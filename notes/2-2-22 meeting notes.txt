@@ -25,3 +25,4 @@ Jesse La Grew also sent this list of problems / pain points:
 -Do not see any changes in scan results over time
 -Data is not available within Splunk
 -Sign-ins required for individuals to see reports - would like people to see reports without logging into Nessus
+-Users cannot see scan settings or schedules set up  (which subnets or devices are being scanned at any given time? Is it happening now?)
