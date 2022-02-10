@@ -33,27 +33,23 @@ Colleen is a the lead of the server and storage team.  There are many critical s
 ## Project Timeline Plan
 (as of 2-9-22)
 
-###February
-
+### February
 -Become familiar with Nessus, its functionality, authentication, and API
 -**Target Monday, February 28th:** Setup the server on the Madison College network which will host the app
 
-###March
-
+### March
 -Become familiar the Splunk API, and focus on Splunk integration to record Nessus data into Splunk
 -Include Unit tests for these integrations
 -Start working on Dashboard, focusing on authentication with Active Directory
 
-###April
-
+### April
 -**Target: Monday, April 4th:**  Complete Splunk Integration.
 -Focus on Dashboard design and features.
 -Develop unit tests for the dashboard.
 -**Target: Monday, April 18th:** Integration with authentication service (Active Directory) completed
 -Get stakeholder feedback on the dashboard features & UI.
 
-###May
-
+### May
 -Incorporate feedback from stakeholders.
 -Debug and put finishing touches.
 -Make sure all unit tests pass.
