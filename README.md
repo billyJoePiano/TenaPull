@@ -38,9 +38,9 @@ Colleen is a the lead of the server and storage team.  There are many critical s
 - **Target Monday, February 28th:** Setup the server on the Madison College network which will host the app
 
 ### March
-- Become familiar the Splunk API, and focus on Splunk integration to record Nessus data into Splunk
-- Include Unit tests for these integrations
-- Start working on Dashboard, focusing on authentication with Active Directory
+- Become familiar with the Splunk API, and focus on Splunk integration to upload Nessus data into Splunk
+- Write Unit tests for these integrations
+- Start working on the dashboard, focusing on authentication with Active Directory
 
 ### April
 - **Target: Monday, April 4th:**  Complete Splunk Integration.
