@@ -1,6 +1,6 @@
-### 2-2-22 Meeting with Security Team Stakeholders, Enterprise Java Project
+# 2-2-22 Meeting with Security Team Stakeholders, Enterprise Java Project
 
-The purpose of this meeting was to decide upon an independent project for Bill Anderson to undertake which could both be used for his Enterprise Java class, and which would benefit the Security Team where he interns.
+I met with Cory Chrisinger, Zach Ward, and Jesse La Grew.  The purpose of this meeting was to decide upon an independent project for me (Bill Anderson) to undertake which could both be used for my Enterprise Java class, and which would benefit the Security Team where I intern.
 
 ## Project ideas
 
@@ -9,11 +9,7 @@ The purpose of this meeting was to decide upon an independent project for Bill A
 - PWM (Identity service?) ??? XX  Probably not do-able???
 
 
-## Nessus App
-
-# User Stories
-
-# Interview with IT-Security Team (Cory, Zach Ward, Jesse La Grew)
+## Nessus App, ideas
 
 - Interface between Splunk and Nessus is broken, stopped working
 - No one outside of the Security Team can read reports
