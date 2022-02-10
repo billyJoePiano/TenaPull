@@ -80,4 +80,4 @@ The Dashboard login should be integrated with an external authentication service
 - Debug and put on finishing touches.
 - Make sure all unit tests pass.
 - **Target: Wednesday, May 11th:** Completed fully functional MVP App.
-- Afterwards: Write additional documentation for future users/maintainers.
+- *Afterwards:* Write additional documentation for future users/maintainers.
