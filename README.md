@@ -36,7 +36,7 @@ Colleen is a the lead of the server and storage team.  There are many critical s
 
 - Splunk Integration
 - Dashboard for users/stakeholders
-- User Authentication through established credentials system
+- User Authentication through Active Directory
 
 
 ### Splunk Integration
@@ -50,7 +50,7 @@ The Dashboard should provide an overview of data from recent Nessus scans, and a
 *MAYBE, time permitting:*  The Dashboard could also include search and data analysis features, to dig deeper into the data.  Alternatively, these features could be built in Splunk, with the Nessus dashboard providing direct links to the applicable Splunk searches.
 
 
-## Authentication
+### Authentication
 
 The Dashboard login should be integrated with an external authentication service, ideally the Madison College Active Directory Domain Controller(s).
 
