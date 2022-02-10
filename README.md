@@ -30,6 +30,32 @@ Members of the Help Desk recieve frequent calls from Madison College students an
 Colleen is a the lead of the server and storage team.  There are many critical systems her team has to administer which the entire college network depends upon.  She would like to know what recent Nessus scans were done and which ones are scheduled, so her team can plan and so the scans don't trigger a panic when the servers think they are under attack.  She would also like to know the results of these scans, and the ability to start them as needed, so the server team can find any gaps in their upgrades.
 
 
+## Minimum Viable Product
+
+### Key Features:
+
+- Splunk Integration
+- Dashboard for users/stakeholders
+- User Authentication through established credentials system
+
+
+### Splunk Integration
+
+The app should be able to pull all data from the Nessus API and load it into Splunk via the Splunk API, thus ensuring an accessible record of the data external to the Nessus server.
+
+
+### Dashboard
+
+The Dashboard should provide an overview of data from recent Nessus scans, and allow users to initiate scans of various devices (...Nessus API permitting)
+*MAYBE, time permitting:*  The Dashboard could also include search and data analysis features, to dig deeper into the data.  Alternatively, these features could be built in Splunk, with the Nessus dashboard providing direct links to the applicable Splunk searches.
+
+
+## Authentication
+
+The Dashboard login should be integrated with an external authentication service, ideally the Madison College Active Directory Domain Controller(s).
+
+
+
 ## Project Timeline Plan
 (as of 2-9-22)
 
@@ -39,7 +65,7 @@ Colleen is a the lead of the server and storage team.  There are many critical s
 
 ### March
 - Become familiar with the Splunk API, and focus on Splunk integration to upload Nessus data into Splunk
-- Write Unit tests for these integrations
+- Write unit tests for these integrations
 - Start working on the dashboard, focusing on authentication with Active Directory
 
 ### April
@@ -51,7 +77,7 @@ Colleen is a the lead of the server and storage team.  There are many critical s
 
 ### May
 - Incorporate feedback from stakeholders.
-- Debug and put finishing touches.
+- Debug and put on finishing touches.
 - Make sure all unit tests pass.
 - **Target: Wednesday, May 11th:** Completed fully functional MVP App.
 - Afterwards: Write additional documentation for future users/maintainers.
