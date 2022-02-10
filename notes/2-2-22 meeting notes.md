@@ -1,6 +1,6 @@
 # 2-2-22 Meeting with Security Team Stakeholders, Enterprise Java Project
 
-I met with Cory Chrisinger, Zach Ward, and Jesse La Grew.  The purpose of this meeting was to decide upon an independent project for me (Bill Anderson) to undertake which could both be used for my Enterprise Java class, and which would benefit the Security Team where I intern.
+I met with Cory Chrisinger, Zach Ward, and Jesse LaGrew.  The purpose of this meeting was to decide upon an independent project for me (Bill Anderson) to undertake which could both be used for my Enterprise Java class, and which would benefit the Security Team where I intern.
 
 ## Project ideas
 
