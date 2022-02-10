@@ -3,7 +3,7 @@
 
 ## Problem Statement
 
-Madison College’s Technology Services employs Nessus, a vulnerability scanning app which helps to identify security vulnerabilities on Madison College’s network and servers.
+Madison College’s Technology Services employs Nessus, a vulnerability scanning app which helps to identify security vulnerabilities on Madison College’s network, devices, and servers.
 
 Because we have only deployed the most basic level of this app, there is only one user login for viewing the data resulting from these scans.  This limits the availability of this data and makes it much harder to search and cross-reference it with other data we have available from other services and data sources (e.g. device inventories, Sysmon and Mitre Threathunting, Active Directory, Microsoft Defender/Security Center, ETC.)
 
@@ -15,7 +15,7 @@ Other technology service teams including Desktop Engineering, the Server Team, a
 
 ### Security Team Members
 
-Jesse is a member of the Madison College Technology Service's Security Team.  He has used Nessus frequently to get information about security vulnerabilities on the College's network and computing systems.  However, this data can be difficult to use and search in its currently format, and he'd like some better ways to utilize it.
+Jesse is a member of the Madison College Technology Service's Security Team.  He has used Nessus frequently to get information about security vulnerabilities on the College's network and computing systems.  However, in its current format this data can be difficult to use and search.  He'd like some improved ways to utilize it.
 
 Zach is another member of the Security Team.  He administers the Splunk server, which is the central security data logging service for all of Madison College's IT infrastructure.  Zach wants to make sure the Nessus data is included in Splunk's data set, so it can be searched and cross referenced with the other data available there.
 
@@ -34,15 +34,18 @@ Colleen is a the lead of the server and storage team.  There are many critical s
 (as of 2-9-22)
 
 ###February
+
 -Become familiar with Nessus, its functionality, authentication, and API
 -**Target Monday, February 28th:** Setup the server on the Madison College network which will host the app
 
 ###March
+
 -Become familiar the Splunk API, and focus on Splunk integration to record Nessus data into Splunk
 -Include Unit tests for these integrations
 -Start working on Dashboard, focusing on authentication with Active Directory
 
 ###April
+
 -**Target: Monday, April 4th:**  Complete Splunk Integration.
 -Focus on Dashboard design and features.
 -Develop unit tests for the dashboard.
@@ -50,6 +53,7 @@ Colleen is a the lead of the server and storage team.  There are many critical s
 -Get stakeholder feedback on the dashboard features & UI.
 
 ###May
+
 -Incorporate feedback from stakeholders.
 -Debug and put finishing touches.
 -Make sure all unit tests pass.
