@@ -1,0 +1,56 @@
+https://nessus.local:8834/scans/22/hosts/3
+
+{
+  "vulnerabilities": [
+    {
+      "count": 1,
+      "score": null,
+      "vuln_index": 4,
+      "plugin_name": "Nessus Scan Information",
+      "severity": 0,
+      "plugin_id": 19506,
+      "severity_index": 0,
+      "cpe": null,
+      "offline": false,
+      "plugin_family": "Settings",
+      "snoozed": 0,
+      "host_id": 3
+    },
+    {
+      "count": 20,
+      "score": null,
+      "vuln_index": 5,
+      "plugin_name": "Netstat Portscanner (WMI)",
+      "severity": 0,
+      "plugin_id": 34220,
+      "severity_index": 1,
+      "cpe": "cpe:/o:microsoft:windows",
+      "offline": false,
+      "plugin_family": "Port scanners",
+      "snoozed": 0,
+      "host_id": 3
+    },
+    {
+      "count": 1,
+      "score": "7.5",
+      "vuln_index": 3,
+      "plugin_name": "KB4056898: Windows 8.1 and Windows Server 2012 R2 January 2018 Security Update (Meltdown)(Spectre)",
+      "severity": 3,
+      "plugin_id": 105553,
+      "severity_index": 2,
+      "cpe": "cpe:/o:microsoft:windows",
+      "offline": false,
+      "plugin_family": "Windows : Microsoft Bulletins",
+      "snoozed": 0,
+      "host_id": 3
+    }
+  ],
+  "compliance": [],
+  "info": {
+    "host_start": "Mon Feb 28 15:28:39 2022",
+    "host-fqdn": "win2012.seclan.local",
+    "host_end": "Mon Feb 28 15:29:30 2022",
+    "operating-system": "Microsoft Windows Server 2012 R2 Standard",
+    "host-ip": "192.168.1.2"
+  }
+}

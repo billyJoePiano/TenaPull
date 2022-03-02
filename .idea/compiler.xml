@@ -10,8 +10,5 @@
         <module name="splunkTools" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="splunkTools" target="1.7" />
-    </bytecodeTargetLevel>
   </component>
 </project>
