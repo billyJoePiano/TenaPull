@@ -4,7 +4,7 @@
 
 ## Problem Statement
 
-Many organization's Technology Services' employs Nessus, a vulnerability scanning app which helps to identify security vulnerabilities on Madison College’s network, devices, and servers.
+Many organization's Technology Services' employs Nessus, a vulnerability scanning app which helps to identify security vulnerabilities on their network, devices, and servers.
 
 Because many have only deployed the most basic level of this app, there is only one user login for viewing the data resulting from these scans.  This limits the availability of this data and makes it much harder to search and cross-reference it with other data we have available from other services and data sources (e.g. device inventories, Sysmon and Mitre Threathunting, Active Directory, Microsoft Defender/Security Center, ETC.)
 
