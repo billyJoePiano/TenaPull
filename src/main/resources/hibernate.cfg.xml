@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="connection.url">jdbc:mariadb://localhost:3306/NessusTools</property>
+        <property name="connection.driver_class">org.mariadb.jdbc.Driver</property>
+
+        <property name="connection.username">student</property>
+        <property name="connection.password">[x_C)>;yz_jBc:6M+G0JmgM]udv3@$o(q(>gQ?bu#`.5d.y:Y?p{>%WM%:;u"Tm|3:ijG,yU~l0*P}:mE|GJkwmnH4o89VY>1n/8Xi)~)lQp?BuZ.cC`>U/HjP#?r[>o2W3LYgP8Yp>'"43V6}Z+@',2~&amp;UozW!RBj/)[k%_Iu*|=c:kgQ4(ESwgM}L%y\*2Q{S8.>aD%yY5;IDgHT2T@EUnAi!Kl0E*%(yXO2X(-sDvEO8ja7sZ5cUK2~5&amp;(hO</property>
+
+        <property name="hibernate.c3p0.min_size">5</property>
+        <property name="hibernate.c3p0.max_size">20</property>
+        <property name="hibernate.c3p0.timeout">300</property>
+        <property name="hibernate.c3p0.max_statements">50</property>
+        <property name="hibernate.c3p0.idle_test_period">3000</property>
+
+        <property name="hibernate.dialect">org.hibernate.dialect.MariaDB53Dialect</property>
+
+        <mapping class="main.nessusData.entity.Folder" />
+        <mapping class="main.nessusData.entity.Scan" />
+        <mapping class="main.nessusData.entity.ScanOwner" />
+        <mapping class="main.nessusData.entity.ScanType" />
+        <mapping class="main.nessusData.entity.Timezone" />
+    </session-factory>
+
+</hibernate-configuration>

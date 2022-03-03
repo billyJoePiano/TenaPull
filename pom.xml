@@ -1,28 +1,43 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>splunkprd01.madisoncollege.edu</groupId>
-    <artifactId>splunkTools</artifactId>
+    <groupId>NessusTools</groupId>
+    <artifactId>NessusTools</artifactId>
     <packaging>war</packaging>
     <version>1.0-SNAPSHOT</version>
-    <name>Splunk Tools</name>
-    <url>https://splunkprd01.madisoncollege.edu:8000/</url>
+    <name>Nessus Tools</name>
+    <url></url>
 
     <properties>
         <maven.compiler.release>11</maven.compiler.release>
         <junit.version>4.12</junit.version>
         <junit-vintage-version>4.12.0</junit-vintage-version>
         <javax.version>7.0</javax.version>
-        <mysql-version>8.0.16</mysql-version>
+        <mariadb-version>3.0.3</mariadb-version>
         <jstl-version>1.2</jstl-version>
         <log4j-version>2.10.0</log4j-version>
         <jupiter-version>5.0.0</jupiter-version>
         <junit-platform-runner-version>1.0.0</junit-platform-runner-version>
         <maven-compiler-plugin-version>3.8.1</maven-compiler-plugin-version>
         <maven-surefire-plugin-version>2.19</maven-surefire-plugin-version>
+        <jackson-version>2.12.4</jackson-version>
+        <hibernate-version>5.4.4.Final</hibernate-version>
     </properties>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-core -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate-version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-c3p0 -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-c3p0</artifactId>
+            <version>${hibernate-version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-runner</artifactId>
@@ -52,12 +67,15 @@
             <artifactId>javaee-web-api</artifactId>
             <version>${javax.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+
+        <!-- https://mariadb.com/kb/en/installing-mariadb-connectorj/ -->
+        <!-- https://mvnrepository.com/artifact/org.mariadb.jdbc/mariadb-java-client -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql-version}</version>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>${mariadb-version}</version>
         </dependency>
+
         <dependency>
             <groupId>jstl</groupId>
             <artifactId>jstl</artifactId>
@@ -74,6 +92,18 @@
             <artifactId>log4j-core</artifactId>
             <version>${log4j-version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson-version}</version>
+        </dependency>
+        <!--dependency>
+            <groupId>org.mpierce</groupId>
+            <artifactId>jfixture-hibernate</artifactId>
+            <version>1.0.1</version>
+            <scope>compile</scope>
+        </dependency-->
     </dependencies>
 
     <build>

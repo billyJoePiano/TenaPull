@@ -6,8 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="yourindieproject" />
-        <module name="splunkTools" />
+        <module name="NessusTools" />
       </profile>
     </annotationProcessing>
   </component>
