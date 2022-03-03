@@ -130,7 +130,7 @@ public class Scan {
         try {
             this.setType(ScanType.dao.getOrCreate(scanType));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 
