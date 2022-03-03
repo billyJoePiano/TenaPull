@@ -1,14 +1,12 @@
 package main.nessusData.entity;
 
-import javax.persistence.*;
-import java.util.*;
 import java.sql.Timestamp;
-import com.fasterxml.jackson.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.annotation.*;
 import main.nessusData.persistence.*;
 import org.apache.logging.log4j.*;
+import javax.persistence.*;
 
 @Entity(name = "Scan")
 @Table(name = "scan")

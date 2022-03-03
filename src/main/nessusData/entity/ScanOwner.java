@@ -1,8 +1,9 @@
 package main.nessusData.entity;
 
-import javax.persistence.*;
 import main.nessusData.persistence.*;
-import org.hibernate.annotations.*;
+import javax.persistence.*;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.NaturalId;
 
 @Entity(name = "ScanOwner")
 @Table(name = "scan_owner")

@@ -4,9 +4,6 @@ import main.nessusData.entity.LookupPojo;
 
 import org.hibernate.*;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 
 public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
     private final String fieldName;
@@ -35,5 +32,9 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
             throw new Exception("Couldn't create pojo for class "
                     + this.getPojoClass().toString());
         }
+    }
+
+    public String toString() {
+        return "[LookupDao for POJO class " + this.getPojoClass().toString() + "]";
     }
 }

@@ -119,8 +119,27 @@ public class Dao<POJO> {
         return pojos;
     }
 
+    public String toString() {
+        return "[Dao for POJO class " + this.getPojoClass().toString() + "]";
+    }
 
+
+    // test compilation
     public static void main (String[] args) {
-        Scan test = new Scan();
+        // load classes
+        new Scan();
+        new ScanOwner();
+        new ScanType();
+        new Timezone();
+        new Folder();
+
+        Logger logger = LogManager.getLogger(Dao.class);
+        logger.debug("TESTING DAO");
+        logger.debug(Folder.dao.toString());
+        logger.debug(Scan.dao.toString());
+        logger.debug(ScanOwner.dao.toString());
+        logger.debug(ScanType.dao.toString());
+        logger.debug(Timezone.dao.toString());
+        logger.debug("TEST DONE");
     }
 }
