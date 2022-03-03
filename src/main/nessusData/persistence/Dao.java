@@ -15,7 +15,7 @@ import java.util.*;
 public class Dao<POJO> {
     public static final SessionFactory sessionFactory = SessionFactoryProvider.getSessionFactory();
 
-    private static Map<Class, Dao> classMap = new TreeMap<Class, Dao>();
+    private static Map<Class, Dao> classMap = new HashMap<Class, Dao>();
     public static Dao get(Class pojoClass) {
         return classMap.get(pojoClass);
     }
@@ -30,7 +30,7 @@ public class Dao<POJO> {
         }
 
         this.pojoClass = pojoClass;
-        classMap.set(pojoClass, this);
+        classMap.put(pojoClass, this);
         logger = LogManager.getLogger(pojoClass);
     }
 
@@ -43,14 +43,14 @@ public class Dao<POJO> {
      */
     public POJO getById(int id) {
         Session session = sessionFactory.openSession();
-        POJO pojo = session.get(POJO.class, id );
+        POJO pojo = (POJO) session.get(this.getPojoClass(), id );
         session.close();
         return pojo;
     }
 
     /**
      * update POJO
-     * @param POJO  POJO to be inserted or updated
+     * @param pojo  POJO to be inserted or updated
      */
     public void saveOrUpdate(POJO pojo) {
         Session session = sessionFactory.openSession();
@@ -62,7 +62,7 @@ public class Dao<POJO> {
 
     /**
      * insert POJO
-     * @param POJO  POJO to be inserted
+     * @param pojo  POJO to be inserted
      */
     public int insert(POJO pojo) {
         Session session = sessionFactory.openSession();
@@ -89,7 +89,7 @@ public class Dao<POJO> {
 
     /**
      * Delete a POJO
-     * @param POJO pojo to be deleted
+     * @param pojo pojo to be deleted
      */
     public void delete(POJO pojo) {
         Session session = sessionFactory.openSession();
@@ -109,8 +109,8 @@ public class Dao<POJO> {
         Session session = sessionFactory.openSession();
 
         CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaQuery<POJO> query = builder.createQuery(POJO.class);
-        Root<POJO> root = query.from(POJO.class);
+        CriteriaQuery<POJO> query = builder.createQuery(this.getPojoClass());
+        Root<POJO> root = query.from(this.getPojoClass());
         List<POJO> pojos = session.createQuery(query).getResultList();
 
         logger.debug("The list of POJOs " + pojos);
