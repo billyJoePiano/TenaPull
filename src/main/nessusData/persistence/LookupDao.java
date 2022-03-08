@@ -8,12 +8,16 @@ import org.hibernate.*;
 public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
     private final String fieldName;
 
-    public LookupDao(Class pojoClass, final String fieldName) {
+    public LookupDao(Class<POJO> pojoClass, final String fieldName) {
         super(pojoClass);
         this.fieldName = fieldName;
     }
 
     public POJO getOrCreate(String string) throws Exception {
+        if (string == null) {
+            return null;
+        }
+
         Session session = sessionFactory.openSession();
         Object obj = session.byNaturalId(this.getPojoClass())
                 .using(this.fieldName, string).load();

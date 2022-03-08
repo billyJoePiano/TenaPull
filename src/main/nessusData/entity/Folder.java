@@ -19,10 +19,13 @@ public class Folder {
     private String type;
 
     @Column
-    private int default_tag;
+    private Integer default_tag;
 
     @Column
-    private int custom;
+    private Integer custom;
+
+    @Column(name = "unread_count")
+    private Integer unreadCount;
 
     @OneToMany(mappedBy="folder", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<Scan> scans;
@@ -53,20 +56,28 @@ public class Folder {
         this.type = type;
     }
 
-    public int getDefault_tag() {
+    public Integer getDefault_tag() {
         return default_tag;
     }
 
-    public void setDefault_tag(int default_tag) {
+    public void setDefault_tag(Integer default_tag) {
         this.default_tag = default_tag;
     }
 
-    public int getCustom() {
+    public Integer getCustom() {
         return custom;
     }
 
-    public void setCustom(int custom) {
+    public void setCustom(Integer custom) {
         this.custom = custom;
+    }
+
+    public Integer getUnreadCount() {
+        return unreadCount;
+    }
+
+    public void setUnreadCount(Integer unreadCount) {
+        this.unreadCount = unreadCount;
     }
 
     public Set<Scan> getScans() {

@@ -65,7 +65,7 @@ public class Scan {
 
     @Column(name = "user_permissions")
     @JsonProperty("user_permissions")
-    private int userPermissions;
+    private Integer userPermissions;
 
     @Column
     private String status;
@@ -91,7 +91,7 @@ public class Scan {
 
     @Column(name = "live_results")
     @JsonProperty("live_results")
-    private int liveResults;
+    private Integer liveResults;
 
 
     public Scan() { }
@@ -105,12 +105,12 @@ public class Scan {
     }
 
     @JsonProperty("folder_id")
-    public void setFolderId(int id) {
+    public void setFolderId(Integer id) {
         this.setFolder(Folder.dao.getById(id));
     }
 
     @JsonProperty("folder_id")
-    public int getFolderId() {
+    public Integer getFolderId() {
         return this.getFolder().getId();
     }
 
@@ -225,11 +225,11 @@ public class Scan {
         this.control = control;
     }
 
-    public int getUserPermissions() {
+    public Integer getUserPermissions() {
         return userPermissions;
     }
 
-    public void setUserPermissions(int userPermissions) {
+    public void setUserPermissions(Integer userPermissions) {
         this.userPermissions = userPermissions;
     }
 
@@ -273,11 +273,11 @@ public class Scan {
         this.timezone = timezone;
     }
 
-    public int getLiveResults() {
+    public Integer getLiveResults() {
         return liveResults;
     }
 
-    public void setLiveResults(int liveResults) {
+    public void setLiveResults(Integer liveResults) {
         this.liveResults = liveResults;
     }
 }

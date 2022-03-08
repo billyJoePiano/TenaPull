@@ -4,7 +4,7 @@
         "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
     <session-factory>
-        <property name="connection.url">jdbc:mariadb://localhost:3306/NessusTools</property>
+        <property name="connection.url">jdbc:mariadb://10.0.0.1:3306/NessusTools</property>
         <property name="connection.driver_class">org.mariadb.jdbc.Driver</property>
 
         <property name="connection.username">student</property>
