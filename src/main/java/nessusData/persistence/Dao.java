@@ -1,9 +1,9 @@
-package main.nessusData.persistence;
+package nessusData.persistence;
 
-import main.nessusData.entity.*;
+import nessusData.entity.*;
+import nessusData.entity.*;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.*;
 import org.hibernate.*;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -12,10 +12,10 @@ import javax.persistence.criteria.Root;
 import java.util.*;
 
 
-public class Dao<POJO> {
-    public static final SessionFactory sessionFactory = SessionFactoryProvider.getSessionFactory();
-
+public class Dao<POJO extends Pojo> {
     private static Map<Class, Dao> classMap = new HashMap<Class, Dao>();
+
+    public static final SessionFactory sessionFactory = SessionFactoryProvider.getSessionFactory();
     public static Dao get(Class pojoClass) {
         return classMap.get(pojoClass);
     }
@@ -23,7 +23,7 @@ public class Dao<POJO> {
     protected final Logger logger;
     private final Class pojoClass;
 
-    public Dao(final Class pojoClass) {
+    public Dao(final Class<POJO> pojoClass) {
         if (classMap.containsKey(pojoClass)) {
             throw new IllegalArgumentException("A Dao for this class already exists: "
                     + pojoClass.toString());
@@ -34,8 +34,12 @@ public class Dao<POJO> {
         logger = LogManager.getLogger(pojoClass);
     }
 
-    public Class getPojoClass() {
+    public Class<POJO> getPojoClass() {
         return this.pojoClass;
+    }
+
+    public Logger getLogger() {
+        return this.logger;
     }
 
     /**
@@ -123,23 +127,4 @@ public class Dao<POJO> {
         return "[Dao for POJO class " + this.getPojoClass().toString() + "]";
     }
 
-
-    // test compilation
-    public static void main (String[] args) {
-        // load classes
-        new Scan();
-        new ScanOwner();
-        new ScanType();
-        new Timezone();
-        new Folder();
-
-        Logger logger = LogManager.getLogger(Dao.class);
-        logger.debug("TESTING DAO");
-        logger.debug(Folder.dao.toString());
-        logger.debug(Scan.dao.toString());
-        logger.debug(ScanOwner.dao.toString());
-        logger.debug(ScanType.dao.toString());
-        logger.debug(Timezone.dao.toString());
-        logger.debug("TEST DONE");
-    }
 }

@@ -1,3 +1,4 @@
+drop table scan_info;
 drop table scan;
 drop table folder;
 drop table scan_owner;
@@ -13,3 +14,5 @@ create table timezone (id       int auto_increment, timezone varchar(255) not nu
 create unique index timezone_timezone_uindex on timezone (timezone);
 create table scan ( id              int          not null, name            varchar(255) null, uuid            varchar(255) null, folder_id       int          null, owner_id        int          null, type_id         int          null, rrules          varchar(255) null, `read`          boolean      null, shared          boolean      null, enabled         boolean      null, control         boolean      null, user_permissions int         null, status          varchar(255) null, creation_date   timestamp    null, start_time      varchar(255) null, last_modification_date  timestamp null, timezone_id     int          null, live_results    int          null, constraint table_name_pk primary key (id), constraint table_name_folder_id_fk foreign key (folder_id) references folder (id), constraint table_name_scan_owner_id_fk foreign key (owner_id) references scan_owner (id), constraint table_name_scan_type_id_fk foreign key (type_id) references scan_type (id), constraint table_name_timezone_id_fk foreign key (timezone_id) references timezone (id) );
 alter table scan disable keys;
+create table scan_info ( id int null, constraint scan_info_pk primary key (id), constraint scan_info_scan_id_fk foreign key (id) references scan (id));
+alter table scan_info disable keys;

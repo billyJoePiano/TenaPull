@@ -1,4 +1,4 @@
-package main.nessusData.persistence;
+package nessusData.persistence;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;

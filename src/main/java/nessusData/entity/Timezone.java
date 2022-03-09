@@ -1,6 +1,7 @@
-package main.nessusData.entity;
+package nessusData.entity;
 
-import main.nessusData.persistence.*;
+import nessusData.persistence.LookupDao;
+import nessusData.persistence.*;
 
 import javax.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -52,16 +53,6 @@ public class Timezone implements LookupPojo  {
     }
 
     public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-
-        } else if (o == null || o.getClass() != this.getClass()) {
-            return false;
-        }
-
-        Timezone other = (Timezone) o;
-
-        return      other.getId()       == this.getId()
-                &&  other.getTimezone() == this.getTimezone();
+        return LookupPojo.super._equals(o);
     }
 }

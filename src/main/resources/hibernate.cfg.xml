@@ -18,11 +18,12 @@
 
         <property name="hibernate.dialect">org.hibernate.dialect.MariaDB53Dialect</property>
 
-        <mapping class="main.nessusData.entity.Folder" />
-        <mapping class="main.nessusData.entity.Scan" />
-        <mapping class="main.nessusData.entity.ScanOwner" />
-        <mapping class="main.nessusData.entity.ScanType" />
-        <mapping class="main.nessusData.entity.Timezone" />
+        <mapping class="nessusData.entity.Folder" />
+        <mapping class="nessusData.entity.Scan" />
+        <mapping class="nessusData.entity.ScanOwner" />
+        <mapping class="nessusData.entity.ScanType" />
+        <mapping class="nessusData.entity.Timezone" />
+        <mapping class="nessusData.entity.ScanInfo" />
     </session-factory>
 
 </hibernate-configuration>

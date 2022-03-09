@@ -1,16 +1,20 @@
-package main.nessusData.entity;
+package nessusData.entity;
 
 import java.sql.Timestamp;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.annotation.*;
-import main.nessusData.persistence.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import nessusData.persistence.*;
+import nessusData.serialize.*;
+import nessusData.serialize.EpochTimestampDeserializer;
+import nessusData.serialize.EpochTimestampSerializer;
 import org.apache.logging.log4j.*;
 import javax.persistence.*;
 
 @Entity(name = "Scan")
 @Table(name = "scan")
-public class Scan {
+public class Scan implements Pojo {
     public static final Dao<Scan> dao = new Dao<Scan>(Scan.class);
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final Logger logger = LogManager.getLogger(Scan.class);
@@ -18,6 +22,11 @@ public class Scan {
     @Id
     @JsonProperty
     private int id;
+
+    @OneToOne
+    @JoinColumn(name = "id")
+    @JsonIgnore
+    private ScanInfo scanInfo;
 
     @Column
     private String name;
@@ -32,6 +41,8 @@ public class Scan {
             foreignKey = @ForeignKey(name = "")
     )
     @JsonProperty("folder_id")
+    @JsonDeserialize(using = IdRefDeserializer.class)
+    @JsonSerialize(using = IdRefSerializer.class)
     private Folder folder;
 
     @ManyToOne
@@ -39,6 +50,8 @@ public class Scan {
             name="owner_id",
             foreignKey = @ForeignKey(name = "")
     )
+    @JsonDeserialize(using = LookupDeserializer.class)
+    @JsonSerialize(using = LookupSerializer.class)
     private ScanOwner owner;
 
     @ManyToOne
@@ -46,12 +59,14 @@ public class Scan {
             name="type_id",
             foreignKey = @ForeignKey(name = "")
     )
+    @JsonDeserialize(using = LookupDeserializer.class)
+    @JsonSerialize(using = LookupSerializer.class)
     private ScanType type;
 
     @Column
     private String rrules;
 
-    @Column
+    @Column(name = "`read`")
     private boolean read;
 
     @Column
@@ -72,6 +87,8 @@ public class Scan {
 
     @Column(name = "creation_date")
     @JsonProperty("creation_date")
+    @JsonDeserialize(using = EpochTimestampDeserializer.class)
+    @JsonSerialize(using = EpochTimestampSerializer.class)
     private Timestamp creationDate;
 
     @Column(name = "start_time")
@@ -80,6 +97,8 @@ public class Scan {
 
     @Column(name = "last_modification_date")
     @JsonProperty("last_modification_date")
+    @JsonDeserialize(using = EpochTimestampDeserializer.class)
+    @JsonSerialize(using = EpochTimestampSerializer.class)
     private Timestamp lastModificationDate;
 
     @ManyToOne
@@ -87,6 +106,8 @@ public class Scan {
             name="timezone_id",
             foreignKey = @ForeignKey(name = "")
     )
+    @JsonDeserialize(using = LookupDeserializer.class)
+    @JsonSerialize(using = LookupSerializer.class)
     private Timezone timezone;
 
     @Column(name = "live_results")
@@ -104,6 +125,7 @@ public class Scan {
         return mapper.writeValueAsString(this);
     }
 
+    /*
     @JsonProperty("folder_id")
     public void setFolderId(Integer id) {
         this.setFolder(Folder.dao.getById(id));
@@ -111,7 +133,33 @@ public class Scan {
 
     @JsonProperty("folder_id")
     public Integer getFolderId() {
-        return this.getFolder().getId();
+        Folder folder = this.getFolder();
+        if (folder == null) {
+            return null;
+            
+        } else {
+            return folder.getId();
+        }
+    }
+
+    @JsonSetter("owner")
+    public void setOwner(String owner) {
+        try {
+            this.setOwner(ScanOwner.dao.getOrCreate(owner));
+
+        } catch (Exception e) {
+            logger.error(e);
+        }
+    }
+
+    @JsonSetter("type")
+    public void setType(String scanType) {
+        try {
+            this.setType(ScanType.dao.getOrCreate(scanType));
+
+        } catch (Exception e) {
+            logger.error(e);
+        }
     }
 
     @JsonProperty("timezone")
@@ -122,15 +170,7 @@ public class Scan {
             logger.error(e);
         }
     }
-
-    @JsonProperty("scan")
-    public void setType(String scanType) {
-        try {
-            this.setType(ScanType.dao.getOrCreate(scanType));
-        } catch (Exception e) {
-            logger.error(e);
-        }
-    }
+     */
 
 
 /**********************************************
@@ -143,6 +183,15 @@ public class Scan {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+
+    public ScanInfo getScanInfo() {
+        return scanInfo;
+    }
+
+    public void setScanInfo(ScanInfo scanInfo) {
+        this.scanInfo = scanInfo;
     }
 
     public String getName() {

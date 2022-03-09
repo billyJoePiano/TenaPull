@@ -16,13 +16,18 @@
         <mariadb-version>3.0.3</mariadb-version>
         <jstl-version>1.2</jstl-version>
         <log4j-version>2.10.0</log4j-version>
-        <jupiter-version>5.0.0</jupiter-version>
-        <junit-platform-runner-version>1.0.0</junit-platform-runner-version>
+        <jupiter-version>5.4.0</jupiter-version>
+        <junit-platform-runner-version>1.4.0</junit-platform-runner-version>
         <maven-compiler-plugin-version>3.8.1</maven-compiler-plugin-version>
         <maven-surefire-plugin-version>2.19</maven-surefire-plugin-version>
-        <jackson-version>2.12.4</jackson-version>
+
+        <!--jackson-version>2.12.4</jackson-version-->
+        <jackson-version>2.10.0</jackson-version>
+
         <hibernate-version>5.4.4.Final</hibernate-version>
         <ibatis-version>3.0</ibatis-version>
+        <jersey-version>2.29.1</jersey-version>
+
     </properties>
 
     <dependencies>
@@ -41,27 +46,33 @@
 
         <dependency>
             <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-commons</artifactId>
+            <version>${junit-platform-runner-version}</version>
+            <!--scope>test</scope-->
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-runner</artifactId>
             <version>${junit-platform-runner-version}</version>
-            <scope>test</scope>
+            <!--scope>test</scope-->
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
             <version>${junit-vintage-version}</version>
-            <scope>test</scope>
+            <!--scope>test</scope-->
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${jupiter-version}</version>
-            <scope>test</scope>
+            <!--scope>test</scope-->
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
-            <scope>test</scope>
+            <!--scope>test</scope-->
         </dependency>
         <dependency>
             <groupId>javax</groupId>
@@ -94,11 +105,28 @@
             <version>${log4j-version}</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson-version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson-version}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson-version}</version>
         </dependency>
+
+
         <!--dependency>
             <groupId>org.mpierce</groupId>
             <artifactId>jfixture-hibernate</artifactId>
@@ -112,6 +140,18 @@
             <groupId>org.apache.ibatis</groupId>
             <artifactId>ibatis-core</artifactId>
             <version>${ibatis-version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>${jersey-version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>${jersey-version}</version>
         </dependency>
 
 

@@ -1,12 +1,16 @@
-package main.nessusData.entity;
+package nessusData.entity;
 
 import javax.persistence.*;
 import java.util.*;
-import main.nessusData.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import nessusData.persistence.Dao;
+import nessusData.persistence.*;
 
 @Entity(name = "Folder")
 @Table(name = "folder")
-public class Folder {
+public class Folder implements Pojo {
     public static final Dao<Folder> dao = new Dao<Folder>(Folder.class);
 
     @Id
@@ -18,16 +22,19 @@ public class Folder {
     @Column
     private String type;
 
-    @Column
-    private Integer default_tag;
+    @Column(name = "default_tag")
+    @JsonProperty("default_tag")
+    private Integer defaultTag;
 
     @Column
     private Integer custom;
 
     @Column(name = "unread_count")
+    @JsonProperty("unread_count")
     private Integer unreadCount;
 
-    @OneToMany(mappedBy="folder", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy="folder", /*cascade = CascadeType.ALL,*/ orphanRemoval = false, fetch = FetchType.EAGER)
+    @JsonIgnore
     private Set<Scan> scans;
 
     public Folder() { }
@@ -56,12 +63,12 @@ public class Folder {
         this.type = type;
     }
 
-    public Integer getDefault_tag() {
-        return default_tag;
+    public Integer getDefaultTag() {
+        return defaultTag;
     }
 
-    public void setDefault_tag(Integer default_tag) {
-        this.default_tag = default_tag;
+    public void setDefaultTag(Integer defaultTag) {
+        this.defaultTag = defaultTag;
     }
 
     public Integer getCustom() {

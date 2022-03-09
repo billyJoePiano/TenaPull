@@ -1,17 +1,10 @@
 package test.testUtils;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.io.*;
+import java.sql.*;
+import java.util.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Properties;
+import org.apache.logging.log4j.*;
 
 // https://ibatis.apache.org/docs/java/dev/com/ibatis/common/jdbc/ScriptRunner.html
 // https://mkyong.com/jdbc/how-to-run-a-mysql-script-using-java/
@@ -128,9 +121,9 @@ public class Database {
             Class.forName(properties.getProperty("driver"));
             connect();
 
-            ScriptRunner runner = new ScriptRunner(connection);
-
+            ScriptRunner runner = new ScriptRunner(this.getConnection());
             runner.runScript(br);
+
 
         } catch (SQLException se) {
             logger.error(se);
