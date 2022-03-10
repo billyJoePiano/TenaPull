@@ -1,4 +1,4 @@
-package test.testUtils;
+package testUtils;
 
 import java.io.*;
 import java.sql.*;
@@ -15,52 +15,45 @@ import org.apache.ibatis.jdbc.ScriptRunner;
  * Provides access the database
  * Created on 8/31/16.
  *
+ * 3/10/22 WJA -- changed from singleton class to static (no instance) utility class
+ *
  * @author pwaite
  */
 
 public class Database {
-    public static final String DB_RESET = "dbSoftReset.sql";
+    public static final String DB_SOFT_RESET = "dbSoftReset.sql";
     public static final String DB_HARD_RESET = "dbHardReset.sql";
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
-    private static Database instance = new Database();
+    private static final Logger logger = LogManager.getLogger(Database.class);
 
-    private Properties properties;
-    private Connection connection;
+    private static Properties properties = loadProperties();
+    private static Connection connection;
 
     private static final String DATABASE_PROPERTIES_FILE = "/database.properties";
 
     /**
-     * Create the database class
+     * Never used
      */
     private Database() {
-        loadProperties();
-
+        throw new IllegalStateException();
     }
 
     /**
      * Load up properties for connection info
      */
 
-    private void loadProperties() {
+    private static Properties loadProperties() {
         properties = new Properties();
         try {
-            properties.load (this.getClass().getResourceAsStream(DATABASE_PROPERTIES_FILE));
+            properties.load (Database.class.getResourceAsStream(DATABASE_PROPERTIES_FILE));
+
         } catch (IOException ioe) {
             logger.error("Database.loadProperties()...Cannot load the properties file", ioe);
         } catch (Exception e) {
             logger.error("Database.loadProperties()...", e);
         }
 
-    }
-
-    /**
-     * Gets instance - singleton pattern usage.
-     *
-     * @return the instance
-     */
-    public static Database getInstance() {
-        return instance;
+        return properties;
     }
 
     /**
@@ -68,7 +61,7 @@ public class Database {
      *
      * @return the connection
      */
-    public Connection getConnection() {
+    public static Connection getConnection() {
         return connection;
     }
 
@@ -77,7 +70,7 @@ public class Database {
      *
      * @throws Exception the exception
      */
-    public void connect() throws Exception {
+    public static void connect() throws Exception {
         if (connection != null)
             return;
 
@@ -94,7 +87,7 @@ public class Database {
     /**
      * Disconnect.
      */
-    public void disconnect() {
+    public static void disconnect() {
         if (connection != null) {
             try {
                 connection.close();
@@ -111,7 +104,7 @@ public class Database {
      *
      * @param sqlFile the sql file to be read and executed line by line
      */
-    public void runSQL(String sqlFile) {
+    public static void runSQL(String sqlFile) {
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
         InputStream inputStream = classloader.getResourceAsStream(sqlFile);
@@ -121,7 +114,7 @@ public class Database {
             Class.forName(properties.getProperty("driver"));
             connect();
 
-            ScriptRunner runner = new ScriptRunner(this.getConnection());
+            ScriptRunner runner = new ScriptRunner(getConnection());
             runner.runScript(br);
 
 
@@ -138,10 +131,14 @@ public class Database {
     }
 
     public static void reset() {
-        getInstance().runSQL(DB_RESET);
+        softReset();
+    }
+
+    public static void softReset() {
+        runSQL(DB_SOFT_RESET);
     }
 
     public static void hardReset() {
-        getInstance().runSQL(DB_HARD_RESET);
+        runSQL(DB_HARD_RESET);
     }
 }

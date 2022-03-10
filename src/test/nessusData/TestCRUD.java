@@ -15,7 +15,7 @@ import nessusData.entity.*;
 import nessusData.persistence.*;
 import org.junit.Before;
 import org.junit.jupiter.api.BeforeEach;
-import test.testUtils.Database;
+import testUtils.Database;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,7 +56,7 @@ public class TestCRUD {
     public void dbReset() {
         Database.reset();
         if (params.sqlPopulate != null) {
-            Database.getInstance().runSQL(params.sqlPopulate);
+            Database.runSQL(params.sqlPopulate);
         }
     }
 

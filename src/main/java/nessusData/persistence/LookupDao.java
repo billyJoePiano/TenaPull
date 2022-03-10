@@ -93,6 +93,7 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
         Runnable sleep = () -> {
             try {
                 Thread.sleep(500);
+                
             } catch (InterruptedException e) {
                 LogManager.getLogger(Dao.class).error(e);
             }

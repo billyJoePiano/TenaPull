@@ -3,7 +3,7 @@ package nessusData;
 import nessusData.entity.*;
 import nessusData.persistence.Dao;
 import nessusData.serialize.*;
-import test.testUtils.Database;
+import testUtils.Database;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -27,7 +27,7 @@ import org.apache.logging.log4j.*;
 //@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
-public class TestDeserializationPersistance {
+public class TestDeserializationPersistence {
 
 
 
@@ -67,7 +67,7 @@ public class TestDeserializationPersistance {
     private List<Response.PojoData> actualData = null;
     private Response persisted = null;
 
-    public TestDeserializationPersistance(TestParams params) {
+    public TestDeserializationPersistence(TestParams params) {
         this.logger = LogManager.getLogger(params.responseClass);
         this.params = params;
 
@@ -269,7 +269,7 @@ public class TestDeserializationPersistance {
         private final List<ExpectedData> expectedData;
         private final Class<? extends Response> responseClass;
 
-        private TestDeserializationPersistance lastInstance;
+        private TestDeserializationPersistence lastInstance;
 
         private TestParams(
                 String filename,
