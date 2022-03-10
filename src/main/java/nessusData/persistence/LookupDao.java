@@ -2,6 +2,7 @@ package nessusData.persistence;
 
 import nessusData.entity.*;
 
+import org.apache.logging.log4j.LogManager;
 import org.hibernate.*;
 
 import java.util.*;
@@ -93,7 +94,7 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LogManager.getLogger(Dao.class).error(e);
             }
         };
 

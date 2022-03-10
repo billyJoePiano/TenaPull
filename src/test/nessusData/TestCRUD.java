@@ -409,12 +409,11 @@ public class TestCRUD {
             }
         }
 
-        if (expected != null) {
+        if (searchId != null) {
             // GET_ONE
             if (expectedList != null || expectedCount != null || searchMap != null) {
                 throw new JsonException(
-                        "Invalid properties combination for TestParams\n"
-                        + node.toString());
+                        "Invalid properties combination for TestParams\n" + node);
             }
             return new Read(searchId, expected);
         }
