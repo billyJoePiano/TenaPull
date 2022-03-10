@@ -1,19 +1,10 @@
 package nessusData.persistence;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import jdk.dynalink.linker.support.Lookup;
 import nessusData.entity.*;
 
 import org.hibernate.*;
 
-import java.io.IOException;
-import java.sql.Timestamp;
+import java.util.*;
 
 
 public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
@@ -53,6 +44,12 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
         }
 
         pojo.setString(string);
+
+        if (runningTests) {
+            persistLater(pojo);
+            return pojo;
+        }
+
         if (this.insert(pojo) != -1) {
             return pojo;
 
@@ -78,5 +75,62 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
         } else {
             return null;
         }
+    }
+
+    /**
+     * This is needed when running certain kinds of unit tests where
+     * JSON is deserialized into POJOs before DB reset(s) happen
+     */
+    private static boolean runningTests = false;
+    public static void runningTests() {
+        runningTests = true;
+    }
+
+    private static List<Runnable> persistLater = null;
+
+    public static Runnable getPersistLater() {
+        Runnable sleep = () -> {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        };
+
+        if (persistLater == null) return sleep;
+
+        List<Runnable> group = persistLater;
+        persistLater = null;
+
+        return () -> {
+            for (Runnable persistLookup : group) {
+                runningTests = false;
+                persistLookup.run();
+                runningTests = true;
+                sleep.run();
+            }
+            for (int i = 0; i < 8; i++) {
+                sleep.run();
+            }
+        };
+    }
+
+    private void persistLater(POJO pojo) {
+        if (persistLater == null) {
+            persistLater = new ArrayList();
+        }
+        persistLater.add(() -> {
+            POJO persisted;
+            try {
+                persisted = this.getOrCreate(pojo.toString());
+
+            } catch (LookupException e) {
+                logger.error(e);
+                return;
+            }
+
+            pojo.setId(persisted.getId());
+
+        });
     }
 }

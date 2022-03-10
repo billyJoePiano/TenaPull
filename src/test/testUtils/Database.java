@@ -19,13 +19,13 @@ import org.apache.ibatis.jdbc.ScriptRunner;
  */
 
 public class Database {
+    public static final String DB_RESET = "dbSoftReset.sql";
+    public static final String DB_HARD_RESET = "dbHardReset.sql";
 
     private final Logger logger = LogManager.getLogger(this.getClass());
-
     private static Database instance = new Database();
 
     private Properties properties;
-
     private Connection connection;
 
     private static final String DATABASE_PROPERTIES_FILE = "/database.properties";
@@ -135,5 +135,13 @@ public class Database {
             disconnect();
         }
 
+    }
+
+    public static void reset() {
+        getInstance().runSQL(DB_RESET);
+    }
+
+    public static void hardReset() {
+        getInstance().runSQL(DB_HARD_RESET);
     }
 }

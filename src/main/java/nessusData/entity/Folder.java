@@ -39,6 +39,23 @@ public class Folder implements Pojo {
 
     public Folder() { }
 
+    public Folder(int id,
+                  String name,
+                  String type,
+                  Integer defaultTag,
+                  Integer custom,
+                  Integer unreadCount,
+                  Set<Scan> scans) {
+
+        this.id = id;
+        this.name = name;
+        this.type = type;
+        this.defaultTag = defaultTag;
+        this.custom = custom;
+        this.unreadCount = unreadCount;
+        this.scans = scans;
+    }
+
     public int getId() {
         return id;
     }

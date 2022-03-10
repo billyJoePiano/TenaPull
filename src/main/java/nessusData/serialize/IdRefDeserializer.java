@@ -62,6 +62,8 @@ public class IdRefDeserializer
     // https://stackoverflow.com/questions/47348029/get-the-detected-generic-type-inside-jacksons-jsondeserializer
     @Override
     public JsonDeserializer<Pojo> createContextual(DeserializationContext deserializationContext, BeanProperty beanProperty) throws JsonMappingException {
+        //JavaType = Jackson's custom Class type
+
         JavaType type = deserializationContext.getContextualType() != null
                 ? deserializationContext.getContextualType()
                 : beanProperty.getMember().getType();
@@ -73,27 +75,30 @@ public class IdRefDeserializer
             logger.error(deserializationContext);
             logger.error(beanProperty);
 
-        } else {
-            this.pojoClass = type.getRawClass();
+            return this;
+        }
 
-            if (this.pojoClass == null) {
-                this.dao = null;
-                logger.error("Could not get raw class from 'JavaType' -- returned null");
-                logger.error(deserializationContext);
-                logger.error(beanProperty);
-                logger.error(type);
+        // "raw class" = Native Java Class type
+        this.pojoClass = type.getRawClass();
 
-            } else {
-                this.dao = Dao.get(this.pojoClass);
+        if (this.pojoClass == null) {
+            this.dao = null;
+            logger.error("Could not get raw class from 'JavaType' -- returned null");
+            logger.error(deserializationContext);
+            logger.error(beanProperty);
+            logger.error(type);
 
-                if (this.dao == null) {
-                    logger.error("Could not find dao for raw class");
-                    logger.error(deserializationContext);
-                    logger.error(beanProperty);
-                    logger.error(type);
-                    logger.error(this.pojoClass);
-                }
-            }
+            return this;
+        }
+
+        this.dao = Dao.get(this.pojoClass);
+
+        if (this.dao == null) {
+            logger.error("Could not find dao for raw class");
+            logger.error(deserializationContext);
+            logger.error(beanProperty);
+            logger.error(type);
+            logger.error(this.pojoClass);
         }
 
         return this;

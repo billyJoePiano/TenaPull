@@ -28,7 +28,7 @@ import org.apache.logging.log4j.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
 public class TestDeserializationPersistance {
-    public static final String DB_RESET = "dbReset.sql";
+
 
 
     /******************************
@@ -40,6 +40,8 @@ public class TestDeserializationPersistance {
 
     @Parameterized.Parameters
     public static Collection responseTypes() {
+        Database.hardReset();
+
         return Arrays.asList(new Object[][] { {
             new TestParams(
                 "indexResponse.json",
@@ -69,7 +71,7 @@ public class TestDeserializationPersistance {
         this.logger = LogManager.getLogger(params.responseClass);
         this.params = params;
 
-        if (params.lastInstance != null) {
+        if (params.lastInstance != null && params.lastInstance != this) {
             // Unfortunately, these variables have to be passed between instances because
             // JUnit insists on creating a new instance for each method with a @Test annotation,
             // but the methods rely upon an order of execution and the results of the
@@ -88,13 +90,7 @@ public class TestDeserializationPersistance {
 
     @Test
     public void _0_dbReset() {
-        origJson = "";
-        origNode = null;
-        deserialized = null;
-        actualData = null;
-        persisted = null;
-
-        Database.getInstance().runSQL(DB_RESET);
+        Database.reset();
     }
 
 

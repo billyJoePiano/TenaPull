@@ -35,30 +35,21 @@ public class Scan implements Pojo {
     @JsonProperty
     private String uuid;
 
-    @ManyToOne
-    @JoinColumn(
-            name="folder_id",
-            foreignKey = @ForeignKey(name = "")
-    )
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="folder_id")
     @JsonProperty("folder_id")
     @JsonDeserialize(using = IdRefDeserializer.class)
     @JsonSerialize(using = IdRefSerializer.class)
     private Folder folder;
 
-    @ManyToOne
-    @JoinColumn(
-            name="owner_id",
-            foreignKey = @ForeignKey(name = "")
-    )
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="owner_id")
     @JsonDeserialize(using = LookupDeserializer.class)
     @JsonSerialize(using = LookupSerializer.class)
     private ScanOwner owner;
 
-    @ManyToOne
-    @JoinColumn(
-            name="type_id",
-            foreignKey = @ForeignKey(name = "")
-    )
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="type_id")
     @JsonDeserialize(using = LookupDeserializer.class)
     @JsonSerialize(using = LookupSerializer.class)
     private ScanType type;
@@ -104,7 +95,7 @@ public class Scan implements Pojo {
     @ManyToOne
     @JoinColumn(
             name="timezone_id",
-            foreignKey = @ForeignKey(name = "")
+            foreignKey = @ForeignKey(name = "scan_timezone_id_fk")
     )
     @JsonDeserialize(using = LookupDeserializer.class)
     @JsonSerialize(using = LookupSerializer.class)
@@ -117,60 +108,19 @@ public class Scan implements Pojo {
 
     public Scan() { }
 
-    public static Scan fromJSON(String json) throws JsonProcessingException {
-        return mapper.readValue(json, Scan.class);
+    public boolean equals(Object o) {
+        return this._equals(o);
     }
 
-    public String toJSON() throws JsonProcessingException {
-        return mapper.writeValueAsString(this);
-    }
-
-    /*
-    @JsonProperty("folder_id")
-    public void setFolderId(Integer id) {
-        this.setFolder(Folder.dao.getById(id));
-    }
-
-    @JsonProperty("folder_id")
-    public Integer getFolderId() {
-        Folder folder = this.getFolder();
-        if (folder == null) {
-            return null;
-            
-        } else {
-            return folder.getId();
-        }
-    }
-
-    @JsonSetter("owner")
-    public void setOwner(String owner) {
+    public String toString() {
         try {
-            this.setOwner(ScanOwner.dao.getOrCreate(owner));
-
-        } catch (Exception e) {
-            logger.error(e);
+            return this.toJson();
+        } catch (JsonProcessingException e) {
+            return super.toString()
+                    + " toString() could not convert to JSON: "
+                    + e.getMessage();
         }
     }
-
-    @JsonSetter("type")
-    public void setType(String scanType) {
-        try {
-            this.setType(ScanType.dao.getOrCreate(scanType));
-
-        } catch (Exception e) {
-            logger.error(e);
-        }
-    }
-
-    @JsonProperty("timezone")
-    public void setTimezone(String timezone) {
-        try {
-            this.setTimezone(Timezone.dao.getOrCreate(timezone));
-        } catch (Exception e) {
-            logger.error(e);
-        }
-    }
-     */
 
 
 /**********************************************
