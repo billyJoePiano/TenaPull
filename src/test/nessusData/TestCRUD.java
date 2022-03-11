@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import nessusData.entity.*;
 import nessusData.persistence.*;
 import org.junit.Before;
-import org.junit.jupiter.api.BeforeEach;
 import testUtils.Database;
 
 import org.junit.Test;
@@ -35,7 +34,6 @@ public class TestCRUD {
             throws NoSuchFieldException, IllegalAccessException, IOException {
 
         Database.hardReset();
-        LookupDao.runningTests();
 
         return Arrays.asList(new Object[][] { {
             createParamsFromJson(Scan.class, "dbPopulate.sql", "scanCRUD.json")
@@ -60,12 +58,36 @@ public class TestCRUD {
         }
     }
 
+    private List<Pojo> convertFromJsonNode(List<JsonNode> nodeList) {
+        return convertFromJsonNode(params.pojoClass, nodeList);
+    }
+
+    private static List<Pojo> convertFromJsonNode(Class<? extends Pojo> pojoClass,
+                                                  List<JsonNode> paramNodes) {
+        List<Pojo> pojoList = new ArrayList();
+        ObjectMapper mapper = new ObjectMapper();
+        for (JsonNode node : paramNodes) {
+            pojoList.add(convertFromJsonNode(pojoClass, mapper, node));
+        }
+        return pojoList;
+    }
+
+    private static Pojo convertFromJsonNode(Class<? extends Pojo> pojoClass,
+                                            ObjectMapper mapper,
+                                            JsonNode node) {
+        if (mapper == null) {
+            mapper = new ObjectMapper();
+        }
+
+        return mapper.convertValue(node, pojoClass);
+    }
+
     @Test
     public void testCreate() {
-        if (params.persistLookupLater != null) params.persistLookupLater.create.run();
         if (params.create == null) return;
+        List<Pojo> pojoList = this.convertFromJsonNode(params.create);
 
-        for (Pojo create : (List<Pojo>) params.create) {
+        for (Pojo create : pojoList) {
             int id = params.dao.insert(create);
 
             if (id < 0) {
@@ -81,10 +103,10 @@ public class TestCRUD {
 
     @Test
     public void testUpdate() {
-        if (params.persistLookupLater != null) params.persistLookupLater.update.run();
         if (params.update == null) return;
+        List<Pojo> pojoList = this.convertFromJsonNode(params.update);
 
-        for (Pojo update : (List<Pojo>) params.update) {
+        for (Pojo update : pojoList) {
             params.dao.saveOrUpdate(update);
 
             Pojo persisted = params.dao.getById(update.getId());
@@ -94,10 +116,10 @@ public class TestCRUD {
 
     @Test
     public void testDelete() {
-        if (params.persistLookupLater != null) params.persistLookupLater.delete.run();
         if (params.delete == null) return;
+        List<Pojo> pojoList = this.convertFromJsonNode(params.delete);
 
-        for (Pojo delete : (List<Pojo>) params.delete) {
+        for (Pojo delete : pojoList) {
             int id = delete.getId();
 
             Pojo verifyExistence = params.dao.getById(id);
@@ -112,7 +134,6 @@ public class TestCRUD {
 
     @Test
     public void testRead() {
-        if (params.persistLookupLater != null) params.persistLookupLater.read.run();
         if (params.read == null) return;
 
         for (Read read : (List<Read<Pojo>>) params.read) {
@@ -141,18 +162,19 @@ public class TestCRUD {
 
     private static class TestParams<POJO extends Pojo> {
         private final String sqlPopulate;
+        private final Class<POJO> pojoClass;
         private final Dao<POJO> dao;
         private final List<POJO> create;
         private final List<POJO> update;
         private final List<POJO> delete;
         private final List<Read<POJO>> read;
-        private PersistLookupLater persistLookupLater = null;
 
         private TestParams(Class<POJO> pojoClass, String sqlPopulate,
                            List<POJO> create,   List<POJO> update,
                            List<POJO> delete,   List<Read<POJO>> read)
                 throws NoSuchFieldException, IllegalAccessException {
 
+            this.pojoClass = pojoClass;
             this.dao = (Dao<POJO>) pojoClass.getDeclaredField("dao").get(null);
 
             this.sqlPopulate = sqlPopulate;
@@ -163,39 +185,31 @@ public class TestCRUD {
         }
     }
 
-    private static class PersistLookupLater {
-        private Runnable create;
-        private Runnable update;
-        private Runnable delete;
-        private Runnable read;
-
-        private PersistLookupLater() { }
-    }
-
-
 
     private static class Read<POJO extends Pojo> {
-        //SV = search field value type, only needed when applicable
-
         private enum Type {
             GET_ALL, GET_ONE, GET_SOME
         }
 
         private final Type readType;
+        private final Class<POJO> pojoClass;
 
         // For GET_ONE only
-        private final POJO expected;
+        private final JsonNode expected;
+        private POJO expectedPojo;
+        private final int searchId;
 
         // For GET_ALL and GET_SOME
-        private final int searchId;
         private final Map<String, Object> searchMap;
         private final int expectedCount;
-        private final List<POJO> expectedList;
+
+        private final List<JsonNode> expectedList;
                 // Doesn't need to be complete, but anything in this list needs to
-                // Objects.equals() an entry in the return
+                // Objects.equals() an entry in the return, after being converted to POJO
 
         // GET_ALL assumed, no search params.  NOTE: expected list can be null if not used. If expectedCount < 0 then it is not checked
-        private Read(int expectedTotalCount, List<POJO> expectedList) {
+        private Read(Class<POJO> pojoClass, int expectedTotalCount, List<JsonNode> expectedList) {
+            this.pojoClass = pojoClass;
             this.readType = Read.Type.GET_ALL;
             this.expectedCount = expectedTotalCount;
             this.expectedList = expectedList;
@@ -206,10 +220,13 @@ public class TestCRUD {
         }
 
         //GET_SOME assumed, with search params.  NOTE: expected list can be null if not used. If expectedCount < 0 then it is not checked
-        private Read(Map<String,Object> searchMap, int expectedCount, List<POJO> expectedList) {
+        private Read(Class<POJO> pojoClass, Map<String,Object> searchMap,
+                     int expectedCount, List<JsonNode> expectedList) {
+
             if (searchMap == null) throw new IllegalArgumentException(
                     "Must provide a non-null search map for TestCRUD.Read of type GET_SOME");
 
+            this.pojoClass = pojoClass;
             this.readType = Read.Type.GET_SOME;
             this.searchMap = searchMap;
             this.expectedCount = expectedCount;
@@ -219,7 +236,8 @@ public class TestCRUD {
         }
 
         //GET_ONE assumed, with individual Pojo.
-        private Read(int searchId, POJO expected) {
+        private Read(Class<POJO> pojoClass, int searchId, JsonNode expected) {
+            this.pojoClass = pojoClass;
             this.readType = Read.Type.GET_ONE;
             this.searchId = searchId;
             this.expected = expected;
@@ -229,22 +247,26 @@ public class TestCRUD {
 
         }
 
-
         private void assertExpected(Object actual) {
-            if (this.readType.equals(Read.Type.GET_ONE)) {
-                this.assertOne((POJO) actual);
+            switch (this.readType) {
+                case GET_ONE:
+                    this.assertOne((POJO) actual);
+                    break;
 
-            } else if (this.readType.equals(Read.Type.GET_SOME) || this.readType.equals(Read.Type.GET_ALL)) {
-                this.assertSomeOrAll((List<POJO>) actual);
+                case GET_SOME: case GET_ALL:
+                    this.assertSomeOrAll((List<POJO>) actual);
+                    break;
 
-            } else {
-                throw new IllegalStateException("TestCRUD.Read.readType must be one of the TestCRUD.Read.Type enums");
+                default:
+                    throw new IllegalStateException(
+                            "TestCRUD.Read.readType must be one of the TestCRUD.Read.Type enums");
             }
         }
 
         private void assertOne(POJO actual) {
-            if (this.expected != null) {
-                assertEquals(this.expected, actual);
+            POJO expected = (POJO) convertFromJsonNode(this.pojoClass, null, this.expected);
+            if (expected != null) {
+                assertEquals(expected, actual);
 
             } else {
                 assertNull(actual);
@@ -258,8 +280,11 @@ public class TestCRUD {
                 assertEquals(this.expectedCount, actual.size());
             }
 
-            if (this.expectedList != null) {
-                for (POJO pojo : this.expectedList) {
+            if (expectedList != null) {
+                List<POJO> expectedList =
+                        (List<POJO>) convertFromJsonNode(this.pojoClass, this.expectedList);
+
+                for (POJO pojo : expectedList) {
                     if (!actual.contains(pojo)) {
                         fail(pojo.toString());
                     }
@@ -277,58 +302,50 @@ public class TestCRUD {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode rootNode = mapper.readValue(reader, JsonNode.class);
 
-        List<Pojo> create = new ArrayList<Pojo>();
-        List<Pojo> update = new ArrayList<Pojo>();
-        List<Pojo> delete = new ArrayList<Pojo>();
-        List<Read> read = new ArrayList<Read>();
-
-        PersistLookupLater persistLookupLater = new PersistLookupLater();
+        List<JsonNode> create = new ArrayList();
+        List<JsonNode> update = new ArrayList();
+        List<JsonNode> delete = new ArrayList();
+        List<Read> read = new ArrayList();
 
         for (JsonNode node : rootNode.get("create")) {
-            create.add(mapper.convertValue(node, pojoClass));
+            create.add(node);
         }
-        persistLookupLater.create = LookupDao.getPersistLater();
 
         for (JsonNode node : rootNode.get("update")) {
-            update.add(mapper.convertValue(node, pojoClass));
+            update.add(node);
         }
-        persistLookupLater.update = LookupDao.getPersistLater();
 
         for (JsonNode node : rootNode.get("delete")) {
-            delete.add(mapper.convertValue(node, pojoClass));
+            delete.add(node);
         }
-        persistLookupLater.delete = LookupDao.getPersistLater();
 
         for (JsonNode node : rootNode.get("read")) {
-            read.add(processReadParamsJson(pojoClass, mapper, node));
+            read.add(processReadParamsJson(pojoClass, node));
         }
-        persistLookupLater.read = LookupDao.getPersistLater();
 
         TestParams params = new TestParams(pojoClass, sqlPopulate, create, update, delete, read);
-        params.persistLookupLater = persistLookupLater;
         return params;
     }
 
     // delegation method for createParamsFromJson
     private static Read processReadParamsJson(
             Class<? extends Pojo> pojoClass,
-            ObjectMapper mapper,
             JsonNode node) {
 
-        Pojo expected = null;
-        List<Pojo> expectedList = null;
+        JsonNode expected = null;
+        List<JsonNode> expectedList = null;
         Integer expectedCount = null;
         Integer searchId = null;
         Map<String, Object> searchMap = null;
 
         if (node.has("expected")) {
-            expected = mapper.convertValue(node.get("expected"), pojoClass);
+            expected = node.get("expected");
         }
 
         if (node.has("expectedList")) {
             expectedList = new ArrayList();
             for (JsonNode subNode : node.get("expectedList")) {
-                expectedList.add(mapper.convertValue(subNode, pojoClass));
+                expectedList.add(subNode);
             }
         }
 
@@ -415,18 +432,18 @@ public class TestCRUD {
                 throw new JsonException(
                         "Invalid properties combination for TestParams\n" + node);
             }
-            return new Read(searchId, expected);
+            return new Read(pojoClass, searchId, expected);
         }
 
         if (expectedCount == null) expectedCount = -1;
 
         if (searchMap != null) {
             // GET_SOME
-            return new Read(searchMap, expectedCount, expectedList);
+            return new Read(pojoClass, searchMap, expectedCount, expectedList);
 
         } else {
             // GET_ALL
-            return new Read(expectedCount, expectedList);
+            return new Read(pojoClass, expectedCount, expectedList);
         }
 
     }

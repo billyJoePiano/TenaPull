@@ -15,7 +15,7 @@ public class Dao<POJO extends Pojo> {
     private static Map<Class, Dao> classMap = new HashMap<Class, Dao>();
 
     public static final SessionFactory sessionFactory = SessionFactoryProvider.getSessionFactory();
-    public static Dao get(Class pojoClass) {
+    public static Dao get(Class<? extends Pojo> pojoClass) {
         return classMap.get(pojoClass);
     }
 
