@@ -1,44 +1,39 @@
 package nessusData;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-
 
 import nessusData.entity.*;
 import nessusData.persistence.*;
-import org.junit.Before;
 import testUtils.Database;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import javax.json.*;
 
-import javax.json.JsonException;
-
+import org.junit.*;
+import org.junit.runner.*;
+import org.junit.runners.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Arrays;
-import java.util.Collection;
 
 @RunWith(Parameterized.class)
 public class TestCRUD {
-    @Parameterized.Parameters
-    public static Collection daoTypes()
-            throws NoSuchFieldException, IllegalAccessException, IOException {
+    // default .sql script to populate the db between tests
+    public static final String DB_POPULATE_SQL = "dbPopulate.sql";
 
-        Database.hardReset();
+    // directory with .json files matching class names, with test params
+    public static final String JSON_DIR = "crud-params/";
+    // ...used when no file is provided (JSON_DIR/pojoClassName.json)
+    // OR when file is a relative path i.e. doesn't start with "/"
 
-        return Arrays.asList(new Object[][] { {
-            createParamsFromJson(Scan.class, "dbPopulate.sql", "scanCRUD.json")
-        }});
-    }
+    public static final Object[][] TESTS = {
+            // { pojoClass, (optionals) dbPopulate script, jsonFile with params] }
+            { Scan.class } ,
+            { Folder.class },
+            { Scan.class, null, "Scan.2.json"} // null = use default
+
+    };
 
 
     private final TestParams params;
@@ -293,14 +288,92 @@ public class TestCRUD {
         }
     }
 
-    private static TestParams createParamsFromJson(
-            Class<? extends Pojo> pojoClass, String sqlPopulate, String jsonFile)
+    @Parameterized.Parameters
+    public static Collection getTestParams()
+            throws NoSuchFieldException, IllegalAccessException, IOException {
+
+        List<TestParams[]> paramsList = new ArrayList();
+
+        for (Object[] test : TESTS) {
+            Class<? extends Pojo> pojoClass = null;
+            String dbPopulate = null;
+            String jsonFile = null;
+
+            if (test.length > 0) {
+                pojoClass = (Class<? extends Pojo>) test[0];
+
+            } else {
+                throw new IllegalStateException("Empty test parameters");
+            }
+
+            if (test.length > 1) {
+                dbPopulate = DB_POPULATE_SQL;
+            }
+
+            if (test.length > 2) {
+                jsonFile = (String) test[2];
+            }
+
+            if (dbPopulate == null) {
+                dbPopulate = DB_POPULATE_SQL;
+            }
+
+            if (jsonFile == null) {
+                jsonFile = JSON_DIR + pojoClass.getSimpleName() + ".json";
+
+            } else if (!jsonFile.substring(0, 1).equals("/")) {
+                jsonFile = JSON_DIR + jsonFile;
+            }
+
+            for (TestParams params :
+                    createParamsFromJson(pojoClass, dbPopulate, jsonFile)) {
+                paramsList.add(new TestParams[] { params });
+            }
+        }
+
+        Database.hardReset();
+
+        return paramsList;
+    }
+
+    private static List<TestParams> createParamsFromJson(Class<? extends Pojo> pojoClass,
+                                                         String sqlPopulate,
+                                                         String jsonFile)
             throws IOException, NoSuchFieldException, IllegalAccessException {
 
         BufferedReader reader = new BufferedReader(new FileReader(jsonFile));
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode rootNode = mapper.readValue(reader, JsonNode.class);
+
+        List<TestParams> list = new ArrayList();
+
+        if (rootNode.isArray()) {
+            for (JsonNode node: rootNode) {
+                if (!node.isObject()) {
+                    throw new JsonException("Invalid json node in file '"
+                            + jsonFile + "'.  Must be an object:\n"
+                            + node.toString());
+                }
+                list.add(createParams(pojoClass, sqlPopulate, node));
+            }
+
+        } else if (rootNode.isObject()) {
+            list.add(createParams(pojoClass, sqlPopulate, rootNode));
+
+        } else {
+            throw new JsonException("Invalid json root node in file '"
+                    + jsonFile + "'.  Must be an array or object:\n"
+                    + rootNode.toString());
+        }
+
+        return list;
+    }
+
+    private static TestParams createParams(Class<? extends Pojo> pojoClass,
+                                           String sqlPopulate,
+                                           JsonNode rootNode)
+            throws NoSuchFieldException, IllegalAccessException {
 
         List<JsonNode> create = new ArrayList();
         List<JsonNode> update = new ArrayList();
@@ -320,7 +393,7 @@ public class TestCRUD {
         }
 
         for (JsonNode node : rootNode.get("read")) {
-            read.add(processReadParamsJson(pojoClass, node));
+            read.add(createReadParams(pojoClass, node));
         }
 
         TestParams params = new TestParams(pojoClass, sqlPopulate, create, update, delete, read);
@@ -328,7 +401,7 @@ public class TestCRUD {
     }
 
     // delegation method for createParamsFromJson
-    private static Read processReadParamsJson(
+    private static Read createReadParams(
             Class<? extends Pojo> pojoClass,
             JsonNode node) {
 

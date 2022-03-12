@@ -63,7 +63,7 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
         return "[LookupDao for POJO class " + this.getPojoClass().toString() + "]";
     }
 
-    public static LookupDao get(Class lookupPojoClass) {
+    public static LookupDao get(Class<? extends Pojo> lookupPojoClass) {
         Dao dao = Dao.get(lookupPojoClass);
         if (dao != null && dao instanceof LookupDao) {
             return (LookupDao) dao;

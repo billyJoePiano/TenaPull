@@ -33,7 +33,7 @@ public class Folder implements Pojo {
     @JsonProperty("unread_count")
     private Integer unreadCount;
 
-    @OneToMany(mappedBy="folder", /*cascade = CascadeType.ALL,*/ orphanRemoval = false, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy="folder", cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonIgnore
     private Set<Scan> scans;
 
@@ -54,6 +54,14 @@ public class Folder implements Pojo {
         this.custom = custom;
         this.unreadCount = unreadCount;
         this.scans = scans;
+    }
+
+    public boolean equals(Object o) {
+        return this._equals(o);
+    }
+
+    public String toString() {
+        return this._toString();
     }
 
     public int getId() {

@@ -18,7 +18,7 @@
         <mysql-version>8.0.16</mysql-version>
 
         <jstl-version>1.2</jstl-version>
-        <log4j-version>2.10.0</log4j-version>
+        <log4j-version>2.12.3</log4j-version>
         <jupiter-version>5.4.0</jupiter-version>
         <junit-platform-runner-version>1.0.0</junit-platform-runner-version>
         <maven-compiler-plugin-version>3.8.1</maven-compiler-plugin-version>

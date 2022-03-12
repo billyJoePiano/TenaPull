@@ -6,6 +6,8 @@ import nessusData.entity.*;
 
 import org.apache.logging.log4j.*;
 import org.hibernate.*;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 
 import javax.persistence.criteria.*;
 import java.util.*;
@@ -14,7 +16,10 @@ import java.util.*;
 public class Dao<POJO extends Pojo> {
     private static Map<Class, Dao> classMap = new HashMap<Class, Dao>();
 
-    public static final SessionFactory sessionFactory = SessionFactoryProvider.getSessionFactory();
+    public static final SessionFactory sessionFactory =
+            (new MetadataSources(new StandardServiceRegistryBuilder().configure().build()))
+                    .getMetadataBuilder().build().getSessionFactoryBuilder().build();
+
     public static Dao get(Class<? extends Pojo> pojoClass) {
         return classMap.get(pojoClass);
     }
@@ -145,7 +150,9 @@ public class Dao<POJO extends Pojo> {
         Root<POJO> root = query.from(pojoClass);
         query.select(root).where(builder.equal(root.get(propertyName),value));
 
-        return session.createQuery(query).getResultList();
+        List<POJO> list = session.createQuery(query).getResultList();
+        session.close();
+        return list;
     }
 
     /**
@@ -167,7 +174,9 @@ public class Dao<POJO extends Pojo> {
         }
         query.select(root).where(builder.and(predicates.toArray(new Predicate[predicates.size()])));
 
-        return session.createQuery(query).getResultList();
+        List<POJO> list = session.createQuery(query).getResultList();
+        session.close();
+        return list;
     }
 
     /**

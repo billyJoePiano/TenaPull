@@ -4,12 +4,15 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 
+import nessusData.persistence.Dao;
 import org.apache.logging.log4j.*;
 
 // https://ibatis.apache.org/docs/java/dev/com/ibatis/common/jdbc/ScriptRunner.html
 // https://mkyong.com/jdbc/how-to-run-a-mysql-script-using-java/
 // https://mvnrepository.com/artifact/org.apache.ibatis/ibatis-core/3.0
 import org.apache.ibatis.jdbc.ScriptRunner;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 
 /**
  * Provides access the database
@@ -135,10 +138,25 @@ public class Database {
     }
 
     public static void softReset() {
+        closeSessions();
         runSQL(DB_SOFT_RESET);
     }
 
     public static void hardReset() {
+        closeSessions();
         runSQL(DB_HARD_RESET);
+    }
+
+    public static void closeSessions() {
+        try {
+            Session session = null;
+            while (session != (session = Dao.sessionFactory.getCurrentSession()) && session != null) {
+                session.close();
+            }
+
+            Dao.sessionFactory.close();
+
+
+        } catch (Throwable e) { }
     }
 }

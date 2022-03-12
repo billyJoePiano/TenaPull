@@ -113,13 +113,7 @@ public class Scan implements Pojo {
     }
 
     public String toString() {
-        try {
-            return this.toJson();
-        } catch (JsonProcessingException e) {
-            return super.toString()
-                    + " toString() could not convert to JSON: "
-                    + e.getMessage();
-        }
+        return this._toString();
     }
 
 
