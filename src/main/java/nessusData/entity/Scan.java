@@ -1,30 +1,23 @@
 package nessusData.entity;
 
 import java.sql.Timestamp;
-import com.fasterxml.jackson.core.*;
+
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.*;
+import nessusData.entity.template.*;
 import nessusData.persistence.*;
 import nessusData.serialize.*;
-import nessusData.serialize.EpochTimestampDeserializer;
-import nessusData.serialize.EpochTimestampSerializer;
 import org.apache.logging.log4j.*;
 import javax.persistence.*;
 
 @Entity(name = "Scan")
 @Table(name = "scan")
-public class Scan implements Pojo {
-    public static final Dao<Scan> dao = new Dao<Scan>(Scan.class);
-    private static final ObjectMapper mapper = new ObjectMapper();
-    private static final Logger logger = LogManager.getLogger(Scan.class);
-
-    @Id
-    @JsonProperty
-    private int id;
+public class Scan extends NaturalIdPojo {
+    public static final Dao<Scan> dao
+            = new Dao<Scan>(Scan.class);
 
     @OneToOne
-    @JoinColumn(name = "id")
     @JsonIgnore
     private ScanInfo scanInfo;
 
@@ -38,20 +31,20 @@ public class Scan implements Pojo {
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="folder_id")
     @JsonProperty("folder_id")
-    @JsonDeserialize(using = IdRefDeserializer.class)
-    @JsonSerialize(using = IdRefSerializer.class)
+    @JsonDeserialize(using = IdReference.Deserializer.class)
+    @JsonSerialize(using = IdReference.Serializer.class)
     private Folder folder;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="owner_id")
-    @JsonDeserialize(using = LookupDeserializer.class)
-    @JsonSerialize(using = LookupSerializer.class)
+    @JsonDeserialize(using = Lookup.Deserializer.class)
+    @JsonSerialize(using = Lookup.Serializer.class)
     private ScanOwner owner;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="type_id")
-    @JsonDeserialize(using = LookupDeserializer.class)
-    @JsonSerialize(using = LookupSerializer.class)
+    @JsonDeserialize(using = Lookup.Deserializer.class)
+    @JsonSerialize(using = Lookup.Serializer.class)
     private ScanType type;
 
     @Column
@@ -78,8 +71,8 @@ public class Scan implements Pojo {
 
     @Column(name = "creation_date")
     @JsonProperty("creation_date")
-    @JsonDeserialize(using = EpochTimestampDeserializer.class)
-    @JsonSerialize(using = EpochTimestampSerializer.class)
+    @JsonDeserialize(using = EpochTimestamp.Deserializer.class)
+    @JsonSerialize(using = EpochTimestamp.Serializer.class)
     private Timestamp creationDate;
 
     @Column(name = "start_time")
@@ -88,8 +81,8 @@ public class Scan implements Pojo {
 
     @Column(name = "last_modification_date")
     @JsonProperty("last_modification_date")
-    @JsonDeserialize(using = EpochTimestampDeserializer.class)
-    @JsonSerialize(using = EpochTimestampSerializer.class)
+    @JsonDeserialize(using = EpochTimestamp.Deserializer.class)
+    @JsonSerialize(using = EpochTimestamp.Serializer.class)
     private Timestamp lastModificationDate;
 
     @ManyToOne
@@ -97,8 +90,8 @@ public class Scan implements Pojo {
             name="timezone_id",
             foreignKey = @ForeignKey(name = "scan_timezone_id_fk")
     )
-    @JsonDeserialize(using = LookupDeserializer.class)
-    @JsonSerialize(using = LookupSerializer.class)
+    @JsonDeserialize(using = Lookup.Deserializer.class)
+    @JsonSerialize(using = Lookup.Serializer.class)
     private Timezone timezone;
 
     @Column(name = "live_results")
@@ -108,28 +101,12 @@ public class Scan implements Pojo {
 
     public Scan() { }
 
-    public boolean equals(Object o) {
-        return this._equals(o);
-    }
-
-    public String toString() {
-        return this._toString();
-    }
-
 
 /**********************************************
       Standard getters/setters below
 ***********************************************/
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-
+/*
     public ScanInfo getScanInfo() {
         return scanInfo;
     }
@@ -137,6 +114,7 @@ public class Scan implements Pojo {
     public void setScanInfo(ScanInfo scanInfo) {
         this.scanInfo = scanInfo;
     }
+ */
 
     public String getName() {
         return name;

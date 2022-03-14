@@ -1,6 +1,7 @@
 package nessusData;
 
 import nessusData.entity.*;
+import nessusData.entity.template.Pojo;
 import nessusData.persistence.Dao;
 import nessusData.serialize.*;
 import testUtils.Database;
@@ -39,13 +40,16 @@ public class TestDeserializationPersistence {
      ******************************/
 
     @Parameterized.Parameters
-    public static Collection responseTypes() {
+    public static Collection responseTypes()
+            throws InvocationTargetException, NoSuchMethodException,
+            InstantiationException, IllegalAccessException {
+
         Database.hardReset();
 
         return Arrays.asList(new Object[][] { {
             new TestParams(
+                    IndexResponse.class,
                 "indexResponse.json",
-                new IndexResponse(),
                 List.of(
                         new ExpectedData<Folder>("folders", Folder.class, 2),
                         new ExpectedData<Scan>("scans", Scan.class, 5)
@@ -272,14 +276,17 @@ public class TestDeserializationPersistence {
         private TestDeserializationPersistence lastInstance;
 
         private TestParams(
+                Class<? extends Response> responseClass,
                 String filename,
-                final Response response,
-                List<ExpectedData> expectedData) {
+                List<ExpectedData> expectedData)
+            throws NoSuchMethodException, InvocationTargetException,
+                InstantiationException, IllegalAccessException {
 
+            this.responseClass = responseClass;
             this.filename = filename;
-            this.response = response;
             this.expectedData = expectedData;
-            this.responseClass = response.getClass();
+
+            this.response = responseClass.getDeclaredConstructor().newInstance();
         }
     }
 

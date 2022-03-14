@@ -5,16 +5,14 @@ import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nessusData.entity.template.*;
 import nessusData.persistence.Dao;
-import nessusData.persistence.*;
 
 @Entity(name = "Folder")
 @Table(name = "folder")
-public class Folder implements Pojo {
-    public static final Dao<Folder> dao = new Dao<Folder>(Folder.class);
-
-    @Id
-    private int id;
+public class Folder extends NaturalIdPojo {
+    public static final Dao<Folder> dao
+            = new Dao<Folder>(Folder.class);
 
     @Column
     private String name;
@@ -47,29 +45,13 @@ public class Folder implements Pojo {
                   Integer unreadCount,
                   Set<Scan> scans) {
 
-        this.id = id;
+        this.setId(id);
         this.name = name;
         this.type = type;
         this.defaultTag = defaultTag;
         this.custom = custom;
         this.unreadCount = unreadCount;
         this.scans = scans;
-    }
-
-    public boolean equals(Object o) {
-        return this._equals(o);
-    }
-
-    public String toString() {
-        return this._toString();
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getName() {

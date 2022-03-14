@@ -19,8 +19,8 @@ public class IndexResponse implements Response {
 
     private List<Scan> scans;
 
-    @JsonDeserialize(using = EpochTimestampDeserializer.class)
-    @JsonSerialize(using = EpochTimestampSerializer.class)
+    @JsonDeserialize(using = EpochTimestamp.Deserializer.class)
+    @JsonSerialize(using = EpochTimestamp.Serializer.class)
     private Timestamp timestamp;
 
     public List<Folder> getFolders() {

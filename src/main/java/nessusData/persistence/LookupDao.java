@@ -1,19 +1,14 @@
 package nessusData.persistence;
 
-import nessusData.entity.*;
-
-import org.apache.logging.log4j.LogManager;
+import nessusData.entity.template.LookupPojo;
+import nessusData.entity.template.Pojo;
 import org.hibernate.*;
-
-import java.util.*;
 
 
 public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
-    private final String fieldName;
 
-    public LookupDao(Class<POJO> pojoClass, final String fieldName) {
+    public LookupDao(Class<POJO> pojoClass) {
         super(pojoClass);
-        this.fieldName = fieldName;
     }
 
     public POJO getOrCreate(String string) throws LookupException {
@@ -23,7 +18,7 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
 
         Session session = sessionFactory.openSession();
         Object obj = session.byNaturalId(this.getPojoClass())
-                .using(this.fieldName, string).load();
+                .using(LookupPojo.FIELD_NAME, string).load();
         // https://stackoverflow.com/questions/14977018/jpa-how-to-get-entity-based-on-field-value-other-than-id
 
         if (obj != null) {
@@ -44,7 +39,7 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
                     this.getPojoClass());
         }
 
-        pojo.setString(string);
+        pojo.setValue(string);
 
         if (this.insert(pojo) != -1) {
             return pojo;
@@ -53,10 +48,6 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
             throw new LookupException("Couldn't create pojo '" + string + "'",
                     this.getPojoClass());
         }
-    }
-
-    public String getFieldName() {
-        return this.fieldName;
     }
 
     public String toString() {

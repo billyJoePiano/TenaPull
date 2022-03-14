@@ -1,58 +1,14 @@
 package nessusData.entity;
 
+import nessusData.entity.template.LookupPojo;
 import nessusData.persistence.LookupDao;
-import nessusData.persistence.*;
 
 import javax.persistence.*;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.NaturalId;
 
 @Entity(name = "ScanType")
 @Table(name = "scan_type")
-public class ScanType implements LookupPojo  {
-    public static final LookupDao<ScanType> dao =
-            new LookupDao<ScanType>(ScanType.class, "type");
+public class ScanType extends LookupPojo {
+    public static final LookupDao<ScanType> dao
+            = new LookupDao<ScanType>(ScanType.class);
 
-    @Id
-    @GeneratedValue(strategy= GenerationType.AUTO, generator="native")
-    @GenericGenerator(name = "native",strategy = "native")
-    private int id;
-
-    @Column
-    @NaturalId
-    private String type;
-
-    public ScanType() { }
-
-    public ScanType(String type) {
-        this.type = type;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public void setString(String type) {
-        this.setType(type);
-    }
-
-    public String toString() {
-        return getType();
-    }
-
-    public boolean equals(Object o) {
-        return LookupPojo.super._equals(o);
-    }
 }

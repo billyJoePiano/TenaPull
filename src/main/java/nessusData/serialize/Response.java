@@ -2,7 +2,8 @@ package nessusData.serialize;
 
 import java.sql.Timestamp;
 import java.util.*;
-import nessusData.entity.*;
+
+import nessusData.entity.template.Pojo;
 
 public interface Response {
     public List<PojoData> getData();

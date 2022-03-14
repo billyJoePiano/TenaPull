@@ -1,9 +1,8 @@
 package nessusData.persistence;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import nessusData.entity.*;
-import nessusData.entity.*;
 
+import nessusData.entity.template.Pojo;
 import org.apache.logging.log4j.*;
 import org.hibernate.*;
 import org.hibernate.boot.MetadataSources;
@@ -88,10 +87,10 @@ public class Dao<POJO extends Pojo> {
             String json;
 
             try {
-                json = pojo.toJson();
+                json = pojo.toJsonString();
 
             } catch (JsonProcessingException ex) {
-                json = "<ERROR PROCESSING JSON>";
+                json = "<ERROR PROCESSING JSON : " + pojo.toString() + " >";
             }
 
             logger.error("Error inserting record:\n" + json, e);

@@ -4,11 +4,12 @@ import java.io.*;
 import java.util.*;
 
 import nessusData.entity.*;
+import nessusData.entity.template.Pojo;
 import nessusData.persistence.*;
 import testUtils.Database;
 
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+
 import javax.json.*;
 
 import org.junit.*;
@@ -29,8 +30,8 @@ public class TestCRUD {
 
     public static final Object[][] TESTS = {
             // { pojoClass, (optionals) dbPopulate script, jsonFile with params] }
-            { Scan.class } ,
             { Folder.class },
+            { Scan.class } ,
             { Scan.class, null, "Scan.2.json"} // null = use default
 
     };
@@ -443,60 +444,13 @@ public class TestCRUD {
         }
 
         if (node.has("searchMap")) {
-            searchMap = new HashMap();
-
-            Iterator<Map.Entry<String, JsonNode>> iterator = node.get("searchMap").fields();
-            // I guess you can't do a for loop over an iterator, only an iterable!!
-            while (iterator.hasNext()) {
-                Map.Entry<String, JsonNode> entry = iterator.next();
-                String key = entry.getKey();
-                JsonNode nodeVal = entry.getValue();
-
-                if (!nodeVal.isValueNode()) {
-                    throw new JsonException("Invalid non-primitive value in searchMap."
-                            + key + "\n" + node.toString());
-                }
-
-                Object value;
-
-                switch (nodeVal.getNodeType()) {
-                    case NUMBER:
-                        if (nodeVal.isFloatingPointNumber()) {
-                            value = nodeVal.doubleValue();
-
-                        } else if (nodeVal.isInt()) {
-                            value = nodeVal.intValue();
-
-                        } else if (nodeVal.isLong()) {
-                            value = nodeVal.longValue();
-
-                        } else {
-                            throw new JsonException("Could not determine numeric type conversion for searchMap."
-                                    + key + "\n" + node.toString());
-                        }
-                        break;
-
-                    case BOOLEAN:
-                        value = nodeVal.booleanValue();
-                        break;
-
-                    case STRING:
-                        value = nodeVal.textValue();
-                        break;
-
-                    case NULL:
-                        value = null;
-                        break;
-
-                    default:
-                        throw new JsonException("Could not determine value type for JsonNode in searchMap"
-                                + key + "\n" + node.toString());
-
-                }
-
-                searchMap.put(key, value);
-
+            JsonNode jsonSearchMap = node.get("searchMap");
+            if (!jsonSearchMap.isObject()) {
+                throw new JsonException("Search map must be a JSON *object*:\n"
+                        + node.toString());
             }
+
+            searchMap = ObjectLookupDao.makeSearchMapFromJson(jsonSearchMap);
         }
 
         if (searchId != null) {
