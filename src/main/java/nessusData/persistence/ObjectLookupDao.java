@@ -119,7 +119,7 @@ public class ObjectLookupDao<POJO extends Pojo> extends Dao<POJO> {
 
 
     public String toString() {
-        return "[ComplexLookupDao for POJO class " + this.getPojoClass().toString() + "]";
+        return "[ObjectLookupDao for " + this.getPojoClass().getSimpleName() + "]";
     }
 
     public static ObjectLookupDao get(Class<? extends Pojo> lookupPojoClass) {

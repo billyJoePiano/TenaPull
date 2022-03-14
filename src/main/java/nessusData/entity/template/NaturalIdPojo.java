@@ -4,24 +4,58 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 import nessusData.entity.*;
 
 import javax.persistence.*;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.CLASS;
+import static com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import org.hibernate.annotations.NaturalId;
 
+import java.util.*;
+
+/*@JsonSubTypes({
+        @Type(value = Folder.class, name = "Folder"),
+        @Type(value = Scan.class, name = "Scan"),
+        @Type(value = ScanInfo.class, name = "ScanInfo"),
+        @Type(value = ScanGroup.class, name = "ScanGroup"),
+        @Type(value = Acl.class, name = "Acl")
+})*/
+
+
+//@JsonTypeInfo(use = CLASS, include = PROPERTY, property = "type")
+
 @MappedSuperclass
-@JsonTypeInfo(use = NAME, include = PROPERTY)
 @JsonSubTypes({
-        @JsonSubTypes.Type(value= Folder.class, name = "Folder"),
-        @JsonSubTypes.Type(value= Scan.class, name = "Scan"),
-        @JsonSubTypes.Type(value= ScanInfo.class, name = "ScanInfo"),
-        @JsonSubTypes.Type(value= ScanGroup.class, name = "ScanGroup"),
-        @JsonSubTypes.Type(value= Acl.class, name = "Acl")
+        @Type(value = Folder.class),
+        @Type(value = Scan.class),
+        @Type(value = ScanInfo.class),
+        @Type(value = ScanGroup.class),
+        @Type(value = Acl.class)
 })
 public abstract class NaturalIdPojo implements Pojo {
+    /*
+    static {
+        ObjectMapper mapper = new ObjectMapper();
+        /*
+        mapper.registerSubtypes(new NamedType(Folder.class, "Folder"));
+        mapper.registerSubtypes(new NamedType(Scan.class, "Scan"));
+        mapper.registerSubtypes(new NamedType(ScanInfo.class, "ScanInfo"));
+        mapper.registerSubtypes(new NamedType(ScanGroup.class, "ScanGroup"));
+        mapper.registerSubtypes(new NamedType(Acl.class, "Acl"));
+         *//*
+
+        mapper.registerSubtypes(Folder.class);
+        mapper.registerSubtypes(Scan.class);
+        mapper.registerSubtypes(ScanInfo.class);
+        mapper.registerSubtypes(ScanGroup.class);
+        mapper.registerSubtypes(Acl.class);
+    }
+    */
+
     // @NaturalId
     @Id
     @JsonProperty

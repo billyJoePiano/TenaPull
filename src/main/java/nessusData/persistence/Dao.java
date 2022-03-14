@@ -187,7 +187,7 @@ public class Dao<POJO extends Pojo> {
     }
 
     public String toString() {
-        return "[Dao for POJO class " + this.getPojoClass().toString() + "]";
+        return "[Dao for " + this.getPojoClass().getSimpleName() + "]";
     }
 
 }

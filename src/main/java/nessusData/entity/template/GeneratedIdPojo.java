@@ -12,11 +12,19 @@ import javax.persistence.*;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
-@MappedSuperclass
+/*
 @JsonTypeInfo(use = NAME, include = PROPERTY)
 @JsonSubTypes({
         @JsonSubTypes.Type(value= SeverityBase.class, name = "SeverityBase"),
         @JsonSubTypes.Type(value= License.class, name = "License")
+})
+ */
+
+
+@MappedSuperclass
+@JsonSubTypes({
+        @JsonSubTypes.Type(value= SeverityBase.class),
+        @JsonSubTypes.Type(value= License.class)
 })
 public abstract class GeneratedIdPojo implements Pojo {
     @Id

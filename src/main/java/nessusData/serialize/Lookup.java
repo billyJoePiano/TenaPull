@@ -81,7 +81,7 @@ public class Lookup {
         }
     }
 
-    public class Serializer extends JsonSerializer<LookupPojo> {
+    public static class Serializer extends JsonSerializer<LookupPojo> {
         // https://stackoverflow.com/questions/33519354/how-to-get-property-or-field-name-in-a-custom-json-serializer
         @Override
         public void serialize(LookupPojo pojo, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {

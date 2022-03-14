@@ -11,6 +11,7 @@ public class ScanOwner extends LookupPojo {
     public static final LookupDao<ScanOwner> dao
             = new LookupDao<ScanOwner>(ScanOwner.class);
 
+    /*
     @OneToOne
     private ScanOwnerId scanOwnerId;
 
@@ -21,4 +22,5 @@ public class ScanOwner extends LookupPojo {
     public void setScanOwnerId(ScanOwnerId scanOwnerId) {
         this.scanOwnerId = scanOwnerId;
     }
+     */
 }

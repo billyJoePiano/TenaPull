@@ -51,7 +51,7 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
     }
 
     public String toString() {
-        return "[LookupDao for POJO class " + this.getPojoClass().toString() + "]";
+        return "[LookupDao for " + this.getPojoClass().getSimpleName() + "]";
     }
 
     public static LookupDao get(Class<? extends Pojo> lookupPojoClass) {

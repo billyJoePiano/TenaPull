@@ -17,9 +17,12 @@ public class Scan extends NaturalIdPojo {
     public static final Dao<Scan> dao
             = new Dao<Scan>(Scan.class);
 
+    /*
     @OneToOne
     @JsonIgnore
     private ScanInfo scanInfo;
+
+     */
 
     @Column
     private String name;

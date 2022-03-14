@@ -14,7 +14,7 @@ import javax.persistence.*;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
-@MappedSuperclass
+/*
 @JsonTypeInfo(use = NAME, include = PROPERTY)
 @JsonSubTypes({
         @JsonSubTypes.Type(value= ScanType.class, name = "ScanType"),
@@ -23,6 +23,17 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
         @JsonSubTypes.Type(value= Scanner.class, name = "Scanner"),
         @JsonSubTypes.Type(value= ScanPolicy.class, name = "ScanPolicy"),
         @JsonSubTypes.Type(value= ScanPolicy.class, name = "ScanStatus")
+})
+*/
+
+@MappedSuperclass
+@JsonSubTypes({
+        @JsonSubTypes.Type(value= ScanType.class),
+        @JsonSubTypes.Type(value= ScanOwner.class),
+        @JsonSubTypes.Type(value= Timezone.class),
+        @JsonSubTypes.Type(value= Scanner.class),
+        @JsonSubTypes.Type(value= ScanPolicy.class),
+        @JsonSubTypes.Type(value= ScanPolicy.class)
 })
 public abstract class LookupPojo implements Pojo {
     public static final String FIELD_NAME = "value";
