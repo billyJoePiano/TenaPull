@@ -57,7 +57,7 @@ create table scanner (
 create table scan_status (
     id int auto_increment primary key,
     value varchar(255) not null unique
-)
+);
 
 
 --
@@ -113,7 +113,7 @@ alter table folder disable keys;
 
 create table scan_group (
     id int primary key auto_increment
-)
+);
 
 create table scan (
     id              int          not null,
