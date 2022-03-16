@@ -23,7 +23,15 @@ public class SeverityBase extends GeneratedIdPojo {
 		return display;
 	}
 
+	public void setDisplay(String display) {
+		this.display = display;
+	}
+
 	public String getValue(){
 		return value;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
 	}
 }

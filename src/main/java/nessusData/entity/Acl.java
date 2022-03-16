@@ -12,23 +12,16 @@ public class Acl extends NaturalIdPojo {
 	public static final ObjectLookupDao<Acl> dao
 			= new ObjectLookupDao<Acl>(Acl.class);
 
-	@JsonProperty("owner")
 	private Integer owner;
 
-	@Column
-	@JsonProperty("permissions")
 	private int permissions;
 
-	@Column
-	@JsonProperty("name")
 	private String name;
 
 	@Column(name = "display_name")
 	@JsonProperty("display_name")
 	private String displayName;
 
-	@Column
-	@JsonProperty("type")
 	private String type;
 
 	public Integer getOwner() {

@@ -12,12 +12,9 @@ public class License extends GeneratedIdPojo {
 	public static final ObjectLookupDao<License> dao
 			= new ObjectLookupDao<License>(License.class);
 
-	@Column
-	@JsonProperty
+	@Column(name = "`limit`")
 	private String limit;
 
-	@Column
-	@JsonProperty("trimmed")
 	private String trimmed;
 
 	public String getLimit(){

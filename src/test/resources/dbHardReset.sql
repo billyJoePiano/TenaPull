@@ -67,6 +67,7 @@ create table scan_status (
 create table acl
 (
     id           int          not null  primary key,
+    owner        int          null,
     name         varchar(255) null,
     type         varchar(255) null,
     permissions  int          null,
@@ -145,9 +146,13 @@ alter table scan disable keys;
 create table scan_info (
     id int primary key,
     name varchar(255) null,
+    folder_id int null,
     uuid  varchar(255) null,
+    scan_type_id int null,
     edit_allowed bool null,
-    current_severity_base_id int null,
+    -- current_severity_base_id int null,
+    current_severity_base varchar(255) null,
+    current_severity_base_display varchar(255) null,
     scan_group_id int null,
     targets varchar(255) null,
     scanner_start timestamp null,
@@ -157,7 +162,7 @@ create table scan_info (
     host_count int null,
     haskb bool null,
     exploitable_vulns bool null,
-    host_vulns bool null,
+    hosts_vulns bool null,
     migrated int null,
     timestamp timestamp null,
     policy_id int null,
@@ -181,18 +186,19 @@ create table scan_info (
     user_permissions int null,
     policy_template_uuid varchar(255) null,
     known_accounts bool null,
-    scan_type_id int null,
     offline bool null,
     status_id int null,
 
 
-
     constraint scan_info_id_fk foreign key (id) references scan (id),
-    constraint scan_info_current_severity_base_id_fk foreign key (current_severity_base_id) references severity_base (id) on delete cascade on update cascade,
+    constraint scan_info_folder_id_fk foreign key (folder_id) references folder (id),
+    constraint scan_info_scan_type_id_fk foreign key (scan_type_id) references scan_type(id),
+    -- constraint scan_info_current_severity_base_id_fk foreign key (current_severity_base_id) references severity_base (id) on delete cascade on update cascade,
     constraint scan_info_scan_group_id_fk foreign key (scan_group_id) references scan_group (id),
     constraint scan_info_policy_id foreign key (policy_id) references scan_policy (id),
     constraint scan_info_scanner_id foreign key (scanner_id) references scanner (id),
     constraint scan_info_scan_type_id foreign key (scan_type_id) references scan_type (id),
+    constraint scan_info_license_id_fk foreign key (license_id) references license (id),
     constraint scan_info_status_id foreign key (status_id) references scan_status (id)
 );
 alter table scan_info disable keys;

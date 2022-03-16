@@ -40,14 +40,10 @@ public class Scan extends NaturalIdPojo {
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="owner_id")
-    @JsonDeserialize(using = Lookup.Deserializer.class)
-    @JsonSerialize(using = Lookup.Serializer.class)
     private ScanOwner owner;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="type_id")
-    @JsonDeserialize(using = Lookup.Deserializer.class)
-    @JsonSerialize(using = Lookup.Serializer.class)
     private ScanType type;
 
     @Column
@@ -93,8 +89,6 @@ public class Scan extends NaturalIdPojo {
             name="timezone_id",
             foreignKey = @ForeignKey(name = "scan_timezone_id_fk")
     )
-    @JsonDeserialize(using = Lookup.Deserializer.class)
-    @JsonSerialize(using = Lookup.Serializer.class)
     private Timezone timezone;
 
     @Column(name = "live_results")

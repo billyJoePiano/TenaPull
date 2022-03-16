@@ -1,17 +1,19 @@
 package nessusData.entity;
 
-import com.fasterxml.jackson.annotation.*;
-
-import java.sql.Timestamp;
-import java.util.*;
-
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import nessusData.entity.template.*;
 import nessusData.persistence.*;
 import nessusData.serialize.*;
 
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
+
 import javax.persistence.*;
+import java.sql.Timestamp;
+import java.util.*;
+
 
 @Entity(name = "ScanInfo")
 @Table(name = "scan_info")
@@ -22,31 +24,64 @@ public class ScanInfo extends NaturalIdPojo {
 	@OneToOne
 	@JoinColumn(name = "id")
 	@JsonIgnore
-	private ScanInfo scanInfo;
+	private Scan scan;
+
+	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+	@JoinColumn(name="folder_id")
+	@JsonProperty("folder_id")
+	@JsonDeserialize(using = IdReference.Deserializer.class)
+	@JsonSerialize(using = IdReference.Serializer.class)
+	private Folder folder;
 
 	private String name;
 
 	private String uuid;
+
+	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+	@JoinColumn(name="scan_type_id")
+	@JsonProperty("scan_type")
+	private ScanType scanType;
 
 	@Column(name = "edit_allowed")
 	@JsonProperty("edit_allowed")
 	private boolean editAllowed;
 
 	@ManyToMany(cascade = CascadeType.ALL)
+	@LazyCollection(LazyCollectionOption.FALSE)
 	@JoinTable(
 			name = "scan_info_acl",
 			joinColumns = { @JoinColumn(name = "scan_id") },
 			inverseJoinColumns = { @JoinColumn(name = "acl_id") }
 	)
 	@JsonProperty("acls")
-	private List<Acl> acls;
+	@JsonDeserialize(using = SetContextualDeserializer.class)
+	@SetType(type = Acl.class, using = ObjectLookup.Deserializer.class)
+	private Set<Acl> acls;
 
-	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+
+
+	private String current_severity_base;
+	private String current_severity_base_display;
+	public String getCurrent_severity_base() {
+		return current_severity_base;
+	}
+	public void setCurrent_severity_base(String current_severity_base) {
+		this.current_severity_base = current_severity_base;
+	}
+	public String getCurrent_severity_base_display() {
+		return current_severity_base_display;
+	}
+	public void setCurrent_severity_base_display(String current_severity_base_display) {
+		this.current_severity_base_display = current_severity_base_display;
+	}
+
+
+	/*@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
 	@JoinColumn(name="current_severity_base_id")
 	@JsonProperty("current_severity_base")
-	@JsonDeserialize(using = IdReference.Deserializer.class)
-	@JsonSerialize(using = IdReference.Serializer.class)
+	@JsonDeserialize(using = ObjectLookup.Deserializer.class)
 	private SeverityBase currentSeverityBase;
+
 
 	@Transient
 	@JsonProperty("current_severity_base_display")
@@ -54,6 +89,19 @@ public class ScanInfo extends NaturalIdPojo {
 		return this.getCurrentSeverityBase().getDisplay();
 	}
 	// TODO handle deserialization/persistence for current_severity_base_display
+	// https://stackoverflow.com/questions/58936715/can-hibernate-map-subset-of-columns-into-an-internal-sub-pojo
+
+	@Transient
+	public void setCurrentSeverityBaseDisplay(String display) {
+		SeverityBase severityBase = this.getCurrentSeverityBase();
+		if (severityBase == null) {
+			severityBase = new SeverityBase();
+			this.setCurrentSeverityBase(severityBase);
+		}
+
+		severityBase.setDisplay(display);
+	}
+	 */
 
 	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
 	@JoinColumn(name="scan_group_id")
@@ -76,6 +124,7 @@ public class ScanInfo extends NaturalIdPojo {
 	@JsonSerialize(using = EpochTimestamp.Serializer.class)
 	private Timestamp scannerEnd;
 
+	@Column(name = "selected_severity_base")
 	@JsonProperty("selected_severity_base")
 	private String selectedSeverityBase;
 
@@ -103,8 +152,6 @@ public class ScanInfo extends NaturalIdPojo {
 
 	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
 	@JoinColumn(name="policy_id")
-	@JsonDeserialize(using = Lookup.Deserializer.class)
-	@JsonSerialize(using = Lookup.Serializer.class)
 	private ScanPolicy policy;
 
 	@Column(name = "year_old_vulns")
@@ -144,8 +191,6 @@ public class ScanInfo extends NaturalIdPojo {
 	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
 	@JoinColumn(name="scanner_id")
 	@JsonProperty("scanner_name")
-	@JsonDeserialize(using = Lookup.Deserializer.class)
-	@JsonSerialize(using = Lookup.Serializer.class)
 	private Scanner scanner;
 
 	@Column(name = "unsupported_software")
@@ -159,6 +204,7 @@ public class ScanInfo extends NaturalIdPojo {
 	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
 	@JoinColumn(name="license_id")
 	@JsonProperty("license_info")
+	@JsonDeserialize(using = ObjectLookup.Deserializer.class)
 	private License licenseInfo;
 
 	@Column(name = "no_target")
@@ -196,33 +242,24 @@ public class ScanInfo extends NaturalIdPojo {
 	@JsonProperty("known_accounts")
 	private Boolean knownAccounts;
 
-	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-	@JoinColumn(name="type_id")
-	@JsonDeserialize(using = Lookup.Deserializer.class)
-	@JsonSerialize(using = Lookup.Serializer.class)
-	private ScanType scanType;
-
-
 	@JsonProperty("offline")
 	private Boolean offline;
 
-
 	@ManyToMany(cascade = CascadeType.ALL)
+	@LazyCollection(LazyCollectionOption.FALSE)
 	@JoinTable(
 			name = "scan_info_severity_base_selection",
 			joinColumns = { @JoinColumn(name = "scan_id") },
-			inverseJoinColumns = { @JoinColumn(name = "severity_base_selection_id") }
+			inverseJoinColumns = { @JoinColumn(name = "severity_base_id") }
 	)
 	@JsonProperty("severity_base_selections")
-	private List<SeverityBase> severityBaseSelections;
-
-
+	@JsonDeserialize(using = SetContextualDeserializer.class)
+	@SetType(type = SeverityBase.class, using = ObjectLookup.Deserializer.class)
+	private Set<SeverityBase> severityBaseSelections;
 
 	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
 	@JoinColumn(name="status_id")
 	@JsonProperty("status")
-	@JsonDeserialize(using = Lookup.Deserializer.class)
-	@JsonSerialize(using = Lookup.Serializer.class)
 	private ScanStatus status;
 
 
@@ -235,46 +272,37 @@ public class ScanInfo extends NaturalIdPojo {
 	 *
 	 ******************************************/
 
-
-
-	public Boolean getAltTargetsUsed() {
-		return altTargetsUsed;
+	public Scan getScan() {
+		return scan;
 	}
 
-	public void setAltTargetsUsed(Boolean altTargetsUsed) {
-		this.altTargetsUsed = altTargetsUsed;
+	public void setScan(Scan scan) {
+		this.scan = scan;
 	}
 
-	public Integer getUserPermissions() {
-		return userPermissions;
+
+	public Folder getFolder() {
+		return folder;
 	}
 
-	public void setUserPermissions(Integer userPermissions) {
-		this.userPermissions = userPermissions;
+	public void setFolder(Folder folder) {
+		this.folder = folder;
 	}
 
-	public String getPolicyTemplateUuid() {
-		return policyTemplateUuid;
+	public String getName() {
+		return name;
 	}
 
-	public void setPolicyTemplateUuid(String policyTemplateUuid) {
-		this.policyTemplateUuid = policyTemplateUuid;
+	public void setName(String name) {
+		this.name = name;
 	}
 
-	public List<Acl> getAcls() {
-		return acls;
+	public String getUuid() {
+		return uuid;
 	}
 
-	public void setAcls(List<Acl> acls) {
-		this.acls = acls;
-	}
-
-	public Boolean getKnownAccounts() {
-		return knownAccounts;
-	}
-
-	public void setKnownAccounts(Boolean knownAccounts) {
-		this.knownAccounts = knownAccounts;
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 
 	public ScanType getScanType() {
@@ -285,6 +313,47 @@ public class ScanInfo extends NaturalIdPojo {
 		this.scanType = scanType;
 	}
 
+	public Boolean getOffline() {
+		return offline;
+	}
+
+	public void setOffline(Boolean offline) {
+		this.offline = offline;
+	}
+
+	public Set<SeverityBase> getSeverityBaseSelections() {
+		return severityBaseSelections;
+	}
+
+	public void setSeverityBaseSelections(Set<SeverityBase> severityBaseSelections) {
+		this.severityBaseSelections = severityBaseSelections;
+	}
+
+	public ScanStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(ScanStatus status) {
+		this.status = status;
+	}
+
+	public boolean isEditAllowed() {
+		return editAllowed;
+	}
+
+	public void setEditAllowed(boolean editAllowed) {
+		this.editAllowed = editAllowed;
+	}
+
+	public Set<Acl> getAcls() {
+		return acls;
+	}
+
+	public void setAcls(Set<Acl> acls) {
+		this.acls = acls;
+	}
+
+	/*
 	public SeverityBase getCurrentSeverityBase() {
 		return currentSeverityBase;
 	}
@@ -292,6 +361,7 @@ public class ScanInfo extends NaturalIdPojo {
 	public void setCurrentSeverityBase(SeverityBase currentSeverityBase) {
 		this.currentSeverityBase = currentSeverityBase;
 	}
+	 */
 
 	public ScanGroup getScanGroup() {
 		return scanGroup;
@@ -309,14 +379,6 @@ public class ScanInfo extends NaturalIdPojo {
 		this.targets = targets;
 	}
 
-	public String getUuid() {
-		return uuid;
-	}
-
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
-
 	public Timestamp getScannerStart() {
 		return scannerStart;
 	}
@@ -331,14 +393,6 @@ public class ScanInfo extends NaturalIdPojo {
 
 	public void setScannerEnd(Timestamp scannerEnd) {
 		this.scannerEnd = scannerEnd;
-	}
-
-	public Boolean getOffline() {
-		return offline;
-	}
-
-	public void setOffline(Boolean offline) {
-		this.offline = offline;
 	}
 
 	public String getSelectedSeverityBase() {
@@ -517,30 +571,6 @@ public class ScanInfo extends NaturalIdPojo {
 		this.noTarget = noTarget;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public boolean isEditAllowed() {
-		return editAllowed;
-	}
-
-	public void setEditAllowed(boolean editAllowed) {
-		this.editAllowed = editAllowed;
-	}
-
-	public List<SeverityBase> getSeverityBaseSelections() {
-		return severityBaseSelections;
-	}
-
-	public void setSeverityBaseSelections(List<SeverityBase> severityBaseSelections) {
-		this.severityBaseSelections = severityBaseSelections;
-	}
-
 	public String getNodeHost() {
 		return nodeHost;
 	}
@@ -557,14 +587,6 @@ public class ScanInfo extends NaturalIdPojo {
 		this.severityProcessed = severityProcessed;
 	}
 
-	public ScanStatus getStatus() {
-		return status;
-	}
-
-	public void setStatus(ScanStatus status) {
-		this.status = status;
-	}
-
 	public Integer getNodeId() {
 		return nodeId;
 	}
@@ -572,4 +594,37 @@ public class ScanInfo extends NaturalIdPojo {
 	public void setNodeId(Integer nodeId) {
 		this.nodeId = nodeId;
 	}
+
+	public Boolean getAltTargetsUsed() {
+		return altTargetsUsed;
+	}
+
+	public void setAltTargetsUsed(Boolean altTargetsUsed) {
+		this.altTargetsUsed = altTargetsUsed;
+	}
+
+	public Integer getUserPermissions() {
+		return userPermissions;
+	}
+
+	public void setUserPermissions(Integer userPermissions) {
+		this.userPermissions = userPermissions;
+	}
+
+	public String getPolicyTemplateUuid() {
+		return policyTemplateUuid;
+	}
+
+	public void setPolicyTemplateUuid(String policyTemplateUuid) {
+		this.policyTemplateUuid = policyTemplateUuid;
+	}
+
+	public Boolean getKnownAccounts() {
+		return knownAccounts;
+	}
+
+	public void setKnownAccounts(Boolean knownAccounts) {
+		this.knownAccounts = knownAccounts;
+	}
+
 }

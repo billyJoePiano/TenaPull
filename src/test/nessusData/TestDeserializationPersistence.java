@@ -4,6 +4,8 @@ import nessusData.entity.*;
 import nessusData.entity.template.Pojo;
 import nessusData.persistence.Dao;
 import nessusData.serialize.*;
+import org.junit.Before;
+import org.junit.jupiter.api.BeforeAll;
 import testUtils.Database;
 
 import java.io.BufferedReader;
@@ -29,7 +31,7 @@ import org.apache.logging.log4j.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
 public class TestDeserializationPersistence {
-
+    public static final String PARAMS_DIR = "deserializationPersistence-params/";
 
 
     /******************************
@@ -47,15 +49,24 @@ public class TestDeserializationPersistence {
         Database.hardReset();
 
         return Arrays.asList(new Object[][] { {
-            new TestParams(
-                    IndexResponse.class,
-                "indexResponse.json",
+
+            new TestParams(IndexResponse.class, "indexResponse.json",
                 List.of(
-                        new ExpectedData<Folder>("folders", Folder.class, 2),
-                        new ExpectedData<Scan>("scans", Scan.class, 5)
+                    new ExpectedData<Folder>("folders", Folder.class, 2),
+                    new ExpectedData<Scan>("scans", Scan.class, 5)
                 )
             )
-        }});
+
+        }, {
+
+            new TestParams(ScanInfoResponse.class, "ScanInfo.json",
+                List.of(
+                    new ExpectedData<ScanInfo>("info", ScanInfo.class, null)
+                )
+            )
+        }
+
+        });
     }
 
     /*******************************
@@ -92,7 +103,7 @@ public class TestDeserializationPersistence {
 
     }
 
-    @Test
+    @BeforeAll
     public void _0_dbReset() {
         Database.reset();
     }
@@ -283,7 +294,14 @@ public class TestDeserializationPersistence {
                 InstantiationException, IllegalAccessException {
 
             this.responseClass = responseClass;
-            this.filename = filename;
+
+            if (filename.substring(0, 1).equals("/")) {
+                this.filename = filename;
+
+            } else {
+                this.filename = PARAMS_DIR + filename;
+            }
+
             this.expectedData = expectedData;
 
             this.response = responseClass.getDeclaredConstructor().newInstance();

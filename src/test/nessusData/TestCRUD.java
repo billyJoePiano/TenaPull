@@ -24,7 +24,7 @@ public class TestCRUD {
     public static final String DB_POPULATE_SQL = "dbPopulate.sql";
 
     // directory with .json files matching class names, with test params
-    public static final String JSON_DIR = "crud-params/";
+    public static final String PARAMS_DIR = "crud-params/";
     // ...used when no file is provided (JSON_DIR/pojoClassName.json)
     // OR when file is a relative path i.e. doesn't start with "/"
 
@@ -320,10 +320,10 @@ public class TestCRUD {
             }
 
             if (jsonFile == null) {
-                jsonFile = JSON_DIR + pojoClass.getSimpleName() + ".json";
+                jsonFile = PARAMS_DIR + pojoClass.getSimpleName() + ".json";
 
             } else if (!jsonFile.substring(0, 1).equals("/")) {
-                jsonFile = JSON_DIR + jsonFile;
+                jsonFile = PARAMS_DIR + jsonFile;
             }
 
             for (TestParams params :

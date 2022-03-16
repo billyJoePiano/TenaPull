@@ -156,7 +156,14 @@ public class Database {
 
             Dao.sessionFactory.close();
 
+        } catch (HibernateException e) {
+            if (!Objects.equals("No CurrentSessionContext configured!", e.getMessage())) {
+                logger.error(e);
+            }
 
-        } catch (Throwable e) { }
+        } catch (Throwable e) {
+            logger.error(e);
+            e.printStackTrace();
+        }
     }
 }

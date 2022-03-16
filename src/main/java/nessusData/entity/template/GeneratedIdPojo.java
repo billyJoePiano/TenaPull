@@ -4,28 +4,13 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nessusData.entity.*;
+
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
 
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
-
-/*
-@JsonTypeInfo(use = NAME, include = PROPERTY)
-@JsonSubTypes({
-        @JsonSubTypes.Type(value= SeverityBase.class, name = "SeverityBase"),
-        @JsonSubTypes.Type(value= License.class, name = "License")
-})
- */
-
 
 @MappedSuperclass
-@JsonSubTypes({
-        @JsonSubTypes.Type(value= SeverityBase.class),
-        @JsonSubTypes.Type(value= License.class)
-})
 public abstract class GeneratedIdPojo implements Pojo {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO, generator="native")

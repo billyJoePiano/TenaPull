@@ -1,59 +1,114 @@
 package nessusData.persistence;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import nessusData.entity.template.Pojo;
+import nessusData.entity.template.NaturalIdPojo;
+
+import java.util.*;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.json.JsonException;
+
+import org.hibernate.Session;
+
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
-import nessusData.entity.template.*;
-import org.hibernate.Session;
-import java.util.*;
-
-import javax.json.JsonException;
-
-import com.fasterxml.jackson.databind.node.*;
-
-
 public class ObjectLookupDao<POJO extends Pojo> extends Dao<POJO> {
+    //whether to lookup the object by a (non-zero) id passed in the Pojo
+    private final boolean naturalId;
+    private final boolean getByIdWhenZero;
+        // Typically, getByIdWhenZero will coincide with use of IdNullable deserializer
 
     public ObjectLookupDao(Class<POJO> pojoClass) {
         super(pojoClass);
+        naturalId = NaturalIdPojo.class.isAssignableFrom(pojoClass);
+        getByIdWhenZero = false;
     }
 
-    public POJO getOrCreate(ObjectNode object) throws LookupException {
-        if (object == null) {
+    public ObjectLookupDao(Class<POJO> pojoClass, boolean getByIdWhenZero) {
+        super(pojoClass);
+        this.naturalId = NaturalIdPojo.class.isAssignableFrom(pojoClass);
+
+        if (getByIdWhenZero && !this.naturalId) {
+                throw new IllegalArgumentException("Pojo class when getByIdWhenZero = true must be a NaturalIdPojo");
+        }
+
+        this.getByIdWhenZero = getByIdWhenZero;
+    }
+
+/*
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        DeserializationConfig config = mapper.getDeserializationConfig();
+        DeserializationContext context = mapper.getDeserializationContext();
+
+        ObjectReader reader = mapper.readerFor(getPojoClass());
+
+        ContextAttributes attributesBefore = reader.getAttributes();
+
+        POJO pojo = reader.readValue(json);
+
+        ContextAttributes attributesAfter = reader.getAttributes();
+
+
+
+
+        MetamodelImplementor metamodel = (MetamodelImplementor)  sessionFactory.getMetamodel();
+        // EntityTypeDescriptor<ScanInfo> entity = metamodel.entity(ScanInfo.class);
+        ClassMetadata metadata = (ClassMetadata) metamodel.entityPersister(ScanInfo.class);
+
+        metadata.getPropertyNames();
+
+        String[] names = metadata.getPropertyNames();
+        Type[] types = metadata.getPropertyTypes();
+
+        System.out.println(names);
+        System.out.println(types);
+
+    */
+
+    public POJO getOrCreate(POJO pojo) throws LookupException {
+        if (pojo == null) {
             return null;
         }
 
-        Session session = sessionFactory.openSession();
+        if (this.naturalId && (this.getByIdWhenZero || pojo.getId() != 0)) {
+            POJO result = this.getById(pojo.getId());
+            if (result != null && !pojo.equals(result)) {
+                this.saveOrUpdate(pojo);
+                result = this.getById(pojo.getId());
 
-        List<POJO> list = this.findByPropertyEqual(makeSearchMapFromJson(object));
-
-        for (POJO pojo : list) {
-            if (object.equals(pojo.toJsonNode())) {
-                return pojo;
+                if (!pojo.equals(result)) {
+                    throw new LookupException("Unable to correctly assign object lookup Pojo to values:\n"
+                            + pojo.toString(), this.getPojoClass());
+                }
+                return result;
             }
         }
 
-        POJO pojo;
+        POJO result = this.findByExactPojo(pojo);
 
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            pojo = mapper.convertValue(object, this.getPojoClass());
-
-        } catch(Exception e) {
-            throw new LookupException(e, this.getPojoClass());
-        }
-
-        if (pojo == null) {
-            throw new LookupException("Null pojo returned for '" + object + "'",
-                    this.getPojoClass());
+        if (result != null) {
+            return result;
         }
 
         if (this.insert(pojo) != -1) {
-            return pojo;
+            result = this.getById(pojo.getId());
+
+            if (!pojo.equals(result)) {
+                throw new LookupException("Unable to correctly assign object lookup Pojo to values:\n"
+                        + pojo.toString(), this.getPojoClass());
+            }
+
+            return result;
 
         } else {
-            throw new LookupException("Couldn't create pojo '" + object + "'",
+            throw new LookupException("Couldn't create pojo '" + pojo + "'",
                     this.getPojoClass());
         }
     }
@@ -122,10 +177,10 @@ public class ObjectLookupDao<POJO extends Pojo> extends Dao<POJO> {
         return "[ObjectLookupDao for " + this.getPojoClass().getSimpleName() + "]";
     }
 
-    public static ObjectLookupDao get(Class<? extends Pojo> lookupPojoClass) {
-        Dao dao = Dao.get(lookupPojoClass);
+    public static <P extends Pojo, D extends Dao<P>> D get(Class<P> objectLookupPojoClass) {
+        D dao = Dao.get(objectLookupPojoClass);
         if (dao != null && dao instanceof ObjectLookupDao) {
-            return (ObjectLookupDao) dao;
+            return dao;
 
         } else {
             return null;

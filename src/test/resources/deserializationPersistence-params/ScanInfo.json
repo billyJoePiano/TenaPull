@@ -1,0 +1,82 @@
+{
+  "info": {
+    "id": 22,
+    "name": "Spectre/Meltdown",
+    "scan_type": "local",
+    "year_old_vulns": false,
+    "no_target": false,
+    "unsupported_software": false,
+    "hasaudittrail": true,
+    "severity_processed": "202202281705",
+    "alt_targets_used": false,
+    "migrated": 0,
+    "top10": false,
+    "targets": "192.168.1.1,192.168.1.2,192.168.1.5,192.168.1.10,192.168.1.11,192.168.100.2,192.168.100.3,192.168.100.4,192.168.100.202",
+    "oses_found": false,
+    "scanner_end": 1646083927,
+    "scanner_start": 1646083719,
+    "severity_base_selections": [
+      {
+        "display": "CVSS v2.0",
+        "value": "cvss_v2"
+      },
+      {
+        "display": "CVSS v3.0",
+        "value": "cvss_v3"
+      },
+      {
+        "display": "Default (CVSS v3.0)",
+        "value": "system_default"
+      }
+    ],
+    "haskb": true,
+    "offline": false,
+    "node_name": null,
+    "control": true,
+    "policy_template_uuid": "5dd44847-3c6a-412c-b916-6cc21dd80785df97ab44910aceee",
+    "uuid": "3b06875f-df5a-5634-4be2-972b38d0e4be0d395d5af67a8842",
+    "node_host": null,
+    "current_severity_base_display": "CVSS v3.0",
+    "exploitable_vulns": false,
+    "timestamp": 1646083929,
+    "policy": "Spectre and Meltdown",
+    "hostcount": 10,
+    "folder_id": 3,
+    "current_severity_base": "cvss_v3",
+    "license_info": {
+      "trimmed": "0",
+      "limit": "16"
+    },
+    "status": "completed",
+    "known_accounts": false,
+    "scan_start": 1646083719,
+    "hosts_vulns": false,
+    "pci-can-upload": false,
+    "scan_end": 1646083929,
+    "object_id": 22,
+    "node_id": null,
+    "edit_allowed": true,
+    "acls": [
+      {
+        "permissions": 0,
+        "owner": null,
+        "display_name": null,
+        "name": null,
+        "id": null,
+        "type": "default"
+      },
+      {
+        "permissions": 128,
+        "owner": 1,
+        "display_name": "wanderson7",
+        "name": "wanderson7",
+        "id": 2,
+        "type": "user"
+      }
+    ],
+    "scanner_name": "Local Scanner",
+    "user_permissions": 128,
+    "selected_severity_base": "system_default",
+    "scan_group": null
+  }
+}

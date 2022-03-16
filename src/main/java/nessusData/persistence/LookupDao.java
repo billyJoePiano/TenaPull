@@ -5,7 +5,7 @@ import nessusData.entity.template.Pojo;
 import org.hibernate.*;
 
 
-public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
+public class LookupDao<POJO extends LookupPojo> extends ObjectLookupDao<POJO> {
 
     public LookupDao(Class<POJO> pojoClass) {
         super(pojoClass);
@@ -54,10 +54,12 @@ public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
         return "[LookupDao for " + this.getPojoClass().getSimpleName() + "]";
     }
 
-    public static LookupDao get(Class<? extends Pojo> lookupPojoClass) {
-        Dao dao = Dao.get(lookupPojoClass);
+    public static <P extends Pojo, D extends Dao<P>> D
+            get(Class<P> lookupPojoClass) {
+
+        D dao = Dao.get(lookupPojoClass);
         if (dao != null && dao instanceof LookupDao) {
-            return (LookupDao) dao;
+            return dao;
 
         } else {
             return null;

@@ -27,23 +27,22 @@ public class IdReference {
         }
     }
 
-    public static class Deserializer
-            extends JsonDeserializer<Pojo>
-            implements ContextualDeserializer {
+    public static class Deserializer<POJO extends Pojo>
+            extends AbstractContextualDeserializer<POJO, Dao<POJO>> {
 
         private static Logger logger = LogManager.getLogger(Deserializer.class);
-
-        private Class pojoClass = null;
-        private Dao dao = null;
+        protected Logger getLogger() {
+            return logger;
+        }
 
         @Override
-        public Pojo deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
+        public POJO deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
             if (this.dao == null) {
                 logger.error("Could not find dao for '" + jp.getText() + "'");
                 return null;
             }
 
-            Pojo pojo;
+            POJO pojo;
             Integer id = null;
 
             try {
@@ -63,7 +62,7 @@ public class IdReference {
             if (pojo == null) {
                 try {
                     //construct a dummy placeholder
-                    pojo = (Pojo) this.pojoClass.getDeclaredConstructor().newInstance();
+                    pojo = this.pojoClass.getDeclaredConstructor().newInstance();
                     pojo.setId(id);
 
                 } catch (Exception e) {
@@ -73,51 +72,6 @@ public class IdReference {
             }
 
             return pojo;
-        }
-
-        // https://stackoverflow.com/questions/47348029/get-the-detected-generic-type-inside-jacksons-jsondeserializer
-        @Override
-        public JsonDeserializer<Pojo> createContextual(DeserializationContext deserializationContext, BeanProperty beanProperty) throws JsonMappingException {
-            //JavaType = Jackson's custom Class type
-
-            JavaType type = deserializationContext.getContextualType() != null
-                    ? deserializationContext.getContextualType()
-                    : beanProperty.getMember().getType();
-
-            if (type == null) {
-                this.pojoClass = null;
-                this.dao = null;
-                logger.error("Null type returned for deserialization context");
-                logger.error(deserializationContext);
-                logger.error(beanProperty);
-
-                return this;
-            }
-
-            // "raw class" = Native Java Class type
-            this.pojoClass = type.getRawClass();
-
-            if (this.pojoClass == null) {
-                this.dao = null;
-                logger.error("Could not get raw class from 'JavaType' -- returned null");
-                logger.error(deserializationContext);
-                logger.error(beanProperty);
-                logger.error(type);
-
-                return this;
-            }
-
-            this.dao = Dao.get(this.pojoClass);
-
-            if (this.dao == null) {
-                logger.error("Could not find dao for raw class");
-                logger.error(deserializationContext);
-                logger.error(beanProperty);
-                logger.error(type);
-                logger.error(this.pojoClass);
-            }
-
-            return this;
         }
     }
 }
