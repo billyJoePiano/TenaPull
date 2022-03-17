@@ -250,7 +250,7 @@ public class ScanInfo extends NaturalIdPojo {
 
 	@Transient
 	@JsonSetter("current_severity_base")
-	public void setCurrentSeverityBaseValue(String value) throws LookupException {
+	public void setCurrentSeverityBaseValue(String value) {
 		SeverityBase current = this.getCurrentSeverityBase();
 		boolean isNew;
 		if (isNew = current == null) {
@@ -263,7 +263,7 @@ public class ScanInfo extends NaturalIdPojo {
 
 	@Transient
 	@JsonSetter("current_severity_base_display")
-	public void setCurrentSeverityBaseDisplay(String display) throws LookupException {
+	public void setCurrentSeverityBaseDisplay(String display) {
 		SeverityBase current = this.getCurrentSeverityBase();
 		boolean isNew;
 		if (isNew = current == null) {
