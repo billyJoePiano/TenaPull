@@ -53,55 +53,15 @@ public class ScanInfo extends NaturalIdPojo {
 			joinColumns = { @JoinColumn(name = "scan_id") },
 			inverseJoinColumns = { @JoinColumn(name = "acl_id") }
 	)
-	@JsonProperty("acls")
-	@JsonDeserialize(using = SetContextualDeserializer.class)
-	@SetType(type = Acl.class, using = ObjectLookup.Deserializer.class)
-	private Set<Acl> acls;
+	@OrderColumn(name = "__order_for_scan_info", nullable = false)
+	@JsonDeserialize(contentAs = Acl.class, contentUsing = ObjectLookup.Deserializer.class)
+	private List<Acl> acls;
 
 
-
-	private String current_severity_base;
-	private String current_severity_base_display;
-	public String getCurrent_severity_base() {
-		return current_severity_base;
-	}
-	public void setCurrent_severity_base(String current_severity_base) {
-		this.current_severity_base = current_severity_base;
-	}
-	public String getCurrent_severity_base_display() {
-		return current_severity_base_display;
-	}
-	public void setCurrent_severity_base_display(String current_severity_base_display) {
-		this.current_severity_base_display = current_severity_base_display;
-	}
-
-
-	/*@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+	@ManyToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name="current_severity_base_id")
-	@JsonProperty("current_severity_base")
-	@JsonDeserialize(using = ObjectLookup.Deserializer.class)
+	@JsonIgnore // see get/setCurrentSeverityBaseValue() and get/setCurrentSeverityBaseDisplay()
 	private SeverityBase currentSeverityBase;
-
-
-	@Transient
-	@JsonProperty("current_severity_base_display")
-	String getCurrentSeverityBaseDisplay() {
-		return this.getCurrentSeverityBase().getDisplay();
-	}
-	// TODO handle deserialization/persistence for current_severity_base_display
-	// https://stackoverflow.com/questions/58936715/can-hibernate-map-subset-of-columns-into-an-internal-sub-pojo
-
-	@Transient
-	public void setCurrentSeverityBaseDisplay(String display) {
-		SeverityBase severityBase = this.getCurrentSeverityBase();
-		if (severityBase == null) {
-			severityBase = new SeverityBase();
-			this.setCurrentSeverityBase(severityBase);
-		}
-
-		severityBase.setDisplay(display);
-	}
-	 */
 
 	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
 	@JoinColumn(name="scan_group_id")
@@ -148,6 +108,8 @@ public class ScanInfo extends NaturalIdPojo {
 
 	private Integer migrated;
 
+	@JsonDeserialize(using = EpochTimestamp.Deserializer.class)
+	@JsonSerialize(using = EpochTimestamp.Serializer.class)
 	private Timestamp timestamp;
 
 	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
@@ -252,16 +214,114 @@ public class ScanInfo extends NaturalIdPojo {
 			joinColumns = { @JoinColumn(name = "scan_id") },
 			inverseJoinColumns = { @JoinColumn(name = "severity_base_id") }
 	)
+	@OrderColumn(name = "__order_for_scan_info", nullable = false)
 	@JsonProperty("severity_base_selections")
-	@JsonDeserialize(using = SetContextualDeserializer.class)
-	@SetType(type = SeverityBase.class, using = ObjectLookup.Deserializer.class)
-	private Set<SeverityBase> severityBaseSelections;
+	@JsonDeserialize(contentAs = SeverityBase.class, contentUsing = ObjectLookup.Deserializer.class)
+	private List<SeverityBase> severityBaseSelections;
 
 	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
 	@JoinColumn(name="status_id")
 	@JsonProperty("status")
 	private ScanStatus status;
 
+
+
+
+	/**********************************
+	 * Special getters/setters for current severity base
+	 *
+	 **********************************/
+
+
+	@Transient
+	@JsonGetter("current_severity_base")
+	public String getCurrentSeverityBaseValue() {
+		SeverityBase current = this.getCurrentSeverityBase();
+		return current != null ? current.getValue() : null;
+	}
+
+
+	@Transient
+	@JsonGetter("current_severity_base_display")
+	String getCurrentSeverityBaseDisplay() {
+		SeverityBase current = this.getCurrentSeverityBase();
+		return current != null ? current.getDisplay() : null;
+	}
+
+	@Transient
+	@JsonSetter("current_severity_base")
+	public void setCurrentSeverityBaseValue(String value) throws LookupException {
+		SeverityBase current = this.getCurrentSeverityBase();
+		boolean isNew;
+		if (isNew = current == null) {
+			current = new SeverityBase();
+		}
+
+		current.setValue(value);
+		this.setCurrentSeverityBase(checkForSeverityBase(current, isNew));
+	}
+
+	@Transient
+	@JsonSetter("current_severity_base_display")
+	public void setCurrentSeverityBaseDisplay(String display) throws LookupException {
+		SeverityBase current = this.getCurrentSeverityBase();
+		boolean isNew;
+		if (isNew = current == null) {
+			this.setCurrentSeverityBase(current = new SeverityBase());
+		}
+
+		current.setDisplay(display);
+		this.setCurrentSeverityBase(checkForSeverityBase(current, isNew));
+	}
+
+
+	/*
+	 * Hibernate was throwing exceptions about "non-unique object" at insert, if it wasn't using the same object
+	 * to represent the same record, when it appeared multiple time.  Therefore, we need to check against every
+	 * instance of SeverityBase already in this ScanInfo instance before inserting the ScanInfo instance.
+	 *
+	 * See Also:
+	 * https://stackoverflow.com/questions/1074081/hibernate-error-org-hibernate-nonuniqueobjectexception-a-different-object-with
+	 * https://stackoverflow.com/questions/16246675/hibernate-error-a-different-object-with-the-same-identifier-value-was-already-a
+	 *
+	 */
+	private SeverityBase checkForSeverityBase(SeverityBase checkAgainst, boolean skipInsert) {
+		if (checkAgainst == null) return null;
+
+		List<SeverityBase> all = this.getSeverityBaseSelections();
+		if (all != null) {
+			all = new ArrayList(all);
+		} else {
+			all = new ArrayList();
+		}
+
+		/* // the below would only be necessary if also using this method to construct the items in the list for severityBaseSelections
+		SeverityBase current = this.getCurrentSeverityBase();
+		if (current != null) {
+			all.add(current);
+		}
+		 */
+
+		for (SeverityBase other : all) {
+			if (other == checkAgainst) continue;
+			if (Objects.equals(other.getDisplay(), checkAgainst.getDisplay())
+					&& Objects.equals(other.getValue(), checkAgainst.getValue())) {
+
+				return other;
+			}
+		}
+
+		SeverityBase persisted = SeverityBase.dao.findByExactPojo(checkAgainst);
+
+		if (persisted != null) {
+			return persisted;
+
+		} else if (!skipInsert) {
+			SeverityBase.dao.insert(checkAgainst);
+		}
+
+		return checkAgainst;
+	}
 
 
 
@@ -321,11 +381,11 @@ public class ScanInfo extends NaturalIdPojo {
 		this.offline = offline;
 	}
 
-	public Set<SeverityBase> getSeverityBaseSelections() {
+	public List<SeverityBase> getSeverityBaseSelections() {
 		return severityBaseSelections;
 	}
 
-	public void setSeverityBaseSelections(Set<SeverityBase> severityBaseSelections) {
+	public void setSeverityBaseSelections(List<SeverityBase> severityBaseSelections) {
 		this.severityBaseSelections = severityBaseSelections;
 	}
 
@@ -345,15 +405,14 @@ public class ScanInfo extends NaturalIdPojo {
 		this.editAllowed = editAllowed;
 	}
 
-	public Set<Acl> getAcls() {
+	public List<Acl> getAcls() {
 		return acls;
 	}
 
-	public void setAcls(Set<Acl> acls) {
+	public void setAcls(List<Acl> acls) {
 		this.acls = acls;
 	}
 
-	/*
 	public SeverityBase getCurrentSeverityBase() {
 		return currentSeverityBase;
 	}
@@ -361,7 +420,6 @@ public class ScanInfo extends NaturalIdPojo {
 	public void setCurrentSeverityBase(SeverityBase currentSeverityBase) {
 		this.currentSeverityBase = currentSeverityBase;
 	}
-	 */
 
 	public ScanGroup getScanGroup() {
 		return scanGroup;

@@ -1,16 +1,23 @@
 package nessusData.entity;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.*;
+
 import nessusData.entity.template.*;
 import nessusData.persistence.ObjectLookupDao;
+import nessusData.serialize.*;
+import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
 
 @Entity(name = "Acl")
 @Table(name = "acl")
-public class Acl extends NaturalIdPojo {
+public class Acl extends NullableIdPojo {
 	public static final ObjectLookupDao<Acl> dao
-			= new ObjectLookupDao<Acl>(Acl.class);
+			= new ObjectLookupDao<Acl>(Acl.class, true);
 
 	private Integer owner;
 

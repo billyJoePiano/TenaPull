@@ -11,8 +11,8 @@ import javax.json.JsonException;
 import java.io.IOException;
 import java.util.*;
 
-public class SetContextualDeserializer<POJO extends Pojo>
-        extends JsonDeserializer<Set<POJO>>
+public class ListContextualDeserializer<POJO extends Pojo>
+        extends JsonDeserializer<List<POJO>>
         implements ContextualDeserializer {
 
     private Class<POJO> pojoClass = null;
@@ -23,10 +23,10 @@ public class SetContextualDeserializer<POJO extends Pojo>
     private JavaType javaType = null;
 
 
-    private static Logger logger = LogManager.getLogger(SetContextualDeserializer.class);
+    private static Logger logger = LogManager.getLogger(ListContextualDeserializer.class);
 
     @Override
-    public Set<POJO> deserialize(JsonParser jsonParser,
+    public List<POJO> deserialize(JsonParser jsonParser,
                                   DeserializationContext deserializationContext)
             throws IOException, JsonProcessingException {
 
@@ -37,7 +37,7 @@ public class SetContextualDeserializer<POJO extends Pojo>
 
         jsonParser.clearCurrentToken();
 
-        Set<POJO> set = new LinkedHashSet();
+        List<POJO> list = new ArrayList();
 
         if (this.deserializer != null) {
             this.deserializer.setPojoClass(this.pojoClass,
@@ -45,13 +45,13 @@ public class SetContextualDeserializer<POJO extends Pojo>
 
             JsonToken token;
             while ((token = jsonParser.nextToken()) != JsonToken.END_ARRAY) {
-                set.add(deserializer.deserialize(jsonParser, deserializationContext));
+                list.add(deserializer.deserialize(jsonParser, deserializationContext));
                 jsonParser.clearCurrentToken();
             }
 
         } else {
             while (jsonParser.nextToken() != JsonToken.END_ARRAY) {
-                set.add(jsonParser.readValueAs(this.pojoClass));
+                list.add(jsonParser.readValueAs(this.pojoClass));
                 jsonParser.clearCurrentToken();
             }
 
@@ -59,17 +59,17 @@ public class SetContextualDeserializer<POJO extends Pojo>
             Iterator<POJO> iterator = jsonParser.readValuesAs(pojoClass);
 
             while (iterator.hasNext()) {
-                set.add(iterator.next());
+                list.add(iterator.next());
             }
              */
         }
 
-        return set;
+        return list;
     }
 
     // https://stackoverflow.com/questions/47348029/get-the-detected-generic-type-inside-jacksons-jsondeserializer
     @Override
-    public JsonDeserializer<Set<POJO>> createContextual(DeserializationContext deserializationContext,
+    public JsonDeserializer<List<POJO>> createContextual(DeserializationContext deserializationContext,
                                                          BeanProperty beanProperty)
             throws JsonMappingException {
 
@@ -80,7 +80,7 @@ public class SetContextualDeserializer<POJO extends Pojo>
                 : beanProperty.getMember().getType();
 
 
-        SetType listType = beanProperty.getMember().getAnnotation(SetType.class);
+        ListType listType = beanProperty.getMember().getAnnotation(ListType.class);
         this.pojoClass = (Class<POJO>) listType.type();
 
         Class<AbstractContextualDeserializer<POJO, ? extends Dao<POJO>>> deserializerClass

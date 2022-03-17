@@ -6,7 +6,7 @@ import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface SetType {
+public @interface ListType {
     Class<? extends Pojo> type();
     Class<? extends AbstractContextualDeserializer> using();
 }

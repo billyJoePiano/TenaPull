@@ -199,20 +199,21 @@ public class TestDeserializationPersistence {
         persisted = params.response.getClass().getDeclaredConstructor().newInstance();
 
         for (Response.PojoData actual : actualData) {
-            Dao dao = (Dao) actual.getPojoClass().getDeclaredField("dao").get(null);
+            Class<? extends Pojo> pojoClass = actual.getPojoClass();
+            Dao dao = (Dao) pojoClass.getDeclaredField("dao").get(null);
 
             if (actual.isIndividual()) {
                 Pojo pojo = dao.getById(actual.getIndividualPojo().getId());
 
                 persisted.setData(new Response.PojoData(
                         actual.getFieldName(),
-                        pojo.getClass(),
+                        pojo != null ? pojo.getClass() : pojoClass,
                         pojo
                     )   );
                 continue;
             }
 
-            Class<? extends Pojo> pojoClass = null;
+            pojoClass = null;
             List<Pojo> list = new ArrayList();
 
             // Sort the arrays to have the same order as the original input

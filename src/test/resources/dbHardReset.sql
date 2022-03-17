@@ -117,7 +117,7 @@ create table scan_group (
 );
 
 create table scan (
-    id              int          not null,
+    id              int          not null primary key,
     name            varchar(255) null,
     uuid            varchar(255) null,
     folder_id       int          null,
@@ -135,7 +135,6 @@ create table scan (
     last_modification_date  timestamp null,
     timezone_id     int          null,
     live_results    int          null,
-    constraint scan_pk primary key (id),
     constraint scan_folder_id_fk foreign key (folder_id) references folder (id) on delete cascade on update cascade,
     constraint scan_scan_owner_id_fk foreign key (owner_id) references scan_owner (id),
     constraint scan_scan_type_id_fk foreign key (type_id) references scan_type (id),
@@ -150,9 +149,9 @@ create table scan_info (
     uuid  varchar(255) null,
     scan_type_id int null,
     edit_allowed bool null,
-    -- current_severity_base_id int null,
-    current_severity_base varchar(255) null,
-    current_severity_base_display varchar(255) null,
+    current_severity_base_id int null,
+    -- current_severity_base varchar(255) null,
+    -- current_severity_base_display varchar(255) null,
     scan_group_id int null,
     targets varchar(255) null,
     scanner_start timestamp null,
@@ -180,7 +179,7 @@ create table scan_info (
     license_id int null,
     no_target bool null,
     node_host varchar(255), -- ??? not sure about data type of this API field
-    severity_processed varchar(255) null, -- timestamp formated as string -- "yyyyddmmhhmm"
+    severity_processed varchar(255) null, -- timestamp formatted as string -- "yyyyddmmhhmm"
     node_id int null,
     alt_targets_used bool null,
     user_permissions int null,
@@ -192,14 +191,14 @@ create table scan_info (
 
     constraint scan_info_id_fk foreign key (id) references scan (id),
     constraint scan_info_folder_id_fk foreign key (folder_id) references folder (id),
-    constraint scan_info_scan_type_id_fk foreign key (scan_type_id) references scan_type(id),
-    -- constraint scan_info_current_severity_base_id_fk foreign key (current_severity_base_id) references severity_base (id) on delete cascade on update cascade,
-    constraint scan_info_scan_group_id_fk foreign key (scan_group_id) references scan_group (id),
-    constraint scan_info_policy_id foreign key (policy_id) references scan_policy (id),
-    constraint scan_info_scanner_id foreign key (scanner_id) references scanner (id),
-    constraint scan_info_scan_type_id foreign key (scan_type_id) references scan_type (id),
-    constraint scan_info_license_id_fk foreign key (license_id) references license (id),
-    constraint scan_info_status_id foreign key (status_id) references scan_status (id)
+    constraint scan_info_scan_type_id_fk foreign key (scan_type_id) references scan_type(id) on update cascade,
+    constraint scan_info_current_severity_base_id_fk foreign key (current_severity_base_id) references severity_base (id) on update cascade,
+    constraint scan_info_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
+    constraint scan_info_policy_id foreign key (policy_id) references scan_policy (id) on update cascade,
+    constraint scan_info_scanner_id foreign key (scanner_id) references scanner (id) on update cascade,
+    constraint scan_info_scan_type_id foreign key (scan_type_id) references scan_type (id) on update cascade,
+    constraint scan_info_license_id_fk foreign key (license_id) references license (id) on update cascade,
+    constraint scan_info_status_id foreign key (status_id) references scan_status (id) on update cascade
 );
 alter table scan_info disable keys;
 
@@ -213,6 +212,7 @@ create table scan_info_acl
 (
     scan_id int not null,
     acl_id  int not null,
+    __order_for_scan_info int not null,
     constraint scan_info_acl_pk
         primary key (scan_id, acl_id),
     constraint scan_info_acl_acl_id_fk
@@ -224,6 +224,7 @@ create table scan_info_acl
 create table scan_info_severity_base_selection (
     scan_id int not null,
     severity_base_id int not null,
+    __order_for_scan_info int not null,
     constraint scan_info_severity_base_selection_pk
         primary key (scan_id, severity_base_id),
     constraint foreign key (scan_id)
