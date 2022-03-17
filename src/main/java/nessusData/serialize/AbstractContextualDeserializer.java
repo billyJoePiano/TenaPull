@@ -19,9 +19,10 @@ public abstract class AbstractContextualDeserializer<POJO extends Pojo, DAO exte
     // https://stackoverflow.com/questions/47348029/get-the-detected-generic-type-inside-jacksons-jsondeserializer
     @Override
     public JsonDeserializer<POJO> createContextual(DeserializationContext deserializationContext, BeanProperty beanProperty) throws JsonMappingException {
-        JavaType type = deserializationContext.getContextualType() != null
-                ? deserializationContext.getContextualType()
-                : beanProperty.getMember().getType();
+        JavaType type = deserializationContext.getContextualType();
+        if (type == null) {
+            type = beanProperty.getMember().getType();
+        }
 
         if (type == null) {
             this.pojoClass = null;
