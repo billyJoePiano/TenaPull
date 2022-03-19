@@ -71,7 +71,8 @@ create table acl
     name         varchar(255) null,
     type         varchar(255) null,
     permissions  int          null,
-    display_name varchar(255) null
+    display_name varchar(255) null,
+    _extra_json  json null
 );
 create unique index acl_uindix
     on acl (name, type, permissions, display_name);
@@ -81,6 +82,7 @@ create table severity_base
     id      int auto_increment,
     value   varchar(255) null,
     display varchar(255) null,
+    _extra_json  json null,
     constraint severity_base_pk
         primary key (id)
 );
@@ -91,7 +93,8 @@ create table license
 (
     id int auto_increment primary key,
     `limit` varchar(255) null,
-    trimmed varchar(255) null
+    trimmed varchar(255) null,
+    _extra_json json null
 );
 create unique index license_uindex
     on license (`limit`, trimmed);
@@ -108,12 +111,14 @@ create table folder (
                         default_tag  int          null,
                         custom       int          null,
                         unread_count int          null,
+                        _extra_json  json null,
                         constraint folder_pk primary key (id)
 );
 alter table folder disable keys;
 
 create table scan_group (
-    id int primary key auto_increment
+    id int primary key auto_increment,
+    _extra_json  json null
 );
 
 create table scan (
@@ -135,6 +140,7 @@ create table scan (
     last_modification_date  timestamp null,
     timezone_id     int          null,
     live_results    int          null,
+    _extra_json  json null,
     constraint scan_folder_id_fk foreign key (folder_id) references folder (id) on delete cascade on update cascade,
     constraint scan_scan_owner_id_fk foreign key (owner_id) references scan_owner (id),
     constraint scan_scan_type_id_fk foreign key (type_id) references scan_type (id),
@@ -149,14 +155,10 @@ create table scan_info (
     uuid  varchar(255) null,
     scan_type_id int null,
     edit_allowed bool null,
-    current_severity_base_id int null,
-    -- current_severity_base varchar(255) null,
-    -- current_severity_base_display varchar(255) null,
     scan_group_id int null,
     targets varchar(255) null,
     scanner_start timestamp null,
     scanner_end timestamp null,
-    selected_severity_base varchar(255) not null,
     oses_found bool null,
     host_count int null,
     haskb bool null,
@@ -187,18 +189,21 @@ create table scan_info (
     known_accounts bool null,
     offline bool null,
     status_id int null,
-
+    current_severity_base_id int null,
+    selected_severity_base_id int null,
+    _extra_json  json null,
 
     constraint scan_info_id_fk foreign key (id) references scan (id),
     constraint scan_info_folder_id_fk foreign key (folder_id) references folder (id),
     constraint scan_info_scan_type_id_fk foreign key (scan_type_id) references scan_type(id) on update cascade,
-    constraint scan_info_current_severity_base_id_fk foreign key (current_severity_base_id) references severity_base (id) on update cascade,
     constraint scan_info_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
     constraint scan_info_policy_id foreign key (policy_id) references scan_policy (id) on update cascade,
     constraint scan_info_scanner_id foreign key (scanner_id) references scanner (id) on update cascade,
     constraint scan_info_scan_type_id foreign key (scan_type_id) references scan_type (id) on update cascade,
     constraint scan_info_license_id_fk foreign key (license_id) references license (id) on update cascade,
-    constraint scan_info_status_id foreign key (status_id) references scan_status (id) on update cascade
+    constraint scan_info_status_id foreign key (status_id) references scan_status (id) on update cascade,
+    constraint scan_info_current_severity_base_id_fk foreign key (current_severity_base_id) references severity_base (id) on update cascade,
+    constraint scan_info_selected_severity_base_id_fk foreign key (selected_severity_base_id) references severity_base (id) on update cascade
 );
 alter table scan_info disable keys;
 

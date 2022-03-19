@@ -4,7 +4,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 
-import nessusData.persistence.Dao;
+import nessusTools.data.persistence.Dao;
 import org.apache.logging.log4j.*;
 
 // https://ibatis.apache.org/docs/java/dev/com/ibatis/common/jdbc/ScriptRunner.html
@@ -138,12 +138,12 @@ public class Database {
     }
 
     public static void softReset() {
-        closeSessions();
+        //closeSessions();
         runSQL(DB_SOFT_RESET);
     }
 
     public static void hardReset() {
-        closeSessions();
+        //closeSessions();
         runSQL(DB_HARD_RESET);
     }
 
@@ -163,7 +163,6 @@ public class Database {
 
         } catch (Throwable e) {
             logger.error(e);
-            e.printStackTrace();
         }
     }
 }

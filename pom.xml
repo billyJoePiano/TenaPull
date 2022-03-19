@@ -164,7 +164,6 @@
             <version>${jersey-version}</version>
         </dependency>
 
-
     </dependencies>
 
     <build>

@@ -16,20 +16,21 @@
         <property name="hibernate.c3p0.max_statements">50</property>
         <property name="hibernate.c3p0.idle_test_period">3000</property>
 
-        <mapping class="nessusData.entity.Scan" />
-        <mapping class="nessusData.entity.Folder" />
-        <mapping class="nessusData.entity.ScanOwner" />
-        <mapping class="nessusData.entity.ScanOwnerId" />
-        <mapping class="nessusData.entity.ScanType" />
-        <mapping class="nessusData.entity.Timezone" />
-        <mapping class="nessusData.entity.ScanInfo" />
-        <mapping class="nessusData.entity.Scanner" />
-        <mapping class="nessusData.entity.ScanGroup" />
-        <mapping class="nessusData.entity.SeverityBase" />
-        <mapping class="nessusData.entity.Acl" />
-        <mapping class="nessusData.entity.License" />
-        <mapping class="nessusData.entity.ScanPolicy" />
-        <mapping class="nessusData.entity.ScanStatus" />
+        <mapping class="nessusTools.data.entity.Scan" />
+        <mapping class="nessusTools.data.entity.Folder" />
+        <mapping class="nessusTools.data.entity.ScanOwner" />
+        <mapping class="nessusTools.data.entity.ScanOwnerId" />
+        <mapping class="nessusTools.data.entity.ScanType" />
+        <mapping class="nessusTools.data.entity.Timezone" />
+        <mapping class="nessusTools.data.entity.ScanInfo" />
+        <mapping class="nessusTools.data.entity.Scanner" />
+        <mapping class="nessusTools.data.entity.ScanGroup" />
+        <mapping class="nessusTools.data.entity.SeverityBase" />
+        <mapping class="nessusTools.data.entity.Acl" />
+        <mapping class="nessusTools.data.entity.License" />
+        <mapping class="nessusTools.data.entity.ScanPolicy" />
+        <mapping class="nessusTools.data.entity.ScanStatus" />
+
     </session-factory>
 
 </hibernate-configuration>
