@@ -4,39 +4,43 @@ import java.sql.Timestamp;
 import java.util.*;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.*;
-import nessusTools.data.entity.template.Pojo;
+import nessusTools.data.entity.template.*;
 
 import javax.persistence.*;
 
 @MappedSuperclass
-public abstract class NessusResponse {
+public abstract class NessusResponse extends ExtensibleJsonPojo {
+    @JsonIgnore //overridden for unit tests by CustomObjectMapper, via a mix-in
+    private Integer id;
+
+    public Integer getId() {
+        return this.id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+        if (id == null) return;
+
+        for (PojoData data : this.getData()) {
+            if (data != null && data.isIndividual()) {
+                DbPojo pojo = data.getIndividualPojo();
+                if (pojo != null) {
+                    pojo.setId(id);
+                }
+            }
+        }
+    }
+
     public abstract List<PojoData> getData();
     public abstract void setData(PojoData data);
 
     public abstract Timestamp getTimestamp();
     public abstract void setTimestamp(Timestamp timestamp);
 
-    @JsonIgnore
-    private Map<String, JsonNode> _extraJson;
-
-    @JsonAnyGetter
-    public Map<String, JsonNode> _getExtraJson() {
-        return this._extraJson;
-    }
-
-    @JsonAnySetter
-    public void set_extraJson(String key, Object value) {
-        if (this._extraJson == null) {
-            this._extraJson = new HashMap();
-        }
-        this._extraJson.put(key, new ObjectMapper().convertValue(value, JsonNode.class));
-    }
-
-    public static class PojoData<POJO extends Pojo> {
+    public static class PojoData<POJO extends DbPojo> {
         private final String fieldName;
         private final Class<POJO> pojoClass;
-        private boolean isList;
+        private final boolean isList;
         private List<POJO> pojoList = null;
         private POJO individualPojo = null;
 

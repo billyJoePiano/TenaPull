@@ -1,0 +1,56 @@
+{
+  "create": [
+    {
+      "folder_id": 3,
+      "type": "local",
+      "read": true,
+      "last_modification_date": 1646885321,
+      "creation_date": 1646885321,
+      "status": "completed",
+      "uuid": "3b06875f-df5a-5634-4be2-972b38d0e4be0d395d5af67a8842",
+      "shared": false,
+      "user_permissions": 255,
+      "owner": "wanderson7",
+      "timezone": null,
+      "rrules": null,
+      "starttime": null,
+      "enabled": false,
+      "control": true,
+      "live_results": null,
+      "name": "TestingCreation123",
+      "id": 12345,
+      "extra_json_test": true,
+      "extra_string": "this is a test",
+      "extra_integer": 12345,
+      "extra_float": 2.5674737803e-25,
+      "extra_null": null
+    }
+  ],
+  "update": [
+    {
+      "folder_id": 2,
+      "type": "remote",
+      "read": true,
+      "last_modification_date": 1646082814,
+      "creation_date": 1646082601,
+      "status": "lurking",
+      "uuid": "21b37df2-fa92-8f1e-0b2e-afd4143b8ddf57f7d6bd34514528",
+      "shared": false,
+      "user_permissions": 666,
+      "owner": "evilAttacker",
+      "timezone": null,
+      "rrules": null,
+      "starttime": null,
+      "enabled": false,
+      "control": true,
+      "live_results": null,
+      "name": "TestingUpdate",
+      "id": 15,
+      "extra_json_test": true,
+      "extra_string": "this is a test",
+      "extra_integer": 12345,
+      "extra_float": 2.5674737803e-25,
+      "extra_null": null
+  }
+  ]
+}

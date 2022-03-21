@@ -1,7 +1,7 @@
 package nessusTools.data.persistence;
 
-import nessusTools.data.entity.template.LookupPojo;
-import nessusTools.data.entity.template.Pojo;
+import nessusTools.data.entity.template.*;
+import nessusTools.data.entity.template.DbPojo;
 import org.hibernate.*;
 
 
@@ -17,18 +17,18 @@ public class LookupDao<POJO extends LookupPojo> extends ObjectLookupDao<POJO> {
         }
 
         Session session = sessionFactory.openSession();
-        Object obj = session.byNaturalId(this.getPojoClass())
+        POJO obj = session.byNaturalId(this.getPojoClass())
                 .using(LookupPojo.FIELD_NAME, string).load();
         // https://stackoverflow.com/questions/14977018/jpa-how-to-get-entity-based-on-field-value-other-than-id
 
         if (obj != null) {
-            return (POJO) obj;
+            return obj;
         }
 
-        POJO pojo;
+        POJO pojo = null;
 
         try {
-            pojo = (POJO) this.getPojoClass().getDeclaredConstructor().newInstance();
+            pojo = this.getPojoClass().getDeclaredConstructor().newInstance();
 
         } catch(Exception e) {
             throw new LookupException(e, this.getPojoClass());
@@ -54,7 +54,7 @@ public class LookupDao<POJO extends LookupPojo> extends ObjectLookupDao<POJO> {
         return "[LookupDao for " + this.getPojoClass().getSimpleName() + "]";
     }
 
-    public static <P extends Pojo, D extends Dao<P>> D
+    public static <P extends DbPojo, D extends Dao<P>> D
             get(Class<P> lookupPojoClass) {
 
         D dao = Dao.get(lookupPojoClass);

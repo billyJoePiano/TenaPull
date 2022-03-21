@@ -2,17 +2,15 @@ package nessusTools.data.persistence;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import nessusTools.data.entity.template.Pojo;
+import nessusTools.data.entity.template.DbPojo;
 import org.apache.logging.log4j.*;
 import org.hibernate.*;
 import org.hibernate.boot.*;
-import org.hibernate.boot.model.source.internal.hbm.*;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 
 import org.hibernate.metamodel.model.domain.spi.EntityTypeDescriptor;
 import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.persister.entity.SingleTableEntityPersister;
-import org.hibernate.persister.walking.spi.*;
 
 
 import org.hibernate.property.access.internal.PropertyAccessStrategyFieldImpl;
@@ -24,18 +22,16 @@ import javax.persistence.criteria.*;
 import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.SingularAttribute;
 import java.lang.*;
-import java.lang.InstantiationException;
-import java.lang.reflect.*;
 import java.util.*;
 
 
-public class Dao<POJO extends Pojo> {
+public class Dao<POJO extends DbPojo> {
     private static final Logger staticLogger = LogManager.getLogger(Dao.class);
-    private static Map<Class<Pojo>, Dao<Pojo>> classMap = new HashMap();
+    private static final Map<Class<DbPojo>, Dao<DbPojo>> classMap = new HashMap();
     public static final SessionFactoryBuilder sessionFactoryBuilder = makeSessionFactoryBuilder();
     public static final SessionFactory sessionFactory = makeSessionFactory();
 
-    public static <P extends Pojo, D extends Dao<P>> D get(Class<P> pojoClass) {
+    public static <P extends DbPojo, D extends Dao<P>> D get(Class<P> pojoClass) {
         return (D) classMap.get(pojoClass);
     }
 
@@ -64,12 +60,11 @@ public class Dao<POJO extends Pojo> {
 
     protected final Logger logger;
     private final Class<POJO> pojoClass;
-    private List<String> fieldNames = null;
 
     private Map<String, Attribute<? super POJO, ?>> attributeMap = null;
     private Map<String, PropertyAccess> accessMap = null;
     private Map<String, Getter> getterMap = null;
-    private Map<String, Class<AttributeConverter>> converterMap = null;
+    //private Map<String, Class<AttributeConverter>> converterMap = null;
 
     private Map<String, Attribute<? super POJO, ?>> idMap = null;
 
@@ -80,7 +75,7 @@ public class Dao<POJO extends Pojo> {
         }
 
         this.pojoClass = pojoClass;
-        classMap.put((Class<Pojo>) pojoClass, (Dao<Pojo>) this);
+        classMap.put((Class<DbPojo>) pojoClass, (Dao<DbPojo>) this);
         logger = LogManager.getLogger(pojoClass);
     }
 
@@ -97,7 +92,7 @@ public class Dao<POJO extends Pojo> {
      */
     public POJO getById(int id) {
         Session session = sessionFactory.openSession();
-        POJO pojo = (POJO) session.get(this.getPojoClass(), id );
+        POJO pojo = session.get(this.getPojoClass(), id );
         session.close();
         return pojo;
     }
@@ -177,9 +172,7 @@ public class Dao<POJO extends Pojo> {
         Root<POJO> root = query.from(this.getPojoClass());
         List<POJO> pojos = session.createQuery(query).getResultList();
 
-        logger.debug("The list of POJOs " + pojos);
         session.close();
-
         return pojos;
     }
 
@@ -196,6 +189,7 @@ public class Dao<POJO extends Pojo> {
         Root<POJO> root = query.from(pojoClass);
 
 
+        /*
         Class<AttributeConverter> converterClass = getConverterMap().get(propertyName);
         if (converterClass != null) {
             try {
@@ -208,6 +202,7 @@ public class Dao<POJO extends Pojo> {
                 logger.error(e);
             }
         }
+         */
 
 
         if (value != null) {
@@ -238,7 +233,7 @@ public class Dao<POJO extends Pojo> {
         Root<POJO> root = query.from(pojoClass);
         List<Predicate> predicates = new ArrayList<Predicate>();
 
-        Map<String, Class<AttributeConverter>> converterMap = getConverterMap();
+        //Map<String, Class<AttributeConverter>> converterMap = getConverterMap();
 
         for (Map.Entry<String, Object> entry: propertyMap.entrySet()) {
             String propertyName = entry.getKey();
@@ -345,12 +340,14 @@ public class Dao<POJO extends Pojo> {
         return this.getterMap;
     }
 
+    /*
     public Map<String, Class<AttributeConverter>> getConverterMap() {
         if (this.converterMap == null) {
             makeAccessorMaps();
         }
         return this.converterMap;
     }
+     */
 
     public Map<String, Attribute<? super POJO, ?>> getIdMap() {
         if (this.idMap == null) {
@@ -385,14 +382,18 @@ public class Dao<POJO extends Pojo> {
             PropertyAccess accessor =
                     PropertyAccessStrategyFieldImpl.INSTANCE.buildPropertyAccess(this.getPojoClass(), fieldname);
 
+            attributeMap.put(fieldname, attribute);
+            accessMap.put(fieldname, accessor);
+            getterMap.put(fieldname, accessor.getGetter());
 
+            /*
             // converter annotation
             // first ... walk up the inheritance hierarchy and try to find this property name
             Class cls = this.getPojoClass();
             Field field = null;
             NoSuchFieldException last = null;
 
-            while (!cls.equals(Pojo.class)) {
+            while (!cls.equals(DbPojo.class)) {
                 try {
                     field = this.getPojoClass().getDeclaredField(fieldname);
                     break; // success!
@@ -413,19 +414,17 @@ public class Dao<POJO extends Pojo> {
                 logger.error(last);
             }
 
-            attributeMap.put(fieldname, attribute);
-            accessMap.put(fieldname, accessor);
-            getterMap.put(fieldname, accessor.getGetter());
             if (converter != null) {
                 converterMap.put(fieldname,
                         (Class<AttributeConverter>) converter.converter());
             }
+             */
         }
 
         this.attributeMap = Collections.unmodifiableMap(attributeMap);
         this.accessMap = Collections.unmodifiableMap(accessMap);
         this.getterMap = Collections.unmodifiableMap(getterMap);
-        this.converterMap = Collections.unmodifiableMap(converterMap);
+        //this.converterMap = Collections.unmodifiableMap(converterMap);
         this.idMap = Collections.unmodifiableMap(idMap);
     }
 

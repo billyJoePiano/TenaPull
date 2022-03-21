@@ -1,7 +1,7 @@
 package nessusTools.data.persistence;
 
-import nessusTools.data.entity.template.Pojo;
-import nessusTools.data.entity.template.NaturalIdPojo;
+import nessusTools.data.entity.template.*;
+import nessusTools.data.entity.template.DbPojo;
 
 import java.util.*;
 
@@ -10,8 +10,8 @@ import javax.json.JsonException;
 import com.fasterxml.jackson.databind.*;
 
 
-public class ObjectLookupDao<POJO extends Pojo> extends Dao<POJO> {
-    //whether to lookup the object by a (non-zero) id passed in the Pojo
+public class ObjectLookupDao<POJO extends DbPojo> extends Dao<POJO> {
+    //whether to lookup the object by a (non-zero) id passed in the DbPojo
     private final boolean naturalId;
     private final boolean getByIdWhenZero;
         // Typically, getByIdWhenZero will coincide with use of IdNullable deserializer
@@ -27,7 +27,7 @@ public class ObjectLookupDao<POJO extends Pojo> extends Dao<POJO> {
         this.naturalId = NaturalIdPojo.class.isAssignableFrom(pojoClass);
 
         if (getByIdWhenZero && !this.naturalId) {
-                throw new IllegalArgumentException("Pojo class when getByIdWhenZero = true must be a NaturalIdPojo");
+                throw new IllegalArgumentException("DbPojo class when getByIdWhenZero = true must be a NaturalIdPojo");
         }
 
         this.getByIdWhenZero = getByIdWhenZero;
@@ -53,15 +53,12 @@ public class ObjectLookupDao<POJO extends Pojo> extends Dao<POJO> {
 
         MetamodelImplementor metamodel = (MetamodelImplementor)  sessionFactory.getMetamodel();
         // EntityTypeDescriptor<ScanInfo> entity = metamodel.entity(ScanInfo.class);
-        ClassMetadata metadata = (ClassMetadata) metamodel.entityPersister(ScanInfo.class);
+        ClassMetadata metadata = (ClassMetadata) metamodel.entityPersister(this.getPojoClass().class);
 
         metadata.getPropertyNames();
 
         String[] names = metadata.getPropertyNames();
         Type[] types = metadata.getPropertyTypes();
-
-        System.out.println(names);
-        System.out.println(types);
 
     */
 
@@ -80,7 +77,7 @@ public class ObjectLookupDao<POJO extends Pojo> extends Dao<POJO> {
                     result = this.getById(pojo.getId());
 
                     if (!pojo.equals(result)) {
-                        throw new LookupException("Unable to correctly assign object lookup Pojo to values:\n"
+                        throw new LookupException("Unable to correctly assign object lookup DbPojo to values:\n"
                                 + pojo.toString(), this.getPojoClass());
                     }
                 }
@@ -98,7 +95,7 @@ public class ObjectLookupDao<POJO extends Pojo> extends Dao<POJO> {
             result = this.getById(pojo.getId());
 
             if (!pojo.equals(result)) {
-                throw new LookupException("Unable to correctly assign object lookup Pojo to values:\n"
+                throw new LookupException("Unable to correctly assign object lookup DbPojo to values:\n"
                         + pojo.toString(), this.getPojoClass());
             }
 
@@ -174,7 +171,7 @@ public class ObjectLookupDao<POJO extends Pojo> extends Dao<POJO> {
         return "[ObjectLookupDao for " + this.getPojoClass().getSimpleName() + "]";
     }
 
-    public static <P extends Pojo, D extends Dao<P>> D get(Class<P> objectLookupPojoClass) {
+    public static <P extends DbPojo, D extends Dao<P>> D get(Class<P> objectLookupPojoClass) {
         D dao = Dao.get(objectLookupPojoClass);
         if (dao != null && dao instanceof ObjectLookupDao) {
             return dao;

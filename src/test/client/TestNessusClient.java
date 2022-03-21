@@ -1,46 +1,36 @@
 package client;
 
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.*;
 import nessusTools.client.*;
+import nessusTools.client.response.*;
 import nessusTools.data.entity.*;
 import nessusTools.data.entity.template.*;
 
-import nessusTools.data.persistence.*;
 import org.junit.*;
 import testUtils.*;
 
-import java.security.*;
-import java.util.*;
-
-import org.junit.jupiter.api.BeforeAll;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 
-import org.junit.runners.MethodSorters;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import org.apache.logging.log4j.*;
 
-import javax.ws.rs.client.*;
 
+public class TestNessusClient {
+    public static final Logger logger = LogManager.getLogger(TestNessusClient.class);
 
-public class TestClient {
     @Before
     public void resetDB() {
         Database.hardReset();
     }
 
     @Test
-    public void testFetchAllScans() throws NoSuchAlgorithmException, KeyManagementException {
+    public void testFetchAllScans()
+            throws JsonProcessingException {
+
         NessusClient client = new NessusClient();
         client.fetchAllScans();
 
@@ -52,34 +42,30 @@ public class TestClient {
         assertNotEquals(0, scans.size());
         assertEquals(scans.size(), infos.size());
 
-        System.out.println("FOLDERS:");
 
+        logger.info("FETCHED FOLDERS:");
         List<Scan> scansFromFolders = new ArrayList(scans.size());
         for (Folder folder : folders) {
-            System.out.println();
-            System.out.println(folder);
+            Folder.logger.info(folder);
             scansFromFolders.addAll(folder.getScans());
         }
 
         assertEquals(scans.size(), scansFromFolders.size());
 
-        Comparator<Pojo> comparator = (a, b) -> a.getId() - b.getId();
+        Comparator<DbPojo> comparator = (a, b) -> a.getId() - b.getId();
         scans.sort(comparator);
         scansFromFolders.sort(comparator);
         infos.sort(comparator);
 
-        System.out.println();
-        System.out.println();
-        System.out.println("SCANS");
+        logger.info("FETCHED SCANS:");
 
         for (int i = 0; i < scans.size(); i++) {
             Scan scan = scans.get(i);
             ScanInfo info = infos.get(i);
             Scan fromFolders = scansFromFolders.get(i);
 
-            System.out.println();
-            System.out.println(scan);
-            System.out.println(info);
+            Scan.logger.info(scan);
+            ScanInfo.logger.info(info);
 
             assertEquals(scan, info.getScan());
             assertEquals(scan, fromFolders);
@@ -88,7 +74,7 @@ public class TestClient {
 
         //re-fetch as raw JsonNodes:
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode indexJson = client.fetch("scans");
+        JsonNode indexJson = client.fetchJson(IndexResponse.pathFor());
 
         TypeReference<List<JsonNode>> typeReference =
                 new TypeReference<List<JsonNode>>() {};
@@ -120,7 +106,7 @@ public class TestClient {
             JsonNode json = scansJson.get(i);
             assertEquals(json, scan.toJsonNode());
 
-            JsonNode infoJson = client.fetch("scans/" + scan.getId()).get("info");
+            JsonNode infoJson = client.fetchJson(ScanInfoResponse.pathFor(scan)).get("info");
             ScanInfo info = infos.get(i);
             assertEquals(infoJson, info.toJsonNode());
         }

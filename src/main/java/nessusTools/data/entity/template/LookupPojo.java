@@ -1,6 +1,5 @@
 package nessusTools.data.entity.template;
 
-import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,7 +9,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.NaturalId;
 
-import javax.naming.*;
 import javax.persistence.*;
 import java.util.*;
 
@@ -19,7 +17,7 @@ import nessusTools.data.deserialize.Lookup;
 @MappedSuperclass
 @JsonDeserialize(using = Lookup.Deserializer.class)
 @JsonSerialize(using = Lookup.Serializer.class)
-public abstract class LookupPojo implements Pojo {
+public abstract class LookupPojo implements DbPojo {
     public static final String FIELD_NAME = "value";
 
     @Id
@@ -45,27 +43,6 @@ public abstract class LookupPojo implements Pojo {
 
     public void setValue(String value) {
         this.value = value;
-    }
-
-    @Transient
-    @JsonIgnore
-    @Override
-    public Map<String, JsonNode> _getExtraJson() {
-        throw new UnsupportedOperationException("_getExtraJson() is not supported by LookupPojo");
-    }
-
-    @Transient
-    @JsonIgnore
-    @Override
-    public void _setExtraJson(Map<String, JsonNode> _extraJson) {
-        throw new UnsupportedOperationException("_setExtraJson(map) is not supported by LookupPojo");
-    }
-
-    @Transient
-    @JsonIgnore
-    @Override
-    public void _putExtraJson(String key, Object value) {
-        throw new UnsupportedOperationException("_putExtraJson(key, value) is not supported by LookupPojo");
     }
 
     public JsonNode toJsonNode() {

@@ -111,14 +111,14 @@ create table folder (
                         default_tag  int          null,
                         custom       int          null,
                         unread_count int          null,
-                        _extra_json  json null,
+                        _extra_json  longtext null,
                         constraint folder_pk primary key (id)
 );
 alter table folder disable keys;
 
 create table scan_group (
     id int primary key auto_increment,
-    _extra_json  json null
+    _extra_json  longtext null
 );
 
 create table scan (
@@ -140,7 +140,7 @@ create table scan (
     last_modification_date  timestamp null,
     timezone_id     int          null,
     live_results    int          null,
-    _extra_json  json null,
+    _extra_json  longtext null,
     constraint scan_folder_id_fk foreign key (folder_id) references folder (id) on delete cascade on update cascade,
     constraint scan_scan_owner_id_fk foreign key (owner_id) references scan_owner (id),
     constraint scan_scan_type_id_fk foreign key (type_id) references scan_type (id),
@@ -191,7 +191,7 @@ create table scan_info (
     status_id int null,
     current_severity_base_id int null,
     selected_severity_base_id int null,
-    _extra_json  json null,
+    _extra_json  longtext null,
 
     constraint scan_info_id_fk foreign key (id) references scan (id),
     constraint scan_info_folder_id_fk foreign key (folder_id) references folder (id),

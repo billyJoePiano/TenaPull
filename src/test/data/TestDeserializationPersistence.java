@@ -2,9 +2,10 @@ package data;
 
 import nessusTools.client.response.*;
 import nessusTools.data.entity.*;
-import nessusTools.data.entity.template.Pojo;
+import nessusTools.data.entity.template.DbPojo;
 import nessusTools.data.persistence.Dao;
-import testUtils.Database;
+import org.junit.*;
+import testUtils.*;
 
 import org.junit.jupiter.api.BeforeAll;
 
@@ -15,8 +16,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 
-import org.junit.Test;
-import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -80,7 +79,7 @@ public class TestDeserializationPersistence {
     private JsonNode origNode = null;
     private NessusResponse deserialized = null;
     private List<NessusResponse.PojoData> actualData = null;
-    private NessusResponse persisted = null;
+    private NessusResponse persistedContainer = null;
 
     public TestDeserializationPersistence(TestParams params) {
         this.logger = LogManager.getLogger(params.responseClass);
@@ -96,7 +95,7 @@ public class TestDeserializationPersistence {
             this.origNode = params.lastInstance.origNode;
             this.deserialized = params.lastInstance.deserialized;
             this.actualData = params.lastInstance.actualData;
-            this.persisted = params.lastInstance.persisted;
+            this.persistedContainer = params.lastInstance.persistedContainer;
         }
 
         params.lastInstance = this;
@@ -104,7 +103,7 @@ public class TestDeserializationPersistence {
     }
 
     @BeforeAll
-    public void _0_dbReset() {
+    public static void dbReset() {
         Database.reset();
     }
 
@@ -113,8 +112,6 @@ public class TestDeserializationPersistence {
      * Checks a dummy json API response from the 'index' level.  Dummy response is in
      * test/resource/indexResponse.json
      *
-     * @throws JsonProcessingException
-     * @throws IOException
      */
     @Test
     public void _1_getDummyJson() {
@@ -140,10 +137,10 @@ public class TestDeserializationPersistence {
         // To standardize the json string's format, first put into a JsonNode
         // then re-stringify to remove "prettifying" whitespace.
         // With the standardized/minified json, serialize it into the appropriate
-        // Pojo objects
+        // DbPojo objects
 
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new CustomObjectMapper();
 
             // https://stackoverflow.com/questions/12173416/how-do-i-get-the-compact-form-of-pretty-printed-json-code
             origNode = mapper.readValue(origJson, JsonNode.class);
@@ -189,23 +186,27 @@ public class TestDeserializationPersistence {
                 continue;
             }
 
-            for (Pojo pojo : (List<Pojo>) actual.getPojoList()) {
+            for (DbPojo pojo : (List<DbPojo>) actual.getPojoList()) {
                 dao.insert(pojo);
             }
         }
 
-        // Fetch back out of the persistence layer
+        // Fetch back out of the persistence layer.
+        // First create a NessusResponse container to hold the fetched data ...
+        persistedContainer = params.response.getClass().getDeclaredConstructor().newInstance();
 
-        persisted = params.response.getClass().getDeclaredConstructor().newInstance();
+        // Set the timestamp and id the same.  Normally this would be handled by the NessusClient
+        persistedContainer.setId(deserialized.getId());
+        persistedContainer.setTimestamp(deserialized.getTimestamp());
 
         for (NessusResponse.PojoData actual : actualData) {
-            Class<? extends Pojo> pojoClass = actual.getPojoClass();
+            Class<? extends DbPojo> pojoClass = actual.getPojoClass();
             Dao dao = (Dao) pojoClass.getDeclaredField("dao").get(null);
 
             if (actual.isIndividual()) {
-                Pojo pojo = dao.getById(actual.getIndividualPojo().getId());
+                DbPojo pojo = dao.getById(actual.getIndividualPojo().getId());
 
-                persisted.setData(new NessusResponse.PojoData(
+                persistedContainer.setData(new NessusResponse.PojoData(
                         actual.getFieldName(),
                         pojo != null ? pojo.getClass() : pojoClass,
                         pojo
@@ -213,30 +214,20 @@ public class TestDeserializationPersistence {
                 continue;
             }
 
+            // ... else, if actual.isList() ....
+
             pojoClass = null;
-            List<Pojo> list = new ArrayList();
+            List<DbPojo> list = new ArrayList();
 
             // Sort the arrays to have the same order as the original input
 
-            for (Pojo orig : (List<Pojo>) actual.getPojoList()) {
-                Pojo pojo = dao.getById(orig.getId());
+            for (DbPojo orig : (List<DbPojo>) actual.getPojoList()) {
+                DbPojo pojo = dao.getById(orig.getId());
                 if (pojoClass == null && pojo != null) {
                     pojoClass = pojo.getClass();
                 }
                 list.add(pojo);
             }
-
-            /*
-            List<Pojo> origList = actual.getPojoList();
-            list.sort(Comparator.comparingInt(origList::indexOf));
-            // not sure if this will work with different instances of same data record,
-            // especially with the "dummy" placeholders for one-to-many relationships...
-            // depends on implementation of equals method???
-
-            // ... alternative is to iterate over the original list, and fetch each
-            // persisted record by id, so they are placed in the list in order
-            // ... WHICH IS EXACTLY WHAT I DID! ;-)
-             */
 
             if (pojoClass == null) {
                 // prefer to take from the first non-null instance in the list...
@@ -244,7 +235,7 @@ public class TestDeserializationPersistence {
                 pojoClass = actual.getPojoClass();
             }
 
-            persisted.setData(new NessusResponse.PojoData(
+            persistedContainer.setData(new NessusResponse.PojoData(
                     actual.getFieldName(),
                     pojoClass,
                     list
@@ -252,8 +243,6 @@ public class TestDeserializationPersistence {
         }
 
 
-        // Set the timestamp the same
-        persisted.setTimestamp(deserialized.getTimestamp());
 
         // Now re-serialize then deserialize into a JsonNode, and compare against the original
         // NOTE: JsonNode equality does not care about the order of properties.  They will almost
@@ -261,8 +250,8 @@ public class TestDeserializationPersistence {
 
         // https://stackoverflow.com/questions/2253750/testing-two-json-objects-for-equality-ignoring-child-order-in-java
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            String reserialized = mapper.writeValueAsString(persisted);
+            ObjectMapper mapper = new CustomObjectMapper();
+            String reserialized = mapper.writeValueAsString(persistedContainer);
             JsonNode reserializedNode = mapper.readValue(reserialized, JsonNode.class);
             assertEquals(origNode, reserializedNode);
 
@@ -316,7 +305,7 @@ public class TestDeserializationPersistence {
      **************************************/
 
 
-    static class ExpectedData<POJO extends Pojo> {
+    static class ExpectedData<POJO extends DbPojo> {
         private final String fieldname;
         private final Class<POJO> pojoClass;
         private final Integer listCount; //null indicates individual PojoData, not list PojoData

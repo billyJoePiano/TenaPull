@@ -12,10 +12,10 @@ import java.io.IOException;
 public class ObjectLookup {
     private ObjectLookup() { }
 
-    public static class Deserializer<POJO extends Pojo>
-            extends AbstractContextualDeserializer<POJO, ObjectLookupDao<POJO>> {
+    public static class Deserializer<POJO extends DbPojo>
+            extends AbstractContextualPojoDeserializer<POJO, ObjectLookupDao<POJO>> {
 
-        private static Logger logger = LogManager.getLogger(ObjectLookup.Deserializer.class);
+        private static final Logger logger = LogManager.getLogger(ObjectLookup.Deserializer.class);
         public Logger getLogger() {
             return logger;
         }
@@ -41,7 +41,7 @@ public class ObjectLookup {
     }
 
     /*
-    public static class ListDeserializer<POJO extends Pojo> {
+    public static class ListDeserializer<POJO extends DbPojo> {
         extends AbstractContextualDeserializer<List<POJO>, ObjectLookupDao<POJO>>
 
     }

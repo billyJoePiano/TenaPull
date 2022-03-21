@@ -1,6 +1,6 @@
 {
+  "id": 22,
   "info": {
-    "id": 22,
     "name": "Spectre/Meltdown",
     "scan_type": "local",
     "year_old_vulns": false,

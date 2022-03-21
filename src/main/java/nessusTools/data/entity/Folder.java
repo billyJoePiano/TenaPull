@@ -7,12 +7,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.Dao;
+import org.apache.logging.log4j.*;
 
 @Entity(name = "Folder")
 @Table(name = "folder")
 public class Folder extends NaturalIdPojo {
     public static final Dao<Folder> dao
             = new Dao<Folder>(Folder.class);
+
+    public static final Logger logger = LogManager.getLogger(Folder.class);
 
     @Column
     private String name;

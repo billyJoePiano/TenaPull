@@ -121,9 +121,6 @@ public class Database {
             runner.runScript(br);
 
 
-        } catch (SQLException se) {
-            logger.error(se);
-
         } catch (Exception e) {
             logger.error(e);
 
@@ -138,31 +135,14 @@ public class Database {
     }
 
     public static void softReset() {
-        //closeSessions();
+        logger.info("RUNNING SOFT RESET ON DATABASE");
         runSQL(DB_SOFT_RESET);
+        logger.info("FINISHED SOFT RESET ON DATABASE");
     }
 
     public static void hardReset() {
-        //closeSessions();
+        logger.info("RUNNING HARD RESET ON DATABASE");
         runSQL(DB_HARD_RESET);
-    }
-
-    public static void closeSessions() {
-        try {
-            Session session = null;
-            while (session != (session = Dao.sessionFactory.getCurrentSession()) && session != null) {
-                session.close();
-            }
-
-            Dao.sessionFactory.close();
-
-        } catch (HibernateException e) {
-            if (!Objects.equals("No CurrentSessionContext configured!", e.getMessage())) {
-                logger.error(e);
-            }
-
-        } catch (Throwable e) {
-            logger.error(e);
-        }
+        logger.info("FINISHED HARD RESET ON DATABASE");
     }
 }

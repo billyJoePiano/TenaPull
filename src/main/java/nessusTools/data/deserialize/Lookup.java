@@ -15,9 +15,9 @@ public class Lookup {
     private Lookup() { }
 
     public static class Deserializer<POJO extends LookupPojo>
-            extends AbstractContextualDeserializer<POJO, LookupDao<POJO>> {
+            extends AbstractContextualPojoDeserializer<POJO, LookupDao<POJO>> {
 
-        private static Logger logger = LogManager.getLogger(Deserializer.class);
+        private static final Logger logger = LogManager.getLogger(Deserializer.class);
         protected Logger getLogger() {
             return logger;
         }

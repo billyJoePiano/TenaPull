@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import org.apache.logging.log4j.*;
 
+import javax.json.*;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.*;
 import java.io.*;
@@ -12,17 +13,27 @@ import java.util.*;
 import nessusTools.client.response.*;
 import nessusTools.data.entity.*;
 
+import static org.hibernate.cfg.AvailableSettings.URL;
 
-public class NessusClient {
+
+public class NessusClient extends GenericClient {
     public static final String PROPERTIES_FILE = "nessus-api.properties";
-    private static Logger logger = LogManager.getLogger(NessusClient.class);
+    private static final Logger logger = LogManager.getLogger(NessusClient.class);
 
     private static final Properties properties = loadProperties();
-    private static final String apiURL = properties.getProperty("api.url");
+
+    public static final String apiProtocol = properties.getProperty("api.url.protocol", "https");
+    public static final String apiHost = properties.getProperty("api.url.host", "localhost");
+    public static final String apiPort = properties.getProperty("api.url.port", "");
+    public static final String apiURL = apiProtocol + "://" + apiHost
+            + (apiPort.length() > 0 ? ":" + apiPort : "");
+
     private static final String apiAccessKey = properties.getProperty("api.key.access");
     private static final String apiSecretKey = properties.getProperty("api.key.secret");
     private static final String apiFullKey = "accessKey=" + apiAccessKey +"; secretKey=" + apiSecretKey;
     private static final String apiKeyHeaderKey = "X-ApiKeys";
+
+    private static final Map<String, String> apiHeaders = Map.of(apiKeyHeaderKey, apiFullKey);
 
     private static Properties loadProperties() {
         Properties properties = new Properties();
@@ -39,40 +50,26 @@ public class NessusClient {
     }
 
 
-    private Client client = AcceptAnySSL.makeClient();
-
     public NessusClient() { }
 
-    public JsonNode fetch (String path) {
-        return this.fetch(path, JsonNode.class);
-    }
-
-    public <R> R fetch (String path, Class<R> responseClass) {
-
-
-        WebTarget target = client.target(apiURL + path);
-        Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
-        builder.header(apiKeyHeaderKey, apiFullKey);
-        String response = builder.get(String.class);
-
-        ObjectMapper mapper = new ObjectMapper();
-
+    public void fetchAllScans() {
+        IndexResponse response = null;
         try {
-            return mapper.readValue(response, responseClass);
+            response = fetchJson(
+                    IndexResponse.pathFor(),
+                    IndexResponse.class);
 
         } catch (JsonProcessingException e) {
             logger.error(e);
-            return null;
+            return;
         }
-    }
 
-
-    public void fetchAllScans() {
-        IndexResponse response = fetch("scans", IndexResponse.class);
         if (response == null) return;
 
         List<Folder> folders = response.getFolders();
         List<Scan> scans = response.getScans();
+
+        logger.info(response);
 
         for (Folder folder : folders) {
             Folder.dao.saveOrUpdate(folder);
@@ -83,20 +80,74 @@ public class NessusClient {
         }
 
         for (Scan scan: scans) {
-            ScanInfo info = fetchScanInfo(scan.getId());
+            ScanInfoResponse infoResponse = fetchScanInfo(scan);
+            ScanInfoResponse.logger.info(infoResponse);
+
+            if (infoResponse == null) {
+                continue;
+            }
+
+            ScanInfo info = infoResponse.getInfo();
             if (info != null) {
                 ScanInfo.dao.saveOrUpdate(info);
             }
         }
     }
 
-    public ScanInfo fetchScanInfo(int scanId) {
-        ScanInfo info = fetch("scans/" + scanId, ScanInfoResponse.class).getInfo();
-        info.setId(scanId);
-        return info;
+    public ScanInfoResponse fetchScanInfo (Scan scan) {
+        if (scan != null) {
+            return fetchScanInfo(scan.getId());
+
+        } else {
+            return null;
+        }
+    }
+
+    public ScanInfoResponse fetchScanInfo(int scanId) {
+        try {
+            ScanInfoResponse response = fetchJson(
+                    ScanInfoResponse.pathFor(scanId),
+                    ScanInfoResponse.class);
+
+            if (response != null) {
+                response.setId(scanId);
+            }
+            return response;
+
+
+        } catch (JsonProcessingException e) {
+            logger.error(e);
+            return null;
+        }
     }
 
 
+    @Override
+    public <R> R fetchJson(String pathOnly, // do not include the protocol, host, or port
+                           Map<String, String> headers,
+                           Class<R> mapToType,
+                           ObjectMapper mapper)
+            throws JsonProcessingException {
 
+        if (pathOnly == null || pathOnly.length() < 1) {
+            throw new IllegalArgumentException("nessusClient.fetchJson URL pathOnly string cannot be null or empty");
 
+        } else if (pathOnly.charAt(0) != '/') {
+            throw new IllegalArgumentException(
+                    "nessusClient.fetchJson URL pathOnly string must start with '/' , was: '"
+                            + pathOnly + "'");
+        }
+
+        String URL = apiURL + pathOnly;
+
+        if (headers == null) {
+            return super.fetchJson(URL, apiHeaders, mapToType, mapper);
+
+        } else {
+            Map<String, String> combinedHeaders = new LinkedHashMap();
+            combinedHeaders.putAll(apiHeaders);
+            combinedHeaders.putAll(headers);
+            return super.fetchJson(URL, combinedHeaders, mapToType, mapper);
+        }
+    }
 }

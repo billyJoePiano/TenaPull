@@ -1,16 +1,49 @@
 package nessusTools.client.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import nessusTools.data.entity.ScanInfo;
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import com.fasterxml.jackson.databind.ser.impl.*;
+import nessusTools.data.deserialize.*;
+import nessusTools.data.entity.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Objects;
 
 public class ScanInfoResponse extends NessusResponse {
-    private static Logger logger = LogManager.getLogger(ScanInfoResponse.class);
+    public static Logger logger = LogManager.getLogger(ScanInfoResponse.class);
+
+    public static String pathFor(int scanId) {
+        return "/scans/" + scanId;
+    }
+
+    public static String pathFor(Scan scan) {
+        if (scan != null) {
+            return pathFor(scan.getId());
+
+        } else {
+            return null;
+        }
+    }
+
+    public static String pathFor(ScanInfo scanInfo) {
+        if (scanInfo != null) {
+            return pathFor(scanInfo.getId());
+
+        } else {
+            return null;
+        }
+    }
+
+    /*
+    static {
+        new SimpleFilterProvider().addFilter("SkipNull.Filter", new SkipNull.Filter());
+
+    }
+     */
 
     private ScanInfo info;
 
@@ -20,6 +53,20 @@ public class ScanInfoResponse extends NessusResponse {
 
     public void setInfo(ScanInfo info) {
         this.info = info;
+        if (info == null) {
+            return;
+        }
+
+        Integer responseId = this.getId();
+        int infoId = info.getId();
+        if (infoId == 0) {
+            if (responseId != null) {
+                info.setId(responseId);
+            }
+
+        } else if (infoId > 0) {
+            this.setId(infoId);
+        }
     }
 
     @JsonIgnore

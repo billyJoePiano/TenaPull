@@ -15,6 +15,10 @@ import org.apache.logging.log4j.Logger;
 public class IndexResponse extends NessusResponse {
     public static final Logger logger = LogManager.getLogger(IndexResponse.class);
 
+    public static String pathFor() {
+        return "/scans";
+    }
+
     private List<Folder> folders;
 
     private List<Scan> scans;

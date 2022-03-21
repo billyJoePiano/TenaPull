@@ -4,9 +4,9 @@ import java.io.*;
 import java.util.*;
 
 import nessusTools.data.entity.*;
-import nessusTools.data.entity.template.Pojo;
+import nessusTools.data.entity.template.DbPojo;
 import nessusTools.data.persistence.*;
-import testUtils.Database;
+import testUtils.*;
 
 import com.fasterxml.jackson.databind.*;
 
@@ -32,7 +32,7 @@ public class TestCRUD {
             // { pojoClass, (optionals) dbPopulate script, jsonFile with params] }
             { Folder.class },
             { Scan.class } ,
-            { Scan.class, null, "Scan.2.json"} // null = use default
+            { Scan.class, null, "Scan.extraJson.json"} // null = use default
 
     };
 
@@ -54,25 +54,25 @@ public class TestCRUD {
         }
     }
 
-    private List<Pojo> convertFromJsonNode(List<JsonNode> nodeList) {
+    private List<DbPojo> convertFromJsonNode(List<JsonNode> nodeList) {
         return convertFromJsonNode(params.pojoClass, nodeList);
     }
 
-    private static List<Pojo> convertFromJsonNode(Class<? extends Pojo> pojoClass,
-                                                  List<JsonNode> paramNodes) {
-        List<Pojo> pojoList = new ArrayList();
-        ObjectMapper mapper = new ObjectMapper();
+    private static List<DbPojo> convertFromJsonNode(Class<? extends DbPojo> pojoClass,
+                                                    List<JsonNode> paramNodes) {
+        List<DbPojo> pojoList = new ArrayList();
+        ObjectMapper mapper = new CustomObjectMapper();
         for (JsonNode node : paramNodes) {
             pojoList.add(convertFromJsonNode(pojoClass, mapper, node));
         }
         return pojoList;
     }
 
-    private static Pojo convertFromJsonNode(Class<? extends Pojo> pojoClass,
-                                            ObjectMapper mapper,
-                                            JsonNode node) {
+    private static DbPojo convertFromJsonNode(Class<? extends DbPojo> pojoClass,
+                                              ObjectMapper mapper,
+                                              JsonNode node) {
         if (mapper == null) {
-            mapper = new ObjectMapper();
+            mapper = new CustomObjectMapper();
         }
 
         return mapper.convertValue(node, pojoClass);
@@ -81,9 +81,9 @@ public class TestCRUD {
     @Test
     public void testCreate() {
         if (params.create == null) return;
-        List<Pojo> pojoList = this.convertFromJsonNode(params.create);
+        List<DbPojo> pojoList = this.convertFromJsonNode(params.create);
 
-        for (Pojo create : pojoList) {
+        for (DbPojo create : pojoList) {
             int id = params.dao.insert(create);
 
             if (id < 0) {
@@ -92,7 +92,7 @@ public class TestCRUD {
 
             assertEquals(create.getId(), id);
 
-            Pojo persisted = params.dao.getById(id);
+            DbPojo persisted = params.dao.getById(id);
             assertEquals(create, persisted);
         }
     }
@@ -100,12 +100,12 @@ public class TestCRUD {
     @Test
     public void testUpdate() {
         if (params.update == null) return;
-        List<Pojo> pojoList = this.convertFromJsonNode(params.update);
+        List<DbPojo> pojoList = this.convertFromJsonNode(params.update);
 
-        for (Pojo update : pojoList) {
+        for (DbPojo update : pojoList) {
             params.dao.saveOrUpdate(update);
 
-            Pojo persisted = params.dao.getById(update.getId());
+            DbPojo persisted = params.dao.getById(update.getId());
             assertEquals(update, persisted);
         }
     }
@@ -113,17 +113,17 @@ public class TestCRUD {
     @Test
     public void testDelete() {
         if (params.delete == null) return;
-        List<Pojo> pojoList = this.convertFromJsonNode(params.delete);
+        List<DbPojo> pojoList = this.convertFromJsonNode(params.delete);
 
-        for (Pojo delete : pojoList) {
+        for (DbPojo delete : pojoList) {
             int id = delete.getId();
 
-            Pojo verifyExistence = params.dao.getById(id);
+            DbPojo verifyExistence = params.dao.getById(id);
             assertNotNull(verifyExistence);
 
             params.dao.delete(delete);
 
-            Pojo persisted = params.dao.getById(id);
+            DbPojo persisted = params.dao.getById(id);
             assertNull(persisted);
         }
     }
@@ -132,7 +132,7 @@ public class TestCRUD {
     public void testRead() {
         if (params.read == null) return;
 
-        for (Read read : (List<Read<Pojo>>) params.read) {
+        for (Read read : (List<Read<DbPojo>>) params.read) {
             Object actual;
 
             switch (read.readType) {
@@ -156,7 +156,7 @@ public class TestCRUD {
         }
     }
 
-    private static class TestParams<POJO extends Pojo> {
+    private static class TestParams<POJO extends DbPojo> {
         private final String sqlPopulate;
         private final Class<POJO> pojoClass;
         private final Dao<POJO> dao;
@@ -182,7 +182,7 @@ public class TestCRUD {
     }
 
 
-    private static class Read<POJO extends Pojo> {
+    private static class Read<POJO extends DbPojo> {
         private enum Type {
             GET_ALL, GET_ONE, GET_SOME
         }
@@ -231,7 +231,7 @@ public class TestCRUD {
             this.expected = null;
         }
 
-        //GET_ONE assumed, with individual Pojo.
+        //GET_ONE assumed, with individual DbPojo.
         private Read(Class<POJO> pojoClass, int searchId, JsonNode expected) {
             this.pojoClass = pojoClass;
             this.readType = Read.Type.GET_ONE;
@@ -296,12 +296,12 @@ public class TestCRUD {
         List<TestParams[]> paramsList = new ArrayList();
 
         for (Object[] test : TESTS) {
-            Class<? extends Pojo> pojoClass = null;
+            Class<? extends DbPojo> pojoClass = null;
             String dbPopulate = null;
             String jsonFile = null;
 
             if (test.length > 0) {
-                pojoClass = (Class<? extends Pojo>) test[0];
+                pojoClass = (Class<? extends DbPojo>) test[0];
 
             } else {
                 throw new IllegalStateException("Empty test parameters");
@@ -337,14 +337,14 @@ public class TestCRUD {
         return paramsList;
     }
 
-    private static List<TestParams> createParamsFromJson(Class<? extends Pojo> pojoClass,
+    private static List<TestParams> createParamsFromJson(Class<? extends DbPojo> pojoClass,
                                                          String sqlPopulate,
                                                          String jsonFile)
             throws IOException, NoSuchFieldException, IllegalAccessException {
 
         BufferedReader reader = new BufferedReader(new FileReader(jsonFile));
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new CustomObjectMapper();
         JsonNode rootNode = mapper.readValue(reader, JsonNode.class);
 
         List<TestParams> list = new ArrayList();
@@ -371,7 +371,7 @@ public class TestCRUD {
         return list;
     }
 
-    private static TestParams createParams(Class<? extends Pojo> pojoClass,
+    private static TestParams createParams(Class<? extends DbPojo> pojoClass,
                                            String sqlPopulate,
                                            JsonNode rootNode)
             throws NoSuchFieldException, IllegalAccessException {
@@ -381,29 +381,43 @@ public class TestCRUD {
         List<JsonNode> delete = new ArrayList();
         List<Read> read = new ArrayList();
 
-        for (JsonNode node : rootNode.get("create")) {
-            create.add(node);
+        JsonNode n;
+        n = rootNode.get("create");
+
+        if (n != null) {
+            for (JsonNode node : n) {
+                create.add(node);
+            }
         }
 
-        for (JsonNode node : rootNode.get("update")) {
-            update.add(node);
+        n = rootNode.get("update");
+
+        if (n != null) {
+            for (JsonNode node : n) {
+                update.add(node);
+            }
         }
 
-        for (JsonNode node : rootNode.get("delete")) {
-            delete.add(node);
+        n = rootNode.get("delete");
+        if (n != null) {
+            for (JsonNode node : n) {
+                delete.add(node);
+            }
         }
 
-        for (JsonNode node : rootNode.get("read")) {
-            read.add(createReadParams(pojoClass, node));
+        n = rootNode.get("read");
+        if (n != null) {
+            for (JsonNode node : n) {
+                read.add(createReadParams(pojoClass, node));
+            }
         }
 
-        TestParams params = new TestParams(pojoClass, sqlPopulate, create, update, delete, read);
-        return params;
+        return new TestParams(pojoClass, sqlPopulate, create, update, delete, read);
     }
 
     // delegation method for createParamsFromJson
     private static Read createReadParams(
-            Class<? extends Pojo> pojoClass,
+            Class<? extends DbPojo> pojoClass,
             JsonNode node) {
 
         JsonNode expected = null;

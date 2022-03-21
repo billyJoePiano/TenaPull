@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import org.apache.logging.log4j.*;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
@@ -24,6 +25,8 @@ import java.util.*;
 public class ScanInfo extends NaturalIdPojo {
     public static final Dao<ScanInfo> dao
             = new Dao<ScanInfo>(ScanInfo.class);
+
+    public static final Logger logger = LogManager.getLogger(ScanInfo.class);
 
 
     @OneToOne

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import nessusTools.data.deserialize.*;
+import org.apache.logging.log4j.*;
 
 import javax.persistence.*;
 
@@ -16,11 +17,12 @@ public class Scan extends NaturalIdPojo {
     public static final Dao<Scan> dao
             = new Dao<Scan>(Scan.class);
 
+    public static final Logger logger = LogManager.getLogger(Scan.class);
+
     /*
     @OneToOne
     @JsonIgnore
     private ScanInfo scanInfo;
-
      */
 
     @Column

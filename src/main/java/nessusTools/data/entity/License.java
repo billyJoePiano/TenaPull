@@ -1,6 +1,7 @@
 package nessusTools.data.entity;
 
 import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
@@ -14,14 +15,14 @@ public class License extends GeneratedIdPojo {
 
 	@Column(name = "`limit`") // tick marks to escape the field name, because 'limit' is a SQL keyword
     @Convert(converter = MultiTypeWrapper.Converter.class)
-    @JsonDeserialize(using = MultiTypeWrapper.Deserializer.class)
-    @JsonSerialize(using = MultiTypeWrapper.Serializer.class)
+    @JsonDeserialize(using = MultiType.Deserializer.class)
+    @JsonSerialize(using = MultiType.Serializer.class)
 	private MultiTypeWrapper limit;
 
     @Column
     @Convert(converter = MultiTypeWrapper.Converter.class)
-    @JsonDeserialize(using = MultiTypeWrapper.Deserializer.class)
-    @JsonSerialize(using = MultiTypeWrapper.Serializer.class)
+    @JsonDeserialize(using = MultiType.Deserializer.class)
+    @JsonSerialize(using = MultiType.Serializer.class)
 	private MultiTypeWrapper trimmed;
 
 	public MultiTypeWrapper getLimit(){

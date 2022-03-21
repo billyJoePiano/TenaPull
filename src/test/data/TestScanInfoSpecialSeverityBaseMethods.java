@@ -27,13 +27,13 @@ public class TestScanInfoSpecialSeverityBaseMethods {
         Database.hardReset();
 
         BufferedReader reader = new BufferedReader(new FileReader(JSON_FILE));
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new CustomObjectMapper();
         JsonNode response = mapper.readValue(reader, JsonNode.class);
 
         return List.of(new Object[][] { { response } });
     }
 
-    private JsonNode response;
+    private final JsonNode response;
 
     public TestScanInfoSpecialSeverityBaseMethods(JsonNode response) {
         this.response = response;
@@ -42,7 +42,7 @@ public class TestScanInfoSpecialSeverityBaseMethods {
 
     @Test
     public void insertScanInfoAndVerifySeverityBaseEntries() {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new CustomObjectMapper();
         ScanInfo deserialized = mapper.convertValue(response, ScanInfoResponse.class).getInfo();
 
         // Make sure foreign key constraints will be satisfied before inserting ScanInfo

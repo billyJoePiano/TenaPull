@@ -95,16 +95,55 @@ public final class MultiTypeWrapper {
             return (MultiTypeWrapper) object;
         }
 
+        Map.Entry<Character, List<Class>> entry = getPrimaryTypeNotNull(object);
+
+        if (entry != null) {
+            return fetchOrConstruct(object,
+                    entry.getKey() + object.toString(),
+                    entry.getValue().get(0));
+
+        } else {
+            return constructUnknownType(object);
+        }
+    }
+
+    public static Class getPrimaryType(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map.Entry<Character, List<Class>> entry = getPrimaryTypeNotNull(object);
+        if (entry != null) {
+            return entry.getValue().get(0);
+
+        } else {
+            return null;
+        }
+    }
+
+    public static Map.Entry<Character, Class> getPrimaryTypeWithChar(Object object) {
+        if (object == null) {
+            return null;
+        }
+
+        Map.Entry<Character, List<Class>> entry = getPrimaryTypeNotNull(object);
+        if (entry != null) {
+            return new AbstractMap.SimpleEntry(entry.getKey(), entry.getValue().get(0));
+
+        } else {
+            return null;
+        }
+    }
+
+    private static Map.Entry<Character, List<Class>> getPrimaryTypeNotNull(Object object) {
         for (Map.Entry<Character, List<Class>> entry : TYPE_MAP.entrySet()) {
             List<Class> list = entry.getValue();
             for (Class type : list) {
                 if (type.isInstance(object)) {
-                    return fetchOrConstruct(object, entry.getKey() + object.toString(), type);
+                    return entry;
                 }
             }
         }
-
-        return constructUnknownType(object);
+        return null;
     }
 
     public static MultiTypeWrapper buildFrom(String dbString) {
@@ -387,118 +426,6 @@ public final class MultiTypeWrapper {
             } else {
                 return null;
             }
-        }
-    }
-
-    public static class Deserializer extends JsonDeserializer<MultiTypeWrapper> {
-        @Override
-        public MultiTypeWrapper deserialize(JsonParser jp,
-                                            DeserializationContext ctxt)
-                throws IOException, JsonProcessingException {
-            JsonToken token = jp.getCurrentToken();
-
-            switch(token) {
-                case VALUE_NULL:
-                    return null;
-
-                case VALUE_STRING:
-                    return wrap(jp.getText());
-
-                case VALUE_NUMBER_INT: case VALUE_NUMBER_FLOAT:
-                    switch(jp.getNumberType()) {
-                        case INT:
-                            return wrap(jp.readValueAs(Integer.class));
-
-                        case DOUBLE:
-                            return wrap(jp.readValueAs(Double.class));
-
-                        case FLOAT:
-                            return wrap(jp.readValueAs(Float.class));
-
-                        case LONG:
-                            return wrap(jp.readValueAs(Long.class));
-
-                        case BIG_DECIMAL:
-                            return wrap(jp.getDecimalValue());
-
-                        case BIG_INTEGER:
-                            return wrap(jp.getBigIntegerValue());
-                    }
-
-                case VALUE_TRUE:
-                    return wrap(Boolean.TRUE);
-
-                case VALUE_FALSE:
-                    return wrap(Boolean.FALSE);
-
-                default:
-                    throw new JsonException(this.getClass()
-                            + " cannot deserialize JSON value of type "
-                            + jp.getCurrentToken() + "\n"
-                            + jp.getText());
-            }
-
-        }
-    }
-
-    public static class Serializer extends JsonSerializer<MultiTypeWrapper> {
-        Logger logger = LogManager.getLogger(EpochTimestamp.Serializer.class);
-
-        // https://stackoverflow.com/questions/33519354/how-to-get-property-or-field-name-in-a-custom-json-serializer
-        @Override
-        public void serialize(MultiTypeWrapper wrapper,
-                              JsonGenerator jsonGenerator,
-                              SerializerProvider serializerProvider)
-                throws IOException {
-
-
-            if (wrapper == null) {
-                jsonGenerator.writeNull();
-                return;
-            }
-
-            Class type = wrapper.getPrimaryType();
-            if (type == null
-                    || type.equals(String.class)
-                    || type.equals(MultiTypeWrapper.class)) {
-
-                jsonGenerator.writeString(wrapper.toString());
-
-            } else if (type.equals(Integer.class)) {
-                jsonGenerator.writeNumber(((Number) wrapper.getObject()).intValue());
-
-            } else if (type.equals(Boolean.class)) {
-                jsonGenerator.writeBoolean((Boolean) wrapper.getObject());
-
-            } else if (type.equals(Double.class)) {
-                jsonGenerator.writeNumber(((Number) wrapper.getObject()).doubleValue());
-
-            } else if (type.equals(Long.class)) {
-                jsonGenerator.writeNumber(((Number) wrapper.getObject()).longValue());
-
-            } else if (type.equals(Byte.class)) {
-                jsonGenerator.writeNumber(((Number) wrapper.getObject()).byteValue());
-
-            } else if (type.equals(Short.class)) {
-                jsonGenerator.writeNumber(((Number) wrapper.getObject()).shortValue());
-
-            } else if (type.equals(Float.class)) {
-                jsonGenerator.writeNumber(((Number) wrapper.getObject()).floatValue());
-
-            } else if (type.equals(BigInteger.class)) {
-                jsonGenerator.writeNumber((BigInteger) wrapper.getObject());
-
-            } else if (type.equals(BigDecimal.class)) {
-                jsonGenerator.writeNumber((BigDecimal) wrapper.getObject());
-
-            } else {
-                logger.error("Unexpected type while serializing MultiTypeObjectWrapper : "
-                        + type.toString() + "\n"
-                        + wrapper.toDb());
-
-                jsonGenerator.writeString(wrapper.toString());
-            }
-
         }
     }
 }

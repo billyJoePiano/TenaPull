@@ -6,11 +6,14 @@ import nessusTools.data.persistence.*;
 import java.math.*;
 import java.util.*;
 
+import org.apache.logging.log4j.*;
 import org.junit.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestMultiTypeWrapper {
+    public static final Logger logger = LogManager.getLogger(TestMultiTypeWrapper.class);
+
     Map<String, Object> TEST_BOTH_DIRECTIONS = Collections.unmodifiableMap(
             new LinkedHashMap() { {
                     put(null, null);
@@ -80,15 +83,13 @@ public class TestMultiTypeWrapper {
 
     @Test
     public void testBothDirections() {
-
         boolean firstPolarity = Math.random() < 0.5;
         boolean secondPolarity = Math.random() < 0.5;
 
-        System.out.println();
-        System.out.println("Test firstPolarity: "
+        logger.info("Test firstPolarity: "
                 + (firstPolarity ? "toDb first" : "fromDb first"));
 
-        System.out.println("Test secondPolarity: "
+        logger.info("Test secondPolarity: "
                 + (secondPolarity ? "backToDb first" : "backFromDb first"));
 
         for (Map.Entry<String, Object> test : TEST_BOTH_DIRECTIONS.entrySet()) {
@@ -106,15 +107,14 @@ public class TestMultiTypeWrapper {
                 toDb = converter.convertToDatabaseColumn(MultiTypeWrapper.wrap(obj));
             }
 
-            System.out.println();
-            System.out.println(toDb);
+            logger.info(toDb);
             if (fromDb != null) {
                 Object tmp = fromDb.getObject();
                 Class type = tmp != null ? tmp.getClass() : void.class;
-                System.out.println(type + " : \t " + fromDb.toString());
+                logger.info(type + " : \t " + fromDb.toString());
 
             } else {
-                System.out.println((Object) null);
+                logger.info((Object) null);
             }
 
             assertEquals(str, toDb);
@@ -168,13 +168,12 @@ public class TestMultiTypeWrapper {
 
             String toDb = converter.convertToDatabaseColumn(MultiTypeWrapper.wrap(obj));
 
-            System.out.println();
-            System.out.println(toDb);
+            logger.info(toDb);
             if (obj != null) {
-                System.out.println(obj.getClass() + " : \t " + obj.toString());
+                logger.info(obj.getClass() + " : \t " + obj.toString());
 
             } else {
-                System.out.println((Object) null);
+                logger.info((Object) null);
             }
 
             assertEquals(str, toDb);
@@ -190,13 +189,12 @@ public class TestMultiTypeWrapper {
             MultiTypeWrapper fromDb = converter.convertToEntityAttribute(str);
             Object objFromDb = fromDb.getObject();
 
-            System.out.println();
-            System.out.println(str);
+            logger.info(str);
             if (fromDb != null) {
-                System.out.println(objFromDb.getClass() + " : \t " + objFromDb.toString());
+                logger.info(objFromDb.getClass() + " : \t " + objFromDb.toString());
 
             } else {
-                System.out.println((Object) null);
+                logger.info((Object) null);
             }
 
             assertEquals(obj, fromDb.getObject());

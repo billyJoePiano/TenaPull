@@ -3,7 +3,7 @@ package nessusTools.data.deserialize;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
-import nessusTools.data.entity.template.Pojo;
+import nessusTools.data.entity.template.DbPojo;
 import nessusTools.data.persistence.Dao;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,10 +13,10 @@ import java.io.IOException;
 public class IdReference {
     private IdReference() { }
 
-    public static class Serializer extends JsonSerializer<Pojo> {
+    public static class Serializer extends JsonSerializer<DbPojo> {
         // https://stackoverflow.com/questions/33519354/how-to-get-property-or-field-name-in-a-custom-json-serializer
         @Override
-        public void serialize(Pojo pojo, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        public void serialize(DbPojo pojo, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
             if (pojo != null) {
                 jsonGenerator.writeNumber(pojo.getId());
 
@@ -26,10 +26,10 @@ public class IdReference {
         }
     }
 
-    public static class Deserializer<POJO extends Pojo>
-            extends AbstractContextualDeserializer<POJO, Dao<POJO>> {
+    public static class Deserializer<POJO extends DbPojo>
+            extends AbstractContextualPojoDeserializer<POJO, Dao<POJO>> {
 
-        private static Logger logger = LogManager.getLogger(Deserializer.class);
+        private static final Logger logger = LogManager.getLogger(Deserializer.class);
         protected Logger getLogger() {
             return logger;
         }
