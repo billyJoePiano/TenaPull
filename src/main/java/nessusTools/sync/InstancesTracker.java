@@ -82,7 +82,7 @@ public class InstancesTracker<K, I> {
     // instance added.
     public Object write(CallableWithArg<CallableWithArg<Map.Entry<K, I>, I, NothingThrown>, I, NothingThrown>
             writeLambda)
-        throws NullPointerException{
+        throws NullPointerException {
 
         return this.instances.write(instances -> {
             Boolean[] unlocked = new Boolean[] { Boolean.FALSE };

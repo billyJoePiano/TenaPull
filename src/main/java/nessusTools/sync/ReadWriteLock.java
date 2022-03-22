@@ -6,23 +6,33 @@ import java.util.*;
 
 /**
  * Simple class for synchronizing concurrent read access and exclusive write access to an object.
+ * The Object is passed into the constructor, and will only be accessed via lambda submitted to the
+ * read() or write() methods.  The object will be provided as the argument to these lambdas.  It is
+ * entirely up to the implementation to honor read and write rules.  This class simply helps to
+ * synchronize those operations.
  *
- * Object type = O
- * Return value type = R
+ * Type Parameters:
+ * O : type of the Object needing synchronized access (passed in the constructor, and as arg to read/write lambdas)
+ * R : return type from the CallableWithArg.  Typically this is the type being held in the object's list/map/set
+ * E : any exceptions thrown by the read/write lambdas.  Use CallableWithArg.NothingThrown to avoid needing
+ *          to catch or declare any exceptions
+ *
+ * Mechanics:
  *
  * Multiple threads can read at one time.  Only one thread can write at a time, and no other
  * threads can read while the write thread holds the lock.  Note that the write thread will still be
- * able to run read operations with the read(runnable) method while holding the write lock.
- * Also note that a read thread must release its read lock BEFORE it requests a write lock, otherwise
- * deadlock will occur.
+ * able to run read operations with the read(callableWithArgs) method while holding the write lock.
+ * More importantly, a thread with only a read lock must release all read locks BEFORE it requests
+ * a write lock.  Otherwise it would lead to deadlock conditions, but an IllegalAccessError will
+ * be thrown to prevent this.
  *
  * Type parameter R is the type of the return value from the CallableWithArg.  If no return
  * is needed or used, just return null and ignore the return value;
  *
- * Type parameter E is the type of any throwable which the runnable might throw.  If no
- * exceptions will be thrown, then use the static inner class NothingThrown as the type for E.
- * NothingThrown cannot be instantiated, and because it extends RuntimeException it does not
- * need to be caught or declared.
+ * Type parameter E is the type of any throwable which the callableWithArg might throw.  If no
+ * exceptions will be thrown, then use the static inner class CallableWithArg.NothingThrown as
+ * the type for E. NothingThrown cannot be instantiated, and because it extends RuntimeException
+ * it does not need to be caught or declared.
  *
  */
 public class ReadWriteLock<O, R, E extends Throwable> {
@@ -72,7 +82,9 @@ public class ReadWriteLock<O, R, E extends Throwable> {
         return returnVal;
     }
 
-    public final R write(CallableWithArg<O, R, E> runnable) throws E {
+    public final R write(CallableWithArg<O, R, E> runnable)
+            throws E, IllegalAccessError {
+
         synchronized (addLock) {
             this.writeLockCounter++;
             if (this.currentWriteLock == null) {
@@ -85,7 +97,8 @@ public class ReadWriteLock<O, R, E extends Throwable> {
                         Lock lock;
                         synchronized (lock = readLocks.get(size - 1)) {
                             if (lock.active && Objects.equals(lock.thread, this.currentWriteLock)) {
-                                throw new IllegalAccessError("A thread cannot grab a write lock until it has released its read lock!");
+                                throw new IllegalAccessError(
+                                        "A thread cannot grab a write lock until it has released all its read locks!");
                             }
 
                             boolean allInactive = true;
