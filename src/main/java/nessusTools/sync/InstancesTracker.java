@@ -6,15 +6,26 @@ import static nessusTools.sync.CallableWithArg.NothingThrown;
 
 /* Synchronizes and maps unique instances to a unique "key" (typically a String).
  * Instances are held as weak references via a WeakHashMap which is synchronized via ReadWriteLock.
- * NOTE: for the implementation of this class, the "key" is actually the instance value, making this more
- * like a bi-map.  It is a little counter-intuitive that the instance is the key and the dbString is
- * the value. but this is needed for the "Weak" reference to work correctly, and allow garbage collection
+ *
+ *
+ * NOTE: In the implementation of this class is more like a bi-map, where both keys and values are unique.
+ * It is a little counter-intuitive that the instance is the key of the actual WeakHashMap and the key is
+ * the value.  But this is needed for the "Weak" reference to work correctly, and allow garbage collection
  * of unused instances.
  *
  * In a sense, both the keys and values are unique "keys" for each other, but only the
  * instance is a weak reference that can be garbage-collected, which is why it must
  * occupy the formal 'key' position in the WeakHashMap.  However, for users of InstancesTracker,
- * the instances are considered to be the "keys"
+ * the instances are considered to be the "values", and the accessor strong references (typically strings)
+ * are considered to be the "keys"
+ *
+ * Type parameters:
+ *
+ * K -- Key -- the string or other object used to access the instances.  There is a strong reference to these values
+ * I -- Instances -- the type of the instances being tracked.  These are weak references so may be garbage
+ * collected if no strong references remain to the instance, in which case the strong reference to the key
+ * will also be destroyed here (though there may be strong references elsewhere that prevent it from being
+ * garbage-collected)
  */
 public class InstancesTracker<K, I> {
     private final ReadWriteLock<Map<I, K>, I, NothingThrown>
