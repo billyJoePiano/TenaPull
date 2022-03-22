@@ -118,18 +118,21 @@ public final class MultiTypeWrapper {
     }
 
 
+    // Maps all instances passed to "wrap" to their respective dbStrings
+    // these dbStrings can then be used to access a MultiTypeWrapper in the wrapperTracker
     private static final ReadWriteLock<Map<Object, String>, String, NothingThrown>
             wrappedInstancesTracker = new ReadWriteLock<>(new WeakHashMap<>());
-    // default construction lambda will throw InstancesTracker.NullReturnFromConstructLambda as a result of this
-    // we can't construct here because we need to synchronize with dbStringTracker
+
 
     private static final InstancesTracker<String, MultiTypeWrapper>
             wrapperTracker = new InstancesTracker<String, MultiTypeWrapper>(dbString -> {
 
         MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
-        wrappedInstancesTracker.write(wrappedInstancesTracker -> {
-            return wrappedInstancesTracker.put(wrapper.getObject(), dbString);
-        });
+        Object obj = wrapper.getObject();
+        if (obj != null && !(obj instanceof MultiTypeWrapper)) {
+            wrappedInstancesTracker.write(
+                    wrappedInstancesTracker -> wrappedInstancesTracker.put(obj, dbString));
+        }
         return wrapper;
     });
 
