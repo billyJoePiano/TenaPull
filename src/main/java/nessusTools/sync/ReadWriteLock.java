@@ -37,16 +37,6 @@ import java.util.*;
  *
  */
 public class ReadWriteLock<O, R> {
-    private final List<Lock> readLocks = new LinkedList<>();
-    private final Lock addLock = new Lock();
-    private final Lock removeLock = new Lock();
-    private final O object;
-    private final O view;
-    private Thread currentWriteLock = null;
-    private int writeLockCounter = 0;
-    private Thread garbageCollector = null;
-    private final Lock gcLock = new Lock();
-
     public static <R, K, V> ReadWriteLock<Map<K, V>, R> forMap(Map<K, V> map) {
         Map view = Collections.unmodifiableMap(map);
         return new ReadWriteLock<>(map, view);
@@ -66,6 +56,16 @@ public class ReadWriteLock<O, R> {
         Collection<T> view = Collections.unmodifiableCollection(collection);
         return new ReadWriteLock<>(collection, view);
     }
+
+    private final O object;
+    private final O view;
+
+    private final List<Lock> readLocks = new LinkedList<>();
+    private final Lock addLock = new Lock();
+    private final Lock removeLock = new Lock();
+    private final Lock gcLock = new Lock();
+    private Thread currentWriteLock = null;
+    private Thread garbageCollector = null;
 
     public ReadWriteLock(O objectToLock) {
         this.object = objectToLock;
@@ -124,16 +124,21 @@ public class ReadWriteLock<O, R> {
             throws IllegalAccessError {
 
         synchronized (addLock) {
-            this.writeLockCounter++;
+            boolean newWriteLock;
             if (this.currentWriteLock == null) {
+                newWriteLock = true;
                 this.currentWriteLock = Thread.currentThread();
                 this.waitForWriteLock();
 
+
             // skip waitForWriteLock() when there was already a currentWriteLock.
             // Just verify that it is this thread... this code block shouldn't be accessible if
-            // not this thread, due to addLock
-            } else if (!Objects.equals(this.currentWriteLock, Thread.currentThread())) {
-                throw new IllegalAccessError("Unexpected thread in the currentWriteLock");
+            // this thread didn't already hold the write lock, due to addLock
+            } else {
+                newWriteLock = false;
+                if (!Objects.equals(this.currentWriteLock, Thread.currentThread())) {
+                    throw new IllegalAccessError("Unexpected thread in the currentWriteLock");
+                }
             }
 
             T returnVal;
@@ -141,9 +146,7 @@ public class ReadWriteLock<O, R> {
                 returnVal = lambda.call(this.object);
 
             } finally {
-                this.writeLockCounter--;
-                if (this.writeLockCounter <= 0) {
-                    this.writeLockCounter = 0;
+                if (newWriteLock) {
                     this.currentWriteLock = null;
                 }
             }
