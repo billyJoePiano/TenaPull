@@ -86,11 +86,11 @@ public class ReadWriteLock<O, R> {
     }
     
     public final R read(Lambda<O, R> lambda) {
-        return (R) this.read(Object.class, (Lambda<O, Object>) lambda);
+        return (R) this.read(null, lambda);
     }
 
     public final R write(Lambda<O, R> lambda) {
-        return (R) this.write(Object.class, (Lambda<O, Object>) lambda);
+        return (R) this.write(null, lambda);
     }
 
     public final <T> T read(Class<T> returnType, Lambda<O, T> lambda) {
