@@ -160,12 +160,17 @@ public class ReadWriteLock<O, R> {
     // WRITE LOCK FOR THIS THREAD.
     private void waitForWriteLock() throws IllegalAccessError {
         // iterate over the existing read locks and wait for all of them to be released
-        int size;
         while (true) {
+            int size;
             boolean allInactive = true;
+
             synchronized (removeLock) {
+                // this.readLocks list cannot be modified externally once inside this code block.
+                // Since both addLock and removeLock are held by this thread, we can
+                // guarantee it will not change during iteration.  However, it is still
+                // possible that the state of individual readLocks within the list may change
+                // which is why we wait for a lock on each individually before inspecting
                 size = readLocks.size();
-                if (size <= 0) break;
 
                 for (Lock lock : this.readLocks) {
                     synchronized (lock) {
@@ -180,6 +185,7 @@ public class ReadWriteLock<O, R> {
                     }
                 }
             }
+
             if (allInactive) {
                 if (size > 0) {
                     synchronized (this.gcLock) {
@@ -188,7 +194,7 @@ public class ReadWriteLock<O, R> {
                         }
                     }
                 }
-                break;
+                return;
             }
         }
     }
