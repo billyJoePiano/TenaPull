@@ -89,7 +89,8 @@ public class ReadWriteLock<O, R> {
         return (R) this.read(null, lambda);
     }
 
-    public final R write(Lambda<O, R> lambda) {
+    public final R write(Lambda<O, R> lambda) throws IllegalAccessError {
+
         return (R) this.write(null, lambda);
     }
 
