@@ -12,21 +12,9 @@ import java.util.*;
  * an unmodifiable view of the object to the ReadWriteLock constructor, where the original object
  * will be sent to write lambdas and the unmodifiable view will be sent read lambdas.  If only one
  * argument is submitted, the same object is sent to both.  Alternatively, you may pass a single
- * Map, Set, List, or Collection to their respective static methods which create an unmodifiable view
+ * Map, Set, List, or Collection to the respective static methods which create an unmodifiable view
  * of the original that is used for reading in a new ReadWriteLock instance (the original, of course,
  * will be used for writing).
- *
- * Type Parameters:
- * O : Object type, of the object needing synchronized access and passed into the constructor.  This will also
- *          be the object and type submitted to the read and write lambdas
- *
- * R : Return type from the standard Lambda lambda.  Typically, this is the type being held in the object's
- *          list/map/set.  You can return null and ignore the return value if it is not needed.  If you need a
- *          different return type under varying situations, this can be specified on a per-invocation basis using
- *          read/write(Class&lt;T&gt; returnType, Callable&lt;O, T&gt; lambda)
- *
- * E : Error/exceptions ... any exceptions thrown by the read/write lambdas.  Use Lambda.NothingThrown
- *          to avoid needing to catch or declare any exceptions
  *
  * Mechanics:
  *
@@ -37,6 +25,15 @@ import java.util.*;
  * More importantly, a thread with only a read lock must release all read locks BEFORE it requests
  * a write lock.  Otherwise it could lead to a deadlock if multiple threads are doing this
  * simultaneously, but an IllegalAccessError will be thrown to prevent this.
+ *
+ * Type Parameters:
+ *  * O : Object type, of the object needing synchronized access and passed into the constructor.  This will also
+ *  *          be the object and type submitted to the read and write lambdas
+ *  *
+ *  * R : Return type from the most commonly used lambda.  Typically, this is the type being held in the list/map/set
+ *  *          being synchronized. You can return null and ignore the return value if it is not needed.  If you need a
+ *  *          different return type under varying situations, this can be specified on a per-invocation basis using
+ *  *          read/write(Class&lt;T&gt; returnType, Callable&lt;O, T&gt; lambda)
  *
  */
 public class ReadWriteLock<O, R> {
