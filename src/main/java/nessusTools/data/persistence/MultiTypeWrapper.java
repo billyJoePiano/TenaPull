@@ -8,8 +8,6 @@ import java.math.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import static nessusTools.sync.CallableWithArg.NothingThrown;
-
 public final class MultiTypeWrapper {
     private static final Logger logger = LogManager.getLogger(MultiTypeWrapper.class);
 
@@ -90,19 +88,41 @@ public final class MultiTypeWrapper {
             return (MultiTypeWrapper) object;
         }
 
-        String dbString = wrappedInstancesTracker.read(map -> map.get(object));
+        MultiTypeWrapper returnVal = wrappedInstancesTracker.get(object);
 
-        //to keep the lambda compiler happy... womp womp
-
-        if (dbString == null) {
-            dbString = makeDbStringFor(object);
-            String finalDbString = dbString;
-            wrappedInstancesTracker.write(wrappedInstancesTracker -> {
-                return wrappedInstancesTracker.put(object, finalDbString);
-            });
+        if (returnVal != null) {
+            return returnVal;
         }
 
-        return wrapperTracker.getOrConstruct(dbString);
+        String dbString = makeDbStringFor(object);
+
+        returnVal = wrapperTracker.get(dbString);
+
+        if (returnVal != null) {
+            // it was already constructed but we need to make this object a key as well
+            wrappedInstancesTracker.put(object, returnVal);
+            return returnVal;
+        }
+
+        returnVal = wrapperTracker.write(putDbs -> {
+            //do one more check here, in case of race conditions...
+            MultiTypeWrapper wrapper = wrappedInstancesTracker.get(object);
+            if (wrapper != null) {
+                return wrapper;
+            }
+            return wrappedInstancesTracker.write(putObj -> {
+                MultiTypeWrapper val = wrapperTracker.getOrConstruct(dbString);
+                putObj.call(object, val);
+                if (val == null) {
+                    System.out.println();
+                }
+                return val;
+            });
+        });
+        if (returnVal == null) {
+            System.out.println();
+        }
+        return returnVal;
     }
 
 
@@ -110,9 +130,7 @@ public final class MultiTypeWrapper {
         if (dbString == null) {
             return null;
 
-        } /*else if (dbString.length() < 1) {
-            return fetchOrConstruct(dbString, dbString, MultiTypeWrapper.class); // dbString is ""
-        }*/
+        }
 
         return wrapperTracker.getOrConstruct(dbString);
     }
@@ -120,44 +138,74 @@ public final class MultiTypeWrapper {
 
     // Maps all instances passed to "wrap" to their respective dbStrings
     // these dbStrings can then be used to access a MultiTypeWrapper in the wrapperTracker
-    private static final ReadWriteLock<Map<Object, String>, String, NothingThrown>
-            wrappedInstancesTracker = new ReadWriteLock<>(new WeakHashMap<>());
+    private static WeakInstancesTracker<Object, MultiTypeWrapper>
+            wrappedInstancesTracker = wrappedInstancesTracker();
 
 
-    private static final InstancesTracker<String, MultiTypeWrapper>
-            wrapperTracker = new InstancesTracker<String, MultiTypeWrapper>(dbString -> {
 
-        MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
-        Object obj = wrapper.getObject();
-        if (obj != null && !(obj instanceof MultiTypeWrapper)) {
-            wrappedInstancesTracker.write(
-                    wrappedInstancesTracker -> wrappedInstancesTracker.put(obj, dbString));
-        }
-        return wrapper;
-    });
+    private static InstancesTracker<String, MultiTypeWrapper>
+            wrapperTracker = wrapperTracker();
+
+    private static WeakInstancesTracker<Object, MultiTypeWrapper> wrappedInstancesTracker() {
+        return new WeakInstancesTracker(Object.class, MultiTypeWrapper.class, null);
+    }
+
+    private static InstancesTracker<String, MultiTypeWrapper> wrapperTracker() {
+        return new InstancesTracker<String, MultiTypeWrapper>(
+                String.class,
+                MultiTypeWrapper.class,
+                dbString -> wrappedInstancesTracker.write(objPut -> {
+                    MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
+                    Object obj = wrapper.getObject();
+                    if (obj != null && !(obj instanceof MultiTypeWrapper)) {
+                        objPut.call(obj, wrapper);
+                    }
+                    return wrapper;
+                }));
+    }
 
 
+
+    //Counts the number of
+    private static long counter = 0;
+    public static long getCounter() {
+        return counter;
+    }
+    public static void resetCounter() {
+        counter = 0;
+    }
+    public static void clearInstances() {
+        wrapperTracker.write(put1 ->
+            wrappedInstancesTracker.write(put2 -> {
+                wrapperTracker = wrapperTracker();
+                wrappedInstancesTracker = wrappedInstancesTracker();
+                return null;
+            })
+        );
+    }
 
     private final Object object;
     private final String dbString;
     private final String toString;
-    private final String typeString;
+    private final String typeString; //used for unknown types only
     private final Class primaryType;
 
     private MultiTypeWrapper(String dbString) {
-        this.dbString = dbString;
+        counter++;
+        String dbs = dbString;
 
-        char typeIdentifier = dbString.charAt(0);
+        char typeIdentifier = dbs.charAt(0);
 
         if (typeIdentifier == UNKNOWN) {
-            if (dbString.length() > 1) {
-                dbString = dbString.substring(1);
+            if (dbs.length() > 1) {
+                dbs = dbs.substring(1);
 
             } else {
-                dbString = "";
+                dbs = "";
             }
 
-            String[] typeAndValue = parseUnknownTypeDbString(dbString);
+            String[] typeAndValue = parseUnknownTypeDbString(dbs);
+            this.dbString = UNKNOWN + typeAndValue[0] + "\n" + typeAndValue[1];
             this.typeString = typeAndValue[0];
             this.toString = typeAndValue[1];
             this.primaryType = null;
@@ -168,12 +216,13 @@ public final class MultiTypeWrapper {
 
             List<Class> typeList = TYPE_MAP.get(typeIdentifier);
             if (typeList == null) {
-                logger.error("Invalid multi-type value passed from DB, does not have correct type init: '"
+                logger.error("Invalid multi-type value passed from DB, does not have correct type init:\n'"
                         + dbString + "'");
+                this.dbString = dbString;
                 this.typeString = null;
-                this.toString = dbString;
+                this.toString = dbs;
                 this.primaryType = null;
-                this.object = dbString;
+                this.object = dbs;
                 return;
 
             }
@@ -182,8 +231,8 @@ public final class MultiTypeWrapper {
         }
 
         String constructorString;
-        if (dbString.length() > 1) {
-            constructorString = dbString.substring(1);
+        if (dbs.length() > 1) {
+            constructorString = dbs.substring(1);
 
         } else {
             constructorString = "";
@@ -201,8 +250,13 @@ public final class MultiTypeWrapper {
             instance = constructorString;
         }
 
+        this.dbString = typeIdentifier + instance.toString();
         this.object = instance;
         this.typeString = null;
+
+        if (!Objects.equals(dbString, this.dbString)) {
+
+        }
     }
 
 

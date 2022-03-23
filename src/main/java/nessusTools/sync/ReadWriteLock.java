@@ -1,63 +1,104 @@
 package nessusTools.sync;
 
-import net.bytebuddy.implementation.bytecode.*;
-
 import java.util.*;
 
 /**
  * Simple class for synchronizing concurrent read access and exclusive write access to an object.
- * The Object is passed into the constructor, and will only be accessed via lambda submitted to the
- * read() or write() methods.  The object will be provided as the argument to these lambdas.  It is
- * entirely up to the implementation to honor read and write rules.  This class simply helps to
- * synchronize those operations.
+ * The Object is passed into the constructor, and should only be accessed via lambdas submitted to the
+ * read() or write() methods.  The object will be provided as the argument to these lambdas.
+ *
+ * It is entirely up to the implementation to honor read and write rules. This class simply helps to
+ * synchronize those operations.  However, the implementation may choose to submit both the object AND
+ * an unmodifiable view of the object to the ReadWriteLock constructor, where the original object
+ * will be sent to write lambdas and the unmodifiable view will be sent read lambdas.  If only one
+ * argument is submitted, the same object is sent to both.  Alternatively, you may pass a single
+ * Map, Set, List, or Collection to their respective static methods which create an unmodifiable view
+ * of the original that is used for reading in a new ReadWriteLock instance (the original, of course,
+ * will be used for writing).
  *
  * Type Parameters:
- * O : type of the Object needing synchronized access (passed in the constructor, and as arg to read/write lambdas)
- * R : return type from the CallableWithArg.  Typically this is the type being held in the object's list/map/set
- * E : any exceptions thrown by the read/write lambdas.  Use CallableWithArg.NothingThrown to avoid needing
- *          to catch or declare any exceptions
+ * O : Object type, of the object needing synchronized access and passed into the constructor.  This will also
+ *          be the object and type submitted to the read and write lambdas
+ *
+ * R : Return type from the standard Lambda lambda.  Typically, this is the type being held in the object's
+ *          list/map/set.  You can return null and ignore the return value if it is not needed.  If you need a
+ *          different return type under varying situations, this can be specified on a per-invocation basis using
+ *          read/write(Class&lt;T&gt; returnType, Callable&lt;O, T&gt; lambda)
+ *
+ * E : Error/exceptions ... any exceptions thrown by the read/write lambdas.  Use Lambda.NothingThrown
+ *          to avoid needing to catch or declare any exceptions
  *
  * Mechanics:
  *
  * Multiple threads can read at one time.  Only one thread can write at a time, and no other
  * threads can read while the write thread holds the lock.  Note that the write thread will still be
- * able to run read operations with the read(callableWithArgs) method while holding the write lock.
+ * able to run read lambdas with the read() method while holding the write lock.
+ *
  * More importantly, a thread with only a read lock must release all read locks BEFORE it requests
- * a write lock.  Otherwise it would lead to deadlock conditions, but an IllegalAccessError will
- * be thrown to prevent this.
- *
- * Type parameter R is the type of the return value from the CallableWithArg.  If no return
- * is needed or used, just return null and ignore the return value;
- *
- * Type parameter E is the type of any throwable which the callableWithArg might throw.  If no
- * exceptions will be thrown, then use the static inner class CallableWithArg.NothingThrown as
- * the type for E. NothingThrown cannot be instantiated, and because it extends RuntimeException
- * it does not need to be caught or declared.
+ * a write lock.  Otherwise it could lead to a deadlock if multiple threads are doing this
+ * simultaneously, but an IllegalAccessError will be thrown to prevent this.
  *
  */
-public class ReadWriteLock<O, R, E extends Throwable> {
+public class ReadWriteLock<O, R> {
     private final List<Lock> readLocks = new LinkedList<>();
     private final Lock addLock = new Lock();
     private final Lock removeLock = new Lock();
     private final O object;
+    private final O view;
     private Thread currentWriteLock = null;
     private int writeLockCounter = 0;
+    private Thread garbageCollector = null;
+    private final Lock gcLock = new Lock();
+
+    public static <R, K, V> ReadWriteLock<Map<K, V>, R> forMap(Map<K, V> map) {
+        Map view = Collections.unmodifiableMap(map);
+        return new ReadWriteLock<>(map, view);
+    }
+
+    public static <R, T> ReadWriteLock<Set, R> forSet(Set<T> set) {
+        Set<T> view = Collections.unmodifiableSet(set);
+        return new ReadWriteLock<>(set, view);
+    }
+
+    public static <R, T> ReadWriteLock<List, R> forList(List<T> list) {
+        List<T> view = Collections.unmodifiableList(list);
+        return new ReadWriteLock<>(list, view);
+    }
+
+    public static <R, T> ReadWriteLock<Collection, R> forCollection(Collection<T> collection) {
+        Collection<T> view = Collections.unmodifiableCollection(collection);
+        return new ReadWriteLock<>(collection, view);
+    }
 
     public ReadWriteLock(O objectToLock) {
         this.object = objectToLock;
+        this.view = objectToLock;
+    }
+
+    public ReadWriteLock(O objectToLock, O unmodifiableView) {
+        this.object = objectToLock;
+        this.view = unmodifiableView;
     }
 
     private class Lock {
-        private Thread thread = Thread.currentThread();
+        private final Thread thread = Thread.currentThread();
         private boolean active = true;
         public boolean equals(Object o) {
             return o == this;
         }
     }
+    
+    public final R read(Lambda<O, R> lambda) {
+        return (R) this.read(Object.class, (Lambda<O, Object>) lambda);
+    }
 
-    public final R read(CallableWithArg<O, R, E> runnable) throws E {
+    public final R write(Lambda<O, R> lambda) {
+        return (R) this.write(Object.class, (Lambda<O, Object>) lambda);
+    }
+
+    public final <T> T read(Class<T> returnType, Lambda<O, T> lambda) {
         Lock readLock = new Lock();
-        R returnVal = null;
+        T returnVal = null;
         synchronized (readLock) {
             try {
                 synchronized (addLock) {
@@ -66,72 +107,160 @@ public class ReadWriteLock<O, R, E extends Throwable> {
                     }
                 }
 
-                returnVal = runnable.run(object);
+                returnVal = lambda.call(view);
 
             } finally {
                 readLock.active = false;
                 // don't hold up the current thread with removing the read lock from the list
-                (new Thread(() -> {
-                    synchronized (removeLock) {
-                        readLocks.remove(readLock);
+                synchronized (gcLock) {
+                    if (this.garbageCollector == null) {
+                        startGarbageCollector();
                     }
-                })).start();
+                }
             }
         }
 
         return returnVal;
     }
 
-    public final R write(CallableWithArg<O, R, E> runnable)
-            throws E, IllegalAccessError {
+    public final <T> T write(Class<T> returnType, Lambda<O, T> lambda)
+            throws IllegalAccessError {
 
         synchronized (addLock) {
             this.writeLockCounter++;
             if (this.currentWriteLock == null) {
-                // skip this check when there was already a writeLock.  It is probably this thread
                 this.currentWriteLock = Thread.currentThread();
+                this.waitForWriteLock();
 
-                int size;
-                while ((size = readLocks.size()) > 0) {
-                    try {
-                        Lock lock;
-                        synchronized (lock = readLocks.get(size - 1)) {
-                            if (lock.active && Objects.equals(lock.thread, this.currentWriteLock)) {
-                                throw new IllegalAccessError(
-                                        "A thread cannot grab a write lock until it has released all its read locks!");
-                            }
-
-                            boolean allInactive = true;
-                            synchronized (removeLock) {
-                                for (Lock l : this.readLocks) {
-                                    if (lock.active) {
-                                        allInactive = false;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (allInactive) {
-                                break;
-                            }
-                        }
-                    } catch (IndexOutOfBoundsException e) {
-                        //  ^^^ in case of race conditions, where the size of the list changed
-                        // between size() and get(size - 1)
-                    }
-                }
+            // skip waitForWriteLock() when there was already a currentWriteLock.
+            // Just verify that it is this thread... this code block shouldn't be accessible if
+            // not this thread, due to addLock
             } else if (!Objects.equals(this.currentWriteLock, Thread.currentThread())) {
                 throw new IllegalAccessError("Unexpected thread in the currentWriteLock");
             }
 
-            R returnVal = runnable.run(this.object);
+            T returnVal;
+            try {
+                returnVal = lambda.call(this.object);
 
-            this.writeLockCounter--;
-            if (this.writeLockCounter <= 0) {
-                this.writeLockCounter = 0;
-                this.currentWriteLock = null;
+            } finally {
+                this.writeLockCounter--;
+                if (this.writeLockCounter <= 0) {
+                    this.writeLockCounter = 0;
+                    this.currentWriteLock = null;
+                }
             }
 
             return returnVal;
         }
+    }
+
+
+    // IMPORTANT: ONLY INVOKE WHILE HOLDING addLock, AND ONLY ON THE FIRST PASS THROUGH
+    // WRITE LOCK FOR THIS THREAD.
+    private void waitForWriteLock() throws IllegalAccessError {
+        // iterate over the existing read locks and wait for all of them to be released
+        int size;
+        while (true) {
+            boolean allInactive = true;
+            synchronized (removeLock) {
+                size = readLocks.size();
+                if (size <= 0) break;
+
+                for (Lock lock : this.readLocks) {
+                    synchronized (lock) {
+                        if (lock.active) {
+                            allInactive = false;
+                            if(Objects.equals(lock.thread, this.currentWriteLock)) {
+                                throw new IllegalAccessError(
+                                        "A thread cannot grab a write lock until it has released all its read locks!");
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            if (allInactive) {
+                if (size > 0) {
+                    synchronized (this.gcLock) {
+                        if (this.garbageCollector == null) {
+                            startGarbageCollector();
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    private void clearGarbageCollector() {
+        this.garbageCollector = null;
+    }
+
+    private void startGarbageCollector() {
+        this.garbageCollector = new Thread(() -> {
+            try {
+                int zeroLocksCounter = 0;
+                int size;
+                while (zeroLocksCounter < 5) {
+                    boolean zeroLocks = true;
+
+                    for (int i = 0; true; i++) {
+                        Lock lock;
+                        synchronized (removeLock) {
+                            size = this.readLocks.size();
+                            if (i >= size) break;
+                            zeroLocks = false;
+                            lock = readLocks.get(i);
+
+                        }
+                        if (lock == null) continue;
+
+                        synchronized (removeLock) {
+                            synchronized (lock) {
+                                if (lock.active) continue;
+
+                                int newI = this.readLocks.indexOf(lock);
+                                if (newI >= 0) {
+                                    i = newI - 1;
+                                } else {
+                                    i--;
+                                }
+                                this.readLocks.remove(lock);
+                            }
+                        }
+                    }
+
+                    if (zeroLocks) {
+                        zeroLocksCounter++;
+
+                    } else {
+                        zeroLocksCounter = 0;
+                    }
+
+                    // size is used as divisor for sleep time
+                    if (size <= 0) {
+                        size = 1;
+                    } else {
+                        size++;
+                    }
+
+                    try {
+                        Thread.sleep(1000 / size);
+                    } catch (Throwable e) { }
+                }
+            } finally {
+                synchronized (removeLock) {
+                    synchronized (gcLock)   {
+                        this.clearGarbageCollector();
+                        if (this.readLocks.size() > 0) {
+                            startGarbageCollector();
+                        }
+                    }
+                }
+            }
+        });
+
+        this.garbageCollector.start();
     }
 }

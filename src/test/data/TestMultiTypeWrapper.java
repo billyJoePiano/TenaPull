@@ -8,13 +8,15 @@ import java.util.*;
 
 import org.apache.logging.log4j.*;
 import org.junit.*;
+import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestMultiTypeWrapper {
     public static final Logger logger = LogManager.getLogger(TestMultiTypeWrapper.class);
 
-    Map<String, Object> TEST_BOTH_DIRECTIONS = Collections.unmodifiableMap(
+    public static Map<String, Object> TEST_BOTH_DIRECTIONS =
             new LinkedHashMap() { {
                     put(null, null);
                     put("STesting string conversion", "Testing string conversion");
@@ -54,24 +56,39 @@ public class TestMultiTypeWrapper {
                         new BigDecimal("-1234567890987654321234567890987654321.1234567890987654321234567890987654321"));
                     put("Uclass nessusTools.data.entity.ScanType\nthis is a test",
                             MultiTypeWrapper.wrap(createUnknownType()));
+                    // need to be able to replace ^^^ this instance on reset of the instance trackers, for multi-threaded test
+                    // that's why this map isn't immutable
 
-        }});
+        }};
 
-    Map<String, Object> TEST_FROM_DB = Map.of(
+    public static Map<String, Object> TEST_FROM_DB = Map.of(
             "b-0", Byte.valueOf((byte)-0),
             "s-0", Short.valueOf((short)-0),
             "i-0", Integer.valueOf(-0),
             "l-0", Long.valueOf(-0),
 
             "BtestingRandoString", Boolean.valueOf(false),
-            "not a valid type init", "not a valid type init"
+            "Not a valid dbString.  This should show up in logger.error but won't cause the test to fail",
+                "Not a valid dbString.  This should show up in logger.error but won't cause the test to fail"
         );
 
-    Map<Object, String> TEST_TO_DB = Map.of(
+    public static Map<Object, String> TEST_TO_DB = Map.of(
             createUnknownType(), "Uclass nessusTools.data.entity.ScanType\nthis is a test"
         );
 
-    private static Object createUnknownType() {
+    public Map<String, Object> testBothDirections;
+    public Map<String, Object> testFromDb;
+    public Map<Object, String> testToDb;
+    public boolean printInfo = true;
+
+    public TestMultiTypeWrapper() {
+        testBothDirections = TEST_BOTH_DIRECTIONS;
+        testFromDb = TEST_FROM_DB;
+        testToDb = TEST_TO_DB;
+    }
+
+
+    public static Object createUnknownType() {
         ScanType o = new ScanType();
         o.setValue("this is a test");
         return o;
@@ -81,18 +98,28 @@ public class TestMultiTypeWrapper {
     private MultiTypeWrapper.Converter converter
                                 = new MultiTypeWrapper.Converter();
 
+    private void info(String str) {
+        if (this.printInfo) logger.info(str);
+    }
+
+    @After
+    public void logCounter() {
+        info("Constructed instances counter for MultiTypeWrapper: " + MultiTypeWrapper.getCounter());
+    }
+
+
     @Test
     public void testBothDirections() {
         boolean firstPolarity = Math.random() < 0.5;
         boolean secondPolarity = Math.random() < 0.5;
 
-        logger.info("Test firstPolarity: "
+        info("Test firstPolarity: "
                 + (firstPolarity ? "toDb first" : "fromDb first"));
 
-        logger.info("Test secondPolarity: "
+        info("Test secondPolarity: "
                 + (secondPolarity ? "backToDb first" : "backFromDb first"));
 
-        for (Map.Entry<String, Object> test : TEST_BOTH_DIRECTIONS.entrySet()) {
+        for (Map.Entry<String, Object> test : testBothDirections.entrySet()) {
             String str = test.getKey();
             Object obj =  test.getValue();
 
@@ -107,14 +134,14 @@ public class TestMultiTypeWrapper {
                 toDb = converter.convertToDatabaseColumn(MultiTypeWrapper.wrap(obj));
             }
 
-            logger.info(toDb);
+            info(toDb);
             if (fromDb != null) {
                 Object tmp = fromDb.getObject();
                 Class type = tmp != null ? tmp.getClass() : void.class;
-                logger.info(type + " : \t " + fromDb.toString());
+                info(type + " : \t " + fromDb.toString());
 
             } else {
-                logger.info((Object) null);
+                info(null);
             }
 
             assertEquals(str, toDb);
@@ -162,18 +189,18 @@ public class TestMultiTypeWrapper {
 
     @Test
     public void testToDb() {
-        for (Map.Entry<Object, String> test : TEST_TO_DB.entrySet()) {
+        for (Map.Entry<Object, String> test : testToDb.entrySet()) {
             String str = test.getValue();
             Object obj =  test.getKey();
 
             String toDb = converter.convertToDatabaseColumn(MultiTypeWrapper.wrap(obj));
 
-            logger.info(toDb);
+            info(toDb);
             if (obj != null) {
-                logger.info(obj.getClass() + " : \t " + obj.toString());
+                info(obj.getClass() + " : \t " + obj.toString());
 
             } else {
-                logger.info((Object) null);
+                info(null);
             }
 
             assertEquals(str, toDb);
@@ -182,19 +209,19 @@ public class TestMultiTypeWrapper {
 
     @Test
     public void testFromDb() {
-        for (Map.Entry<String, Object> test : TEST_FROM_DB.entrySet()) {
+        for (Map.Entry<String, Object> test : testFromDb.entrySet()) {
             String str = test.getKey();
             Object obj =  test.getValue();
 
             MultiTypeWrapper fromDb = converter.convertToEntityAttribute(str);
             Object objFromDb = fromDb.getObject();
 
-            logger.info(str);
+            info(str);
             if (fromDb != null) {
-                logger.info(objFromDb.getClass() + " : \t " + objFromDb.toString());
+                info(objFromDb.getClass() + " : \t " + objFromDb.toString());
 
             } else {
-                logger.info((Object) null);
+                info(null);
             }
 
             assertEquals(obj, fromDb.getObject());
