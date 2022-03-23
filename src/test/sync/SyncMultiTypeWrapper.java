@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SyncMultiTypeWrapper {
     public static final Logger logger = LogManager.getLogger(SyncMultiTypeWrapper.class);
 
-    public static final int THREADS = 256;
+    public static final int THREADS = 1024;
     public static final int WARM_UP_ITERATIONS = 64;
 
     public SyncMultiTypeWrapper() { }

@@ -184,17 +184,17 @@ public class ReadWriteLock<O, R> {
                         }
                     }
                 }
-            }
-
-            if (allInactive) {
-                if (size > 0) {
-                    synchronized (this.gcLock) {
-                        if (this.garbageCollector == null) {
-                            startGarbageCollector();
-                        }
+                if (allInactive) {
+                    if (size > 0) {
+                        this.readLocks.clear();
+                        // Makes the GC's job easier, since this is basically doing the same thing
+                        // by iterating over the locks and checking if they are active.
+                        // Also negates the need to start GC if it's not currently running ...
+                        // It would be started the next time a read lock is created
+                        // and finished, and wouldn't be needed until that time anyways.
                     }
+                    return;
                 }
-                return;
             }
         }
     }
@@ -208,43 +208,40 @@ public class ReadWriteLock<O, R> {
             try {
                 int zeroLocksCounter = 0;
                 int size;
-                while (zeroLocksCounter < 5) {
+                while (true) {
                     boolean zeroLocks = true;
 
                     for (int i = 0; true; i++) {
-                        Lock lock;
                         synchronized (removeLock) {
                             size = this.readLocks.size();
                             if (i >= size) break;
                             zeroLocks = false;
-                            lock = readLocks.get(i);
+                            Lock lock = readLocks.get(i);
 
-                        }
-                        if (lock == null) continue;
+                            if (lock == null) continue;
 
-                        synchronized (removeLock) {
                             synchronized (lock) {
-                                if (lock.active) continue;
-
-                                int newI = this.readLocks.indexOf(lock);
-                                if (newI >= 0) {
-                                    i = newI - 1;
-                                } else {
+                                if (!lock.active) {
+                                    this.readLocks.remove(lock);
                                     i--;
                                 }
-                                this.readLocks.remove(lock);
                             }
                         }
                     }
 
                     if (zeroLocks) {
-                        zeroLocksCounter++;
+                        if (++zeroLocksCounter >= 5) {
+                            // discontinue the GC thread if there are no
+                            // new readLocks created in the last 5+ seconds
+                            break;
+                        }
 
                     } else {
                         zeroLocksCounter = 0;
                     }
 
                     // size is used as divisor for sleep time
+                    // the more locks are present, the more active the GC should be
                     if (size <= 0) {
                         size = 1;
                     } else {
