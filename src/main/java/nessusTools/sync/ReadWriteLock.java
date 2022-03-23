@@ -42,17 +42,17 @@ public class ReadWriteLock<O, R> {
         return new ReadWriteLock<>(map, view);
     }
 
-    public static <R, T> ReadWriteLock<Set, R> forSet(Set<T> set) {
+    public static <R, T> ReadWriteLock<Set<T>, R> forSet(Set<T> set) {
         Set<T> view = Collections.unmodifiableSet(set);
         return new ReadWriteLock<>(set, view);
     }
 
-    public static <R, T> ReadWriteLock<List, R> forList(List<T> list) {
+    public static <R, T> ReadWriteLock<List<T>, R> forList(List<T> list) {
         List<T> view = Collections.unmodifiableList(list);
         return new ReadWriteLock<>(list, view);
     }
 
-    public static <R, T> ReadWriteLock<Collection, R> forCollection(Collection<T> collection) {
+    public static <R, T> ReadWriteLock<Collection<T>, R> forCollection(Collection<T> collection) {
         Collection<T> view = Collections.unmodifiableCollection(collection);
         return new ReadWriteLock<>(collection, view);
     }
