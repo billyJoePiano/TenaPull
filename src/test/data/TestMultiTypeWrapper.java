@@ -110,6 +110,7 @@ public class TestMultiTypeWrapper {
 
     @Test
     public void testBothDirections() {
+        if (testBothDirections == null) return;
         boolean firstPolarity = Math.random() < 0.5;
         boolean secondPolarity = Math.random() < 0.5;
 
@@ -189,6 +190,7 @@ public class TestMultiTypeWrapper {
 
     @Test
     public void testToDb() {
+        if (testToDb == null) return;
         for (Map.Entry<Object, String> test : testToDb.entrySet()) {
             String str = test.getValue();
             Object obj =  test.getKey();
@@ -209,6 +211,7 @@ public class TestMultiTypeWrapper {
 
     @Test
     public void testFromDb() {
+        if (testFromDb == null) return;
         for (Map.Entry<String, Object> test : testFromDb.entrySet()) {
             String str = test.getKey();
             Object obj =  test.getValue();
@@ -219,12 +222,21 @@ public class TestMultiTypeWrapper {
             info(str);
             if (fromDb != null) {
                 info(objFromDb.getClass() + " : \t " + objFromDb.toString());
+                if (objFromDb instanceof MultiTypeWrapper) {
+                    assertTrue(objFromDb == fromDb);
+                    if (obj == null) {
+                        obj = fromDb;
+
+                    } else if (obj.getClass().equals(String.class)) {
+                        objFromDb = objFromDb.toString();
+                    }
+                }
 
             } else {
                 info(null);
             }
 
-            assertEquals(obj, fromDb.getObject());
+            assertEquals(obj, objFromDb);
         }
     }
 

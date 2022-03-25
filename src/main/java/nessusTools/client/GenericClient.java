@@ -12,26 +12,10 @@ import java.io.*;
 import java.util.*;
 
 
-public class GenericClient {
+public abstract class GenericClient {
     public static final String PROPERTIES_FILE = "nessus-api.properties";
     private static final Logger logger = LogManager.getLogger(GenericClient.class);
-
-
-    private static Properties loadProperties() {
-        Properties properties = new Properties();
-        try {
-            properties.load(new FileReader(PROPERTIES_FILE));
-
-        } catch (IOException ioe) {
-            logger.error("NessusClient.loadProperties()...Cannot load the properties file", ioe);
-        } catch (Exception e) {
-            logger.error("NessusClient.loadProperties()...", e);
-        }
-
-        return properties;
-    }
-
-
+    
     private final Client client = AcceptAnySSL.makeClient();
 
     public GenericClient() { }

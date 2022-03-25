@@ -4,16 +4,11 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import org.apache.logging.log4j.*;
 
-import javax.json.*;
-import javax.ws.rs.client.*;
-import javax.ws.rs.core.*;
 import java.io.*;
 import java.util.*;
 
 import nessusTools.client.response.*;
 import nessusTools.data.entity.*;
-
-import static org.hibernate.cfg.AvailableSettings.URL;
 
 
 public class NessusClient extends GenericClient {
@@ -22,18 +17,18 @@ public class NessusClient extends GenericClient {
 
     private static final Properties properties = loadProperties();
 
-    public static final String apiProtocol = properties.getProperty("api.url.protocol", "https");
-    public static final String apiHost = properties.getProperty("api.url.host", "localhost");
-    public static final String apiPort = properties.getProperty("api.url.port", "");
-    public static final String apiURL = apiProtocol + "://" + apiHost
-            + (apiPort.length() > 0 ? ":" + apiPort : "");
+    public static final String API_PROTOCOL = properties.getProperty("api.url.protocol", "https");
+    public static final String API_HOST = properties.getProperty("api.url.host", "localhost");
+    public static final String API_PORT = properties.getProperty("api.url.port", "");
+    public static final String API_URL = API_PROTOCOL + "://" + API_HOST
+            + (API_PORT.length() > 0 ? ":" + API_PORT : "");
 
-    private static final String apiAccessKey = properties.getProperty("api.key.access");
-    private static final String apiSecretKey = properties.getProperty("api.key.secret");
-    private static final String apiFullKey = "accessKey=" + apiAccessKey +"; secretKey=" + apiSecretKey;
-    private static final String apiKeyHeaderKey = "X-ApiKeys";
+    private static final String API_ACCESS_KEY = properties.getProperty("api.key.access");
+    private static final String API_SECRET_KEY = properties.getProperty("api.key.secret");
+    private static final String API_FULL_KEY = "accessKey=" + API_ACCESS_KEY +"; secretKey=" + API_SECRET_KEY;
+    private static final String API_KEY_HEADER_KEY = "X-ApiKeys";
 
-    private static final Map<String, String> apiHeaders = Map.of(apiKeyHeaderKey, apiFullKey);
+    private static final Map<String, String> apiHeaders = Map.of(API_KEY_HEADER_KEY, API_FULL_KEY);
 
     private static Properties loadProperties() {
         Properties properties = new Properties();
@@ -138,7 +133,7 @@ public class NessusClient extends GenericClient {
                             + pathOnly + "'");
         }
 
-        String URL = apiURL + pathOnly;
+        String URL = API_URL + pathOnly;
 
         if (headers == null) {
             return super.fetchJson(URL, apiHeaders, mapToType, mapper);

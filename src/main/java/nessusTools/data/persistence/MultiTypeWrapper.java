@@ -4,6 +4,7 @@ import nessusTools.sync.*;
 import org.apache.logging.log4j.*;
 
 import javax.persistence.*;
+import javax.swing.plaf.multi.*;
 import java.math.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
@@ -13,50 +14,50 @@ public final class MultiTypeWrapper {
 
     public static char UNKNOWN = 'U';
 
-    private static final List<Class> STRING_TYPES = List.of(
+    public static final List<Class> STRING_TYPES = List.of(
             String.class //,
             // Character[].class // TODO ???
         );
 
-    private static final List<Class> INT_TYPES = List.of(
+    public static final List<Class> INT_TYPES = List.of(
             Integer.class,
             AtomicInteger.class
         );
 
-    private static final List<Class> BOOLEAN_TYPES = List.of(
+    public static final List<Class> BOOLEAN_TYPES = List.of(
             Boolean.class
         );
 
-    private static final List<Class> DOUBLE_TYPES = List.of(
+    public static final List<Class> DOUBLE_TYPES = List.of(
             Double.class,
             DoubleAccumulator.class,
             DoubleAdder.class
         );
 
-    private static final List<Class> LONG_TYPES = List.of(
+    public static final List<Class> LONG_TYPES = List.of(
             Long.class,
             AtomicLong.class,
             LongAccumulator.class,
             LongAdder.class
         );
 
-    private static final List<Class> BYTE_TYPES = List.of(
+    public static final List<Class> BYTE_TYPES = List.of(
             Byte.class
         );
 
-    private static final List<Class> SHORT_TYPES = List.of(
+    public static final List<Class> SHORT_TYPES = List.of(
             Short.class
         );
 
-    private static final List<Class> FLOAT_TYPES = List.of(
+    public static final List<Class> FLOAT_TYPES = List.of(
             Float.class
         );
 
-    private static final List<Class> BIGINT_TYPES = List.of(
+    public static final List<Class> BIGINT_TYPES = List.of(
             BigInteger.class
         );
 
-    private static final List<Class> BIGDECIMAL_TYPES = List.of(
+    public static final List<Class> BIGDECIMAL_TYPES = List.of(
             BigDecimal.class
         );
 
@@ -65,7 +66,7 @@ public final class MultiTypeWrapper {
     // from DB varchar values.
     // Character == first character of DB varchar value, to indicate the type of the subsequent string
     // All primary types MUST have a single-argument String constructor
-    private static final Map<Character, List<Class>> TYPE_MAP = Collections.unmodifiableMap(
+    public static final Map<Character, List<Class>> TYPE_MAP = Collections.unmodifiableMap(
             new LinkedHashMap() { { //preserves order
                 put('S',STRING_TYPES);
                 put('i',INT_TYPES);
@@ -88,41 +89,20 @@ public final class MultiTypeWrapper {
             return (MultiTypeWrapper) object;
         }
 
-        MultiTypeWrapper returnVal = wrappedInstancesTracker.get(object);
+        String dbString = makeDbStringForNotNull(object);
+        return wrapperTracker.getOrConstructWith(dbString, dbs -> {
+            return wrappedInstancesTracker.getOrConstructWith(object, (o, altKey) -> {
+                MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
+                Object obj = wrapper.getObject() != null ? wrapper.getObject() : wrapper;
+                // We need a unique key that allows us to place the instance into the
+                // wrappedInstancesTracker as well, in case an Unknown object comes
+                // along that matches the dbString for this (assuming this construction
+                // was based soley on dbString)
 
-        if (returnVal != null) {
-            return returnVal;
-        }
-
-        String dbString = makeDbStringFor(object);
-
-        returnVal = wrapperTracker.get(dbString);
-
-        if (returnVal != null) {
-            // it was already constructed but we need to make this object a key as well
-            wrappedInstancesTracker.put(object, returnVal);
-            return returnVal;
-        }
-
-        returnVal = wrapperTracker.write(putDbs -> {
-            //do one more check here, in case of race conditions...
-            MultiTypeWrapper wrapper = wrappedInstancesTracker.get(object);
-            if (wrapper != null) {
+                altKey.call(obj);
                 return wrapper;
-            }
-            return wrappedInstancesTracker.write(putObj -> {
-                MultiTypeWrapper val = wrapperTracker.getOrConstruct(dbString);
-                putObj.call(object, val);
-                if (val == null) {
-                    System.out.println();
-                }
-                return val;
             });
         });
-        if (returnVal == null) {
-            System.out.println();
-        }
-        return returnVal;
     }
 
 
@@ -154,14 +134,21 @@ public final class MultiTypeWrapper {
         return new InstancesTracker<String, MultiTypeWrapper>(
                 String.class,
                 MultiTypeWrapper.class,
-                dbString -> wrappedInstancesTracker.write(objPut -> {
+                (dbString, altKey) -> {
                     MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
-                    Object obj = wrapper.getObject();
-                    if (obj != null && !(obj instanceof MultiTypeWrapper)) {
-                        objPut.call(obj, wrapper);
+                    Object obj = wrapper.getObject() != null ? wrapper.getObject() : wrapper;
+                    // We need a unique key that allows us to place the instance into the
+                    // wrappedInstancesTracker as well, in case an Unknown object comes
+                    // along that matches the dbString for this (assuming this construction
+                    // was based soley on dbString)
+
+                    wrappedInstancesTracker.constructWith(obj, o -> wrapper);
+
+                    if (!Objects.equals(dbString, wrapper.toDb())) {
+                        altKey.call(wrapper.toDb());
                     }
                     return wrapper;
-                }));
+                });
     }
 
 
@@ -192,11 +179,11 @@ public final class MultiTypeWrapper {
 
     private MultiTypeWrapper(String dbString) {
         counter++;
-        String dbs = dbString;
 
-        char typeIdentifier = dbs.charAt(0);
+        char typeIdentifier = dbString.charAt(0);
 
         if (typeIdentifier == UNKNOWN) {
+            String dbs = dbString;
             if (dbs.length() > 1) {
                 dbs = dbs.substring(1);
 
@@ -220,9 +207,9 @@ public final class MultiTypeWrapper {
                         + dbString + "'");
                 this.dbString = dbString;
                 this.typeString = null;
-                this.toString = dbs;
+                this.toString = dbString;
                 this.primaryType = null;
-                this.object = dbs;
+                this.object = this;
                 return;
 
             }
@@ -231,14 +218,13 @@ public final class MultiTypeWrapper {
         }
 
         String constructorString;
-        if (dbs.length() > 1) {
-            constructorString = dbs.substring(1);
+        if (dbString.length() > 1) {
+            constructorString = dbString.substring(1);
 
         } else {
             constructorString = "";
         }
 
-        toString = constructorString;
 
         Object instance = null;
 
@@ -247,16 +233,18 @@ public final class MultiTypeWrapper {
 
         } catch (Throwable e) {
             logger.error(e);
-            instance = constructorString;
+
+            this.toString = constructorString;
+            this.dbString = dbString;
+            this.object = this;
+            this.typeString = null;
+            return;
         }
 
-        this.dbString = typeIdentifier + instance.toString();
+        this.toString = instance.toString();
+        this.dbString = typeIdentifier + toString;
         this.object = instance;
         this.typeString = null;
-
-        if (!Objects.equals(dbString, this.dbString)) {
-
-        }
     }
 
 
@@ -300,6 +288,18 @@ public final class MultiTypeWrapper {
         return null;
     }
 
+    public static String makeDbStringFor(Object object) {
+        if (object == null) {
+            return null;
+
+        } else if (object instanceof MultiTypeWrapper) {
+            return ((MultiTypeWrapper)object).toDb();
+
+        } else {
+            return makeDbStringForNotNull(object);
+        }
+    }
+
     //error messages.  These will end up in the DB if there are errors or nulls with unknown types
     private static final String PRE = "<" + MultiTypeWrapper.class.toString() + " for Unknown class : ";
 
@@ -307,7 +307,7 @@ public final class MultiTypeWrapper {
     public static final String NULL_TYPE = PRE + "object.getClass() returned null>";
     public static final String NULL_TYPE_STRING = PRE + "object.getClass().toString() returned null>";
 
-    private static String makeDbStringFor(Object object) {
+    private static String makeDbStringForNotNull(Object object) {
         Map.Entry<Character, List<Class>> entry = getPrimaryTypeNotNull(object);
         if (entry != null) {
             return entry.getKey() + object.toString();
@@ -404,7 +404,7 @@ public final class MultiTypeWrapper {
                     return false;
                 }
             } else {
-                return Objects.equals(this.dbString, makeDbStringFor(o));
+                return Objects.equals(this.dbString, makeDbStringForNotNull(o));
             }
 
         } else if (o instanceof MultiTypeWrapper) {

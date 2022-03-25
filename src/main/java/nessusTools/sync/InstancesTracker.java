@@ -4,7 +4,8 @@ import org.apache.logging.log4j.*;
 
 import java.util.*;
 
-/* Synchronizes and maps unique instances to a unique "key" (typically a String).
+/**
+ * Synchronizes and maps unique instances to a unique "key" (typically a String).
  * Instances are held as weak references via a WeakHashMap which is synchronized via ReadWriteLock.
  *
  *
@@ -43,9 +44,10 @@ import java.util.*;
 public class InstancesTracker<K, I> {
     private static final Logger logger = LogManager.getLogger(InstancesTracker.class);
 
-    private final Class<K> keyClass;
+    private final Class<K> keyType;
     private final Class<I> instClass;
-    private final Lambda<K, I> construct;
+    private final Lambda1<K, I> construct;
+    private final Lambda2<K, Lambda1<K, Void>, I> construct2;
 
     private final ReadWriteLock<Map<I, Set<K>>, I> instances
             = ReadWriteLock.forMap(new WeakHashMap());
@@ -66,11 +68,29 @@ public class InstancesTracker<K, I> {
 
     public InstancesTracker(Class<K> keyType,
                             Class<I> instancesClass,
-                            Lambda<K, I> constructionLambda) {
-        this.keyClass = keyType;
-        this.instClass = instancesClass;
+                            Lambda1<K, I> constructionLambda) {
+        this(keyType, instancesClass, constructionLambda, null);
+    }
 
-        this.construct = constructionLambda;
+    public InstancesTracker(Class<K> keyType,
+                            Class<I> instancesClass,
+                            Lambda2<K, Lambda1<K, Void>, I> constructionLambda) {
+        this(keyType, instancesClass, null, constructionLambda);
+    }
+
+    private InstancesTracker(Class<K> keyType,
+                            Class<I> instancesClass,
+                            Lambda1<K, I> construct,
+                            Lambda2<K, Lambda1<K, Void>, I> construct2) {
+        if (keyType == null || instancesClass == null
+                || (construct == null && construct2 == null)) {
+            throw new NullPointerException();
+        }
+
+        this.keyType = keyType;
+        this.instClass = instancesClass;
+        this.construct = construct;
+        this.construct2 = construct2;
 
         this.keysComparable = Comparable.class.isAssignableFrom(keyType);
 
@@ -81,8 +101,8 @@ public class InstancesTracker<K, I> {
         }
 
         this.keySetImmutable = keySet.read(keySet -> keySet);
-
     }
+
 
     public Set<K> keySet() {
         return this.keySetImmutable;
@@ -108,9 +128,58 @@ public class InstancesTracker<K, I> {
         });
     }
 
+
     public I getOrConstruct(K key)
             throws InstancesTrackerException {
-        return getOrConstruct(key, this.construct, false);
+        return getOrMakeCreateLock(key, this.construct, this.construct2, false);
+    }
+
+    // First removes the key if it already exists, and then gains a construct
+    // lock with it before running the custom one-time construction lambda
+    public I constructWith(K key, Lambda1<K, I> customLambda)
+            throws InstancesTrackerException, NullPointerException {
+        if (customLambda == null) {
+            throw new NullPointerException();
+        }
+
+        return getOrMakeCreateLock(key, customLambda, null, true);
+    }
+
+    public I constructWith(K key, Lambda2<K, Lambda1<K, Void>, I> customLambda)
+            throws InstancesTrackerException, NullPointerException {
+        if (customLambda == null) {
+            throw new NullPointerException();
+        }
+
+        return getOrMakeCreateLock(key, null, customLambda, true);
+    }
+
+    public I getOrConstructWith(K key, Lambda1<K, I> customLambda)
+            throws InstancesTrackerException, NullPointerException {
+
+        if (customLambda == null) {
+            throw new NullPointerException();
+        }
+
+        return getOrMakeCreateLock(key, customLambda, null, false);
+    }
+
+    public I getOrConstructWith(K key, Lambda2<K, Lambda1<K, Void>, I> customLambda)
+            throws InstancesTrackerException, NullPointerException {
+
+        if (customLambda == null) {
+            throw new NullPointerException();
+        }
+
+        return getOrMakeCreateLock(key, null, customLambda, false);
+    }
+
+    // uses the default construction lambda for key K
+    public I construct(K key) throws InstancesTrackerException {
+        if (key == null) {
+            return null;
+        }
+        return this.getOrMakeCreateLock(key, this.construct, this.construct2, true);
     }
 
     public I remove(K key) {
@@ -134,36 +203,23 @@ public class InstancesTracker<K, I> {
         return instances.read(Set.class,
                 instances -> keySetViews.write(views -> {
 
-            Set<K> view = views.get(instance);
-            if (view != null) {
-                return view;
-            }
+                    Set<K> view = views.get(instance);
+                    if (view != null) {
+                        return view;
+                    }
 
-            Set<K> orig = instances.get(instance);
-            if (orig == null) {
-                throw new UnrecognizedInstance(this, instance);
-            }
+                    Set<K> orig = instances.get(instance);
+                    if (orig == null) {
+                        throw new UnrecognizedInstance(this, instance);
+                    }
 
-            view = Collections.unmodifiableSet(orig);
-            views.put(instance, view);
-            return view;
-        }));
+                    view = Collections.unmodifiableSet(orig);
+                    views.put(instance, view);
+                    return view;
+                }));
     }
 
-
-    // First removes the key if it already exists, and then gains a construct
-    // lock with it before running the custom one-time construction lambda
-    public I constructWith(K key, Lambda<K, I> customLambda)
-            throws InstancesTrackerException, IllegalArgumentException {
-        if (customLambda == null) {
-            throw new IllegalArgumentException(
-                    "instancesTracker.constructWith(key, callableWithArg) cannot have a null callableWithArg");
-        }
-
-        return getOrConstruct(key, customLambda, true);
-    }
-
-    public I read(K key, Lambda<I, I> readLambda) {
+    public I read(K key, Lambda1<I, I> readLambda) {
         return this.instances.read(instances -> {
             return readLambda.call(this.get(key));
         });
@@ -253,18 +309,357 @@ public class InstancesTracker<K, I> {
         return displacedInstance;
     }
 
+    private I getOrMakeCreateLock(K key,
+                                  Lambda1<K, I> construct,
+                                  Lambda2<K, Lambda1<K, Void>, I> construct2,
+                                  boolean overwriteIfFound)
+            throws InstancesTrackerException {
+
+        if (key == null) {
+            throw new NullArgumentAsKey(this);
+        }
+
+        List<CreateLock> lockPlaceholder = new ArrayList<>(1);
+
+        // Executor may be called with read lock or write lock, depending
+        // on the value of overwriteIfFound
+        Lambda1<Map<I, Set<K>>, I> executor = (instances) -> {
+
+            for (Map.Entry<I, Set<K>> entry : instances.entrySet()) {
+                if (entry.getValue().contains(key)) {
+                    I instance = entry.getKey();
+                    if (overwriteIfFound) {
+                        // will only be invoked on write lock
+                        entry.getValue().remove(key);
+                        break;
+
+                    } else if (instance == null) {
+                        break;
+                        //since this is a WeakHashMap, is it possible the key
+                        // was garbage collected while iterating?!?!?
+
+                    } else {
+                        return instance;
+                    }
+                }
+            }
+
+            lockPlaceholder.add(underConstruction.write(underConstruction -> {
+                CreateLock l = underConstruction.get(key);
+                if (l == null) {
+                    l = new CreateLock(key, construct, construct2, overwriteIfFound);
+                    underConstruction.put(key, l);
+                }
+                return l;
+            }));
+            return null;
+        };
+
+        I instance;
+
+        if (overwriteIfFound) {
+            instance = instances.write(executor);
+
+        } else {
+            instance = instances.read(executor);
+        }
+
+
+        if (instance != null) {
+            return instance;
+        }
+
+        if (lockPlaceholder.size() <= 0) {
+            throw new AssertionError("Non-existent createLock but no instance to return.");
+        }
+
+        CreateLock lock = lockPlaceholder.get(0);
+
+        if (lock == null) {
+            throw new AssertionError("Non-existent createLock but no instance to return.");
+        }
+
+        instance = lock.softConstruct();
+
+        if (instance == null) {
+            throw new NullReturnFromConstructLambda(this, key);
+        }
+
+        return instance;
+    }
+
+    public Lambda1<K, I> getConstruct() {
+        return this.construct;
+    }
+
+    public Lambda2<K, Lambda1<K, Void>, I> getConstruct2() {
+        return this.construct2;
+    }
+
+
+
+    private class CreateLock {
+        private final K key;
+        private final Lambda1<K, I> construct;
+        private final Lambda2<K, Lambda1<K, Void>, I> construct2;
+        private final boolean override;
+
+        private Object innerLock = new Object();
+        private I finishedInstance = null;
+        private Boolean failedConstruction = null;
+        private boolean removedFromUnderConstruction = false;
+        private Set<K> keySet = null;
+
+
+        private CreateLock(final K forKey,
+                            final Lambda1<K, I> construct,
+                            final Lambda2<K, Lambda1<K, Void>, I> construct2,
+                            final boolean override) {
+            this.key = forKey;
+            this.construct = construct;
+            this.construct2 = construct2;
+            this.override = override;
+        }
+
+        // checks for another instance on the lock first
+        private I softConstruct() {
+            if (this.failedConstruction != null) {
+                //quick and dirty check.  Don't grab the lock unless we need to
+                synchronized (this) {
+                    if (this.finishedInstance != null) {
+                        return this.finishedInstance;
+                    }
+                }
+            }
+
+            boolean runFinished = true;
+            I instance = null;
+
+            try {
+                synchronized (this) {
+                    //double-check, because we released the lock briefly
+                    if (this.failedConstruction != null && this.finishedInstance != null) {
+                        runFinished = false;
+                        return this.finishedInstance;
+
+                    } else {
+                        ConstructResult<I> result = runConstruct(this.construct);
+                        instance = result.instance;
+                        runFinished = result.runFinished;
+                    }
+                }
+            } finally {
+                // This needs to be outside the above synchronized block to prevent deadlock
+                // Reason: The lambda that creates CreateLocks grabs the create lock *while*
+                // holding the locks on both instances and constructionUnderway
+                // Also, The 'put' lambda passed in write() does this
+                if (runFinished) {
+                    I inst = instance;
+                    instances.write(instances -> {
+                        underConstruction.write(underConstruction -> {
+                            synchronized (this) {
+                                this.finished(inst, instances, underConstruction);
+                            }
+                            return null;
+                        });
+                        return null;
+                    });
+                }
+            }
+
+            synchronized (this) {
+                if (this.finishedInstance == null && instance != null) {
+                    this.finishedInstance = instance;
+                }
+                return this.finishedInstance;
+            }
+        }
+
+        /**
+         *  Only call with a lock on 'this' (createLock).  instances and underConstruction lock not needed
+          */
+        private ConstructResult<I> runConstruct(Lambda1<K, I> construct) {
+            //Arg is so this can also be called by write(put -> put(k, i))
+            I instance = null;
+            boolean runFinished = true;
+            Boolean[] allowAltKeys = new Boolean[] { Boolean.TRUE };
+
+            if (construct == null) {
+                Lambda1<K, Void> setAltKey = altKey -> {
+                    if (!allowAltKeys[0]) {
+                        throw new IllegalAccessError(
+                                "Cannot call construct2 lambdas addKey(K) lambda after the write lock has been released");
+                    }
+
+                    if (altKey == null) {
+                        throw new NullArgumentAsKey(InstancesTracker.this);
+                    }
+                    //DO NOT GRAB LOCK ON underConstruction
+                    // COULD LEAD TO DEADLOCK
+                    //That will be handled by finished()
+
+                    if (this.keySet == null) {
+                        this.makeKeySet();
+                    }
+
+                    this.keySet.add(altKey);
+                    return null;
+                };
+
+                construct = key -> {
+                    return this.construct2.call(this.key, setAltKey);
+                };
+            }
+
+            try {
+                instance = construct.call(key);
+
+            } finally {
+                allowAltKeys[0] = Boolean.FALSE;
+                if (this.failedConstruction == null) {
+                    this.failedConstruction = instance == null;
+                    this.finishedInstance = instance;
+
+                } else if (this.finishedInstance == instance
+                        || instance == null) {
+                    runFinished = false;
+
+                } else {
+                    // means this thread put an instance here
+                    // further down the call stack
+                    logger.warn("Thread put a *different* finishedInstance in createLock further down the callstack");
+                    I i = instance;
+                    instances.write(instances ->
+                            InstancesTracker.this.putWithLock(this.key, i, instances));
+                }
+            }
+            return new ConstructResult<I>(instance, runFinished);
+        }
+
+        /**
+         * Synchronizes the moving of a newly constructed instance from the "underConstruction" map to the
+         * instances map.  This should only be called while holding locks on instances, underConstruction,
+         * and 'this' (createLock)
+         */
+        private void finished(  I instance,
+                                Map<I, Set<K>> instances,
+                                Map<K, CreateLock> underConstruction) {
+            if (!this.removedFromUnderConstruction) {
+                underConstruction.remove(key);
+                this.removedFromUnderConstruction = true;
+                if (this.finishedInstance != null) {
+                    InstancesTracker.this.putWithLock(key, this.finishedInstance, instances);
+                }
+            }
+
+            if (this.keySet != null) {
+                checkAltKeys(instance, instances, underConstruction);
+            }
+
+            if (instance != this.finishedInstance &&
+                    instance != null) {
+                /* if the finishedInstance changed, it means that either
+                 *   1) Another thread (or this thread) overrode it with a call to write(writeLambda)
+                 *   2) This thread placed it first somewhere down the call stack
+                 * We will respect the other thread's/call's precedence,
+                 * but still place instance in the instances map with an empty keySet
+                 *
+                 * The caller may choose to override the other thread/call (e.g. write())
+                 * after this method returns.
+                 */
+                if (!instances.containsKey(instance)) {
+                    if (keySet == null) {
+                        makeKeySet();
+                    }
+
+                    instances.put(instance, this.keySet);
+                }
+            }
+        }
+
+        private void makeKeySet() {
+            if (InstancesTracker.this.keysComparable) {
+                this.keySet = new TreeSet<>();
+
+            } else {
+                this.keySet = new LinkedHashSet<>();
+            }
+        }
+
+
+        // only call with full write lock on instances, underConstruction, and createLock
+        private void checkAltKeys(I instance,
+                                  Map<I, Set<K>> instances,
+                                  Map<K, CreateLock> underConstruction) {
+            Set<K> actual = instances.get(instance);
+
+            for (K alt : this.keySet) {
+                boolean skip = false;
+                for (Map.Entry<K, CreateLock> entry
+                        : underConstruction.entrySet()) {
+                    K otherKey = entry.getKey();
+                    CreateLock lock = entry.getValue();
+                    synchronized (lock) {
+                        if (otherKey.equals(alt)
+                                || (lock.keySet != null && lock.keySet.contains(alt))) {
+                            skip = true;
+                            if (lock.finishedInstance == null || this.override) {
+                                lock.finishedInstance = instance;
+                                lock.failedConstruction = Boolean.FALSE;
+                                lock.finished(instance, instances, underConstruction);
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if (skip) continue;
+
+                for (Map.Entry<I, Set<K>> entry: instances.entrySet()) {
+                    Set<K> otherKeySet = entry.getValue();
+                     if (otherKeySet.contains(alt)) {
+                        if (override) {
+                            otherKeySet.remove(alt);
+                        } else {
+                            skip = true;
+                        }
+                        break;
+                    }
+                }
+
+                if (!skip) {
+                    actual.add(alt);
+                }
+            }
+            // add to master keyset ... may have some redundant, but it's a set so doesn't matter
+            InstancesTracker.this.keySet.write(masterKs -> {
+                masterKs.addAll(actual);
+                return null;
+            });
+        }
+
+        // end of CreateLock inner class
+    }
+
     /**
      * Obtains a write lock on the instances map, which allows the passed lambda to call the "put" lambda
      * passed to it.
      *
-     * Note that this method will block all read access to the instance map AND underConstruction CreateLock map
-     * while it is executing, so is generally a less-preferred approach than getOrConstruct or constructWith.
-     * However, it may be necessary in certain circumstances depending on external synchronization needs.
+     * Note that this method will block all read access to the instance map AND underConstruction&lt;K, CreateLock&gt;
+     * map while it is executing.  It is a more direct way to put an instance into the instances map,
+     * because it avoids the hassle of making and syncing a create lock.  However, the put lambda
+     * will still check for a create lock for the given key, and grab that lock if it exists.  If a different
+     * finishedInstance is found in this lock, that instance will be overridden and returned by the put lambda.
+     * If the overriden instance was created by another thead, the other thread will end up returning this thread's
+     * instance once it is able to gain a lock on the instances & underConstruction map again.
      *
-     * Also note that every call to "put" lambda will first check for a construct lock on the given key,
-     * and if found will wait for that lock to release before overriding the instance it created.  The
-     * overridden instance will be returned by the put lambda, and the other thread will return this
-     * thread's instance once it is able to gain a lock on underConstruction map again.
+     * Depending on the circumstance, write() may be a less-preferred approach than getOrConstruct or constructWith,
+     * because those only grab the full write lock for the instances map (and underConstruction map) *after*
+     * construction is finished.  However, depending on external synchronization needs, this may be neccessary
+     * under certain circumstances.
+     *
+     * NOTE: DO NOT CALL WRITE FROM WITHIN THE DEFAULT CONSTRUCT LAMBDA, OR IN ANY CONSTRUCT LAMBDA WHICH DOES
+     * NOT ALREADY HAVE A PRE-EXISTING WRITE LOCK.  IT COULD CAUSE DEADLOCK.
      *
      * @param writeLambda Callback lambda's argument is another lambda to 'put' a key-value pair passed
      * via a Map.Entry. Return value of put is another instance displaced by this put, or null if no
@@ -276,7 +671,7 @@ public class InstancesTracker<K, I> {
      *
      * @return whatever value &gt;I&lt; (including null) returned by writeLambda
      */
-    public I write(Lambda<Lambda2<K, I, I>, I> writeLambda)
+    public I write(Lambda1<Lambda2<K, I, I>, I> writeLambda)
             throws NullPointerException {
 
         Boolean[] unlocked = new Boolean[]{ Boolean.FALSE };
@@ -300,18 +695,25 @@ public class InstancesTracker<K, I> {
 
             CreateLock lock = underConstruction[0].get(key);
             boolean newLock = lock == null;
-            if (newLock) {
-                lock = new CreateLock(key);
-                // no need to put into underConstruction, since we hold its lock the entire time
-            }
-
             I displacedInstance;
+            if (lock == null) {
+                displacedInstance = putWithLock(key, instance, instances[0]);
+                // no need to make a CreateLock, since we hold a full write lock on both maps,
+                // plus there is no chance of a conflicting construction further down the call stack
+                // since putWithLock is entirely under the control of this class
 
-            synchronized (lock) {
-                 displacedInstance = putWithLock(key, instance, instances[0]);
+            } else synchronized (lock) {
+                ConstructResult<I> result = lock.runConstruct(k -> instance);
 
-                if (!newLock) {
-                    underConstruction[0].remove(key);
+                if (lock.finishedInstance != instance) {
+                    displacedInstance = lock.finishedInstance;
+                    lock.finishedInstance = instance;
+                } else {
+                    displacedInstance = null;
+                }
+
+                if (result.runFinished) {
+                    lock.finished(instance, instances[0], underConstruction[0]);
                 }
 
                 if (lock.finishedInstance != null) {
@@ -334,6 +736,7 @@ public class InstancesTracker<K, I> {
                 lock.finishedInstance = instance;
             }
 
+
             return displacedInstance;
         };
 
@@ -344,11 +747,11 @@ public class InstancesTracker<K, I> {
             // lock.finishedInstance in other threads' removeFromUnderConstruction calls
 
             return this.instances.write(insts -> this.underConstruction.write(instClass,
-                ucMap -> {
-                    instances[0] = insts;
-                    underConstruction[0] = ucMap;
-                    return writeLambda.call(put);
-                }));
+                    ucMap -> {
+                        instances[0] = insts;
+                        underConstruction[0] = ucMap;
+                        return writeLambda.call(put);
+                    }));
 
 
         } finally {
@@ -358,174 +761,16 @@ public class InstancesTracker<K, I> {
         }
     }
 
-    private I getOrConstruct(K key,
-                             Lambda<K, I> constructLambda,
-                             boolean overwriteIfFound)
-            throws InstancesTrackerException {
 
-        if (key == null) {
-            throw new NullArgumentAsKey(this);
+
+    private static class ConstructResult<I> {
+        private final I instance;
+        private final boolean runFinished;
+
+        ConstructResult(I instance, boolean runFinished) {
+            this.instance = instance;
+            this.runFinished = runFinished;
         }
-        Boolean[] newlyConstructed = new Boolean[] { Boolean.FALSE };
-
-        // Executor may be called with read lock or write lock, depending
-        // on the value of overwriteIfFound
-        Object[] lk = new Object[] { null };
-
-        Lambda<Map<I, Set<K>>, I> executor = (instances) -> {
-
-            for (Map.Entry<I, Set<K>> entry : instances.entrySet()) {
-                if (entry.getValue().contains(key)) {
-                    I instance = entry.getKey();
-                    if (instance == null) {
-                        break;
-                        //since this is a WeakHashMap, is it possible the key
-                        // was garbage collected while iterating?!?!?
-
-                    } else if (overwriteIfFound) {
-                        // will only be invoked on write lock
-                        instances.remove(instance);
-                        break;
-
-                    } else {
-                        return instance;
-                    }
-
-                }
-            }
-
-            CreateLock lock;
-
-            synchronized (lock = underConstruction.write(underConstruction -> {
-                CreateLock l = underConstruction.get(key);
-                if (l == null) {
-                    l = new CreateLock(key);
-                    underConstruction.put(key, l);
-                }
-
-                return l;
-
-            })) {
-                // this block is synchronized on the CreateLock fetched/constructed above
-                lk[0] = lock;
-                if (lock.finishedInstance == null && !lock.failedConstruction) {
-                    newlyConstructed[0] = Boolean.TRUE;
-                    try {
-                        lock.finishedInstance = constructLambda.call(key);
-
-                    } finally {
-                        lock.failedConstruction = lock.finishedInstance == null;
-                    }
-                }
-                return lock.finishedInstance;
-            }
-        };
-
-        I instance = null;
-
-        try {
-            if (overwriteIfFound) {
-                instance = instances.write(executor);
-
-            } else {
-                instance = instances.read(executor);
-            }
-
-        } finally {
-            if (newlyConstructed[0]) {
-                removeFromUnderConstruction(key, instance, (CreateLock) lk[0]);
-            }
-        }
-
-        if (instance == null) {
-            throw new NullReturnFromConstructLambda(this, key);
-        }
-
-        CreateLock lock = (CreateLock) lk[0];
-        if (lock != null) {
-            synchronized (lock) {
-                if (lock.finishedInstance != null) {
-                    instance = lock.finishedInstance;
-                    // in case this was overriden by instancesTracker.write(writeLambda(put) -> put(mapEntry))
-
-                } else if (lock.failedConstruction) {
-                    // ???
-                    lock.finishedInstance = instance;
-                    logger.warn("Unexpected success in constructing instance that failed previously");
-
-                } else {
-                    logger.warn("Unexpected null found in createLock.finishedInstance that didn't fail");
-                }
-            }
-        }
-
-        return instance;
-    }
-
-    /**
-     * Synchronizes the moving of a newly constructed instance from the "underConstruction" map to the
-     * instances map.  In all cases, a write lock is needed on the "underConstruction" list. However,
-     * If the instance is null, no lock is needed on the instances map.  Otherwise it will
-     * require a write lock on the instances map, which may be blocked if a write(writeLambda) method is
-     * under way in another thread.  In this case, if the writeLambda places a different instance on
-     * the same key, that instance will be returned instead
-     *
-     */
-    private void removeFromUnderConstruction(K key, I instance, CreateLock lock) {
-        Map<I, Set<K>>[] instances = new Map[] { null }; // instances map will be put here...
-        //only used if instance != null , but needs to be declared in this scope so it is accessible to
-        // removeFromUnderConstruction lambda (below)
-
-        Lambda<Map<K, CreateLock>, CreateLock>
-                removeFromUnderConstruction = (underConstruction) -> {
-
-            synchronized (lock) {
-                try {
-                    if (instance != null && instance == lock.finishedInstance) {
-                        // if the finishedInstance changed, it means that
-                        // another thread overrode it with a call to write(writeLambda)
-                        // in this case, don't bother writing it.
-                        this.putWithLock(key, instance, instances[0]);
-                    }
-                } finally {
-                    underConstruction.remove(key);
-                }
-            }
-
-            return null;
-        };
-
-        Runnable executor;
-
-        // only invoke a lock on instances map if it is needed
-        if (instance != null) {
-            this.instances.write(insts -> {
-                instances[0] = insts;
-                underConstruction.write(removeFromUnderConstruction);
-                instances[0] = null;
-                return null;
-            });
-
-        } else {
-            underConstruction.write(removeFromUnderConstruction);
-        }
-    }
-
-    public Lambda<K, I> getConstruct() {
-        return this.construct;
-    }
-
-
-
-    private class CreateLock {
-        private final K key;
-        private I finishedInstance;
-        private boolean failedConstruction = false;
-
-        private CreateLock(K forKey) {
-            this.key = forKey;
-        }
-
     }
 
     public static abstract class InstancesTrackerException extends RuntimeException {
