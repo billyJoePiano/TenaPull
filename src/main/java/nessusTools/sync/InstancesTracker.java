@@ -452,7 +452,6 @@ public class InstancesTracker<K, I> {
 
         // for other locks to check on the stage of construction
         private final Object checkpointLock = new Object();
-        private final Object runLock = new Object();
         private Stage stage = Stage.IDLE;
 
 
