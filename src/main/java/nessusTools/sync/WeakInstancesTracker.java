@@ -123,22 +123,6 @@ public class WeakInstancesTracker<K, I> {
         );
     }
 
-    public I getOrConstructWith(K key, Lambda2<K, Lambda1<K, Void>, I> lambda) {
-        Set<K>[] strongRefs = new Set[] { null };
-        //to keep the alt keys from being garbage collected while the method is running
-
-        return tracker.getOrConstructWith(make(key), (wr, akLambda) ->
-            lambda.call(key, altKey -> {
-                if (strongRefs[0] == null) {
-                    strongRefs[0] = new LinkedHashSet<>();
-                }
-                WeakRef altWr = new WeakRef(altKey);
-                strongRefs[0].add(altKey);
-                return akLambda.call(altWr);
-            })
-        );
-    }
-
     public I put(K key, I instance) {
         return tracker.put(make(key), instance);
     }
@@ -179,15 +163,5 @@ public class WeakInstancesTracker<K, I> {
         }
 
         return keySet;
-    }
-
-    public I read(K key, Lambda1<I, I> readLambda) {
-        return tracker.read(make(key), readLambda);
-    }
-
-    public I write(Lambda1<Lambda2<K, I, I>, I> writeLambda) {
-        return tracker.write(putWr -> writeLambda.call(
-                (key, value) -> putWr.call(make(key), value)
-            ));
     }
 }

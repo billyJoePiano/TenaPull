@@ -91,7 +91,7 @@ public final class MultiTypeWrapper {
 
         String dbString = makeDbStringForNotNull(object);
         return wrapperTracker.getOrConstructWith(dbString, dbs -> {
-            return wrappedInstancesTracker.getOrConstructWith(object, (o, altKey) -> {
+            return wrappedInstancesTracker.getOrConstructWith(object, o -> {
                 MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
                 Object obj = wrapper.getObject() != null ? wrapper.getObject() : wrapper;
                 // We need a unique key that allows us to place the instance into the
@@ -99,7 +99,7 @@ public final class MultiTypeWrapper {
                 // along that matches the dbString for this (assuming this construction
                 // was based soley on dbString)
 
-                altKey.call(obj);
+                wrappedInstancesTracker.put(obj, wrapper);
                 return wrapper;
             });
         });
@@ -134,7 +134,7 @@ public final class MultiTypeWrapper {
         return new InstancesTracker<String, MultiTypeWrapper>(
                 String.class,
                 MultiTypeWrapper.class,
-                (dbString, altKey) -> {
+                dbString -> {
                     MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
                     Object obj = wrapper.getObject() != null ? wrapper.getObject() : wrapper;
                     // We need a unique key that allows us to place the instance into the
@@ -145,7 +145,7 @@ public final class MultiTypeWrapper {
                     wrappedInstancesTracker.constructWith(obj, o -> wrapper);
 
                     if (!Objects.equals(dbString, wrapper.toDb())) {
-                        altKey.call(wrapper.toDb());
+                        wrapperTracker.put(wrapper.toDb(), wrapper);
                     }
                     return wrapper;
                 });
@@ -162,13 +162,8 @@ public final class MultiTypeWrapper {
         counter = 0;
     }
     public static void clearInstances() {
-        wrapperTracker.write(put1 ->
-            wrappedInstancesTracker.write(put2 -> {
-                wrapperTracker = wrapperTracker();
-                wrappedInstancesTracker = wrappedInstancesTracker();
-                return null;
-            })
-        );
+        wrapperTracker = wrapperTracker();
+        wrappedInstancesTracker = wrappedInstancesTracker();
     }
 
     private final Object object;
