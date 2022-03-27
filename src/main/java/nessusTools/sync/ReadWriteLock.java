@@ -127,6 +127,21 @@ public class ReadWriteLock<O, R> {
         }
     }
 
+    private final Lock getCurrentLock() {
+        if (Thread.holdsLock(writeLock)) {
+            return writeLock;
+        }
+        synchronized (removeLock) {
+            Thread current = Thread.currentThread();
+            Lock lock = this.readLocks.get(current);
+            if (lock == null || !(lock.active && Thread.holdsLock(lock))) {
+                return null;
+            }
+
+            return lock;
+        }
+    }
+
     public final boolean holdsLock() {
         return this.holdsWriteLock() || this.holdsReadLock();
     }
@@ -140,11 +155,19 @@ public class ReadWriteLock<O, R> {
     }
 
     public final <T> T read(Class<T> returnType, Lambda1<O, T> lambda) {
-        if (this.holdsLock()) {
-            return lambda.call(this.view);
+        Lock readLock = this.getCurrentLock();
+
+        if (readLock != null) {
+            //could also be the write lock, but that's ok
+            // a write lock can also grab a read lock
+            // ... just not the other way around
+
+            synchronized (readLock) {
+                return lambda.call(this.view);
+            }
         }
 
-        Lock readLock = new Lock();
+        readLock = new Lock();
         synchronized (readLock) {
             try {
                 synchronized (addLock) {
@@ -221,10 +244,10 @@ public class ReadWriteLock<O, R> {
                 for (Lock lock : this.readLocks.values()) {
                     synchronized (lock) {
                         if (lock.active) {
-                            allInactive = false;
-                            // In theory the below break should be unreachable ...
+                            // In theory this should be unreachable ...
                             // All "read" threads set lock.active = false before releasing
                             // their lock
+                            allInactive = false;
                             break;
                         }
                     }

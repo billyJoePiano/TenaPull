@@ -88,20 +88,7 @@ public class InstancesTracker<K, I> {
 
         this.keySetImmutable = keySet.read(keySet -> keySet);
 
-        trackers.constructWith(new Object(), k -> this);
-    }
-
-    private InstancesTracker(Class<K> keyType,
-                             Class<I> instancesType) {
-
-        // for the tracker of trackers
-        this.keyType = keyType;
-        this.instType = instancesType;
-        this.construct = null;
-        this.keySet = ReadWriteLock.forSet(new LinkedHashSet());
-        this.keySetImmutable = keySet.read(keySet -> keySet);
-        this.keysComparable = false;
-
+        trackers.write(Void.class, trackers -> trackers.put(this, null));
     }
 
 
@@ -244,6 +231,7 @@ public class InstancesTracker<K, I> {
                     } else if (lock == null) {
                         // put in underConstruction queue so it can still be overridden ...
                         CreateLock altLock = new CreateLock(key, k -> instance, false);
+                        altLock.startOfChain = true;
                         underConstruction.put(key, altLock);
                         return null;
 
@@ -386,6 +374,7 @@ public class InstancesTracker<K, I> {
                 CreateLock l = underConstruction.get(key);
                 if (l == null) {
                     l = new CreateLock(key, construct, overwriteIfFound);
+                    l.startOfChain = true;
                     underConstruction.put(key, l);
                 }
                 return l;
@@ -439,6 +428,8 @@ public class InstancesTracker<K, I> {
     }
 
     private class CreateLock {
+        private boolean startOfChain = false;
+
         private final K key;
         private final Lambda1<K, I> construct;
         private final boolean override;
@@ -450,7 +441,14 @@ public class InstancesTracker<K, I> {
         private Thread runThread = null;
         private Thread overriddingThread = null;
 
-        // for other locks to check on the stage of construction
+        /** for other locks to check on the stage of construction
+         * The critical different between checkpointLock and the CreateLock itself is that
+         * a CreateLock *must* be locked from OUTSIDE of the write lock on instances and
+         * underConstruction maps, and cannot lock other createLocks as this would cause deadlock.
+         *
+         *
+         */
+
         private final Object checkpointLock = new Object();
         private Stage stage = Stage.IDLE;
 
@@ -524,7 +522,6 @@ public class InstancesTracker<K, I> {
                         this.failedConstruction = this.finishedInstance == null;
                     }
                 }
-
 
 
             } catch (Throwable e) {
@@ -604,10 +601,10 @@ public class InstancesTracker<K, I> {
         }
 
 
-        //for putting unused instances into the map
+        //for putting unused instances into the map, but with an empty keySet
         private void addInstanceNoKey(Map<I, Set<K>> instances) {
             if (this.finishedInstance != null
-                    || !instances.containsKey(this.finishedInstance)) {
+                    && !instances.containsKey(this.finishedInstance)) {
 
                 instances.put(this.finishedInstance, InstancesTracker.this.makeKeySet());
             }
@@ -658,122 +655,200 @@ public class InstancesTracker<K, I> {
 
         private I overrideInstance(CreateLock otherLock) {
             //typically this would be called from a different thread than the thread that created the lock
-            if (otherLock == this) {
-                return this.run();
+            if (otherLock == this
+                    || otherLock.startOfChain
+                    || (this.override && !otherLock.override)) {
+
+                throw new CreateLockException(InstancesTracker.this, this.key);
             }
 
-            boolean walkChain;
-            boolean useRun;
+            boolean idle;
+            boolean postConstruct;
+            boolean overridden;
+            boolean currentThread;
 
             synchronized (this.checkpointLock) {
-                if (this.override && !otherLock.override) {
-                    throw new IllegalStateException();
+                idle = this.stage == Stage.IDLE;
+                currentThread = this.runThread != null
+                                    && this.runThread.equals(Thread.currentThread());
+                overridden = this.overriddenBy != null;
+                postConstruct = stage.ordinal() >= Stage.POST_CONSTRUCT.ordinal();
 
-                } else if (this.stage.ordinal() > Stage.RETURNED.ordinal())  {
-                    throw new IllegalStateException();
-                }
+                if (overridden) {
+                    if (!(this.override || otherLock.override)
+                            && this.overriddenBy.override) {
 
-                useRun = this.override
-                        && this.stage.ordinal() <= Stage.CONSTRUCT.ordinal();
-                //when override is true, calling run() is mandatory, even IF it is overridden
-                // by another createLock where override = true
-
-                if (this.overriddenBy == null) {
-                    walkChain = false;
-                    this.overriddenBy = otherLock;
-                    this.overriddingThread = Thread.currentThread();
+                        // splice otherLock in between, and use the current
+                        // overriddenBy lock in place of "otherLock"
+                        CreateLock overridding = this.overriddenBy;
+                        this.overriddenBy = overridding;
+                    }
 
                 } else {
-                    walkChain = useRun;
-                }
-            }
+                    if (this.override) {
+                        if (postConstruct || currentThread) {
+                            this.overriddenBy = otherLock;
+                            return this.finishedInstance;
+                        }
 
-            if (walkChain) {
-                CreateLock next = this.overriddenBy;
-                while (true) {
-                    synchronized (next.checkpointLock) {
-                        if (next.overriddenBy == null) {
-                            next.overriddenBy = otherLock;
-                            next.overriddingThread = Thread.currentThread();
-                            break;
-
-                        } else if (next.overriddenBy == otherLock) {
-                            break;
-
-                        } else {
-                            next = next.overriddenBy;
+                    } else {
+                        if (idle || postConstruct || currentThread) {
+                            this.overriddenBy = otherLock;
+                            return this.finishedInstance;
                         }
                     }
                 }
             }
 
-            if (useRun) {
-                return this.run();
+            I displaced;
+
+            if (this.override) {
+                if (!idle && !postConstruct && currentThread) {
+                    if (!overridden) {
+                        // compiler says this is unreachable ... leaving in case of refactor
+                        synchronized (this.checkpointLock) {
+                            if (this.overriddenBy == null) {
+                                this.overriddenBy = otherLock;
+                                return null;
+                            }
+                        }
+                    }
+                    // fall through...
+
+                } else if (idle || overridden || postConstruct) {
+                    displaced = this.run();
+
+                    synchronized (checkpointLock) {
+                        if (this.overriddenBy == null) {
+                            this.overriddenBy = otherLock;
+                            if (displaced != null) {
+                                return displaced;
+                                
+                            } else {
+                                return this.finishedInstance;
+                            }
+
+                        }
+                    }
+                }
+
+                return this.overriddenBy.overrideInstance(otherLock);
 
             } else {
-                I instance = this.overriddenBy.overrideInstance(otherLock);
-                // recursive shortcut when override = false,
-                // to skip calling run() until the last lock in the chain
-
-                if (instance == null) {
-                    instance = this.run();
-
+                if (!idle && !postConstruct && !currentThread) {
+                    displaced = this.run();
+                    if (displaced == null) {
+                        // probably unnecessary????
+                        displaced = this.finishedInstance;
+                    }
+                    
+                } else {
+                    displaced = this.finishedInstance; // most likely null???
                 }
-                return instance;
+                
+                if (!overridden) {
+                    synchronized (this.checkpointLock) {
+                        if (this.overriddenBy == null) {
+                            this.overriddenBy = otherLock;
+                            return displaced;
+                        }
+                    }
+                }
+
+                return this.overriddenBy.overrideInstance(otherLock);
             }
         }
 
         // end of CreateLock inner class
     }
 
-    private boolean finalizeCreateLocks() {
+
+    //
+    private Integer[] finalizeCreateLocks() {
         Set<CreateLock> finishedLocks = new LinkedHashSet<>();
 
-        this.underConstruction.read(underConstruction -> {
+        Integer[] counts = this.underConstruction.read(Integer[].class, underConstruction -> {
+            int t = underConstruction.size();
+            int c = 0;
             for (CreateLock lock : underConstruction.values()) {
                 if (lock.stage.ordinal() >= Stage.POST_CONSTRUCT.ordinal()) {
                     finishedLocks.add(lock);
+                    if (++c >= 200) break;
                 }
             }
-            return null;
+            return new Integer[] { t, c, null };
         });
 
-        this.instances.write(instances -> {
-            this.underConstruction.write(underConstruction -> {
+        if (!(counts[1] > 0)) {
+            counts[2] = 0;
+            return counts;
+        }
+
+        counts[2] = this.instances.write(Integer.class, instances ->
+            this.underConstruction.write(Integer.class, underConstruction -> {
+                int failed = 0;
                 for (CreateLock lock : finishedLocks) {
-                    if (lock.stage.ordinal() >= Stage.FINALIZED.ordinal()) {
+                    if (lock.stage.ordinal() >= Stage.RETURNED.ordinal()) {
                         if (!lock.finished(instances, underConstruction)) {
                             logger.error(lock);
+                            failed++;
                         }
+                    } else {
+                        failed++;
                     }
+
                 }
-                return null;
-            });
-            return null;
-        });
-        return true; //TODO what to do with this?
+                return failed;
+            }));
+        return counts;
     }
 
     //tracker of trackers
-    private static InstancesTracker<Object, InstancesTracker>
-            trackers = new InstancesTracker(Object.class, InstancesTracker.class);
+    private static ReadWriteLock<Map<InstancesTracker, Void>, Map<InstancesTracker, Void>>
+            trackers = ReadWriteLock.forMap(new WeakHashMap<>());
 
 
     private static Thread finalizer = new Thread(() -> {
-        trackers.constructWith(trackers, k -> trackers);
+        //trackers.constructWith(trackers, k -> trackers);
 
-            while (true) {
-                Set<InstancesTracker> t = new LinkedHashSet<>();
-                trackers.instances.read(Void.class, trackers -> {
-                    t.addAll(trackers.keySet());
-                    return null;
-                });
+        int loops = 1;
+        while (true) {
+            try {
+                Thread.yield();
 
-                for (InstancesTracker tracker : t) {
-                    tracker.finalizeCreateLocks();
+                Map<InstancesTracker, Void>
+                        t = trackers.read(trackers -> new WeakHashMap<>(trackers));
+
+                Thread.yield();
+
+                int counts[] = { 0, 0, 0 };
+
+                long start = System.nanoTime();
+
+                for (InstancesTracker tracker : t.keySet()) {
+                    Integer[] c = tracker.finalizeCreateLocks();
+                    counts[0] += c[0];
+                    counts[1] += c[1];
+                    counts[2] += c[2];
                     Thread.yield();
                 }
+
+                double time = (double)(System.nanoTime() - start) / 1000000000;
+
+                logger.info("Finalizing time: " + time + " \t Trackers: " + t.size()
+                        + " \t Counts: [" + counts[0] + ","
+                        + counts[1] + "," + counts[2] + "] \t Loop number: "
+                        + (loops++));
+
+                // int divisor = 50 + (counts[0] + counts[1] + counts[2]) / 2;
+
+                Thread.sleep(5000);
+
+
+            } catch (Throwable e) {
+                logger.error(e);
             }
+        }
     });
 
     static {

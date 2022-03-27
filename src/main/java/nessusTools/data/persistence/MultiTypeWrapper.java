@@ -93,13 +93,21 @@ public final class MultiTypeWrapper {
         return wrapperTracker.getOrConstructWith(dbString, dbs -> {
             return wrappedInstancesTracker.getOrConstructWith(object, o -> {
                 MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
-                Object obj = wrapper.getObject() != null ? wrapper.getObject() : wrapper;
-                // We need a unique key that allows us to place the instance into the
-                // wrappedInstancesTracker as well, in case an Unknown object comes
-                // along that matches the dbString for this (assuming this construction
-                // was based soley on dbString)
+                Object obj = wrapper.getObject();
 
-                wrappedInstancesTracker.put(obj, wrapper);
+                if (!(obj instanceof MultiTypeWrapper || Objects.equals(obj, object))) {
+                    MultiTypeWrapper alt = wrappedInstancesTracker.put(obj, wrapper);
+
+                    if (alt != null && alt != wrapper) {
+                        if (Objects.equals(wrapper, alt)) {
+                            return alt;
+
+                        } else {
+                            System.out.println("!wrapper.equals(alt) (1)");
+                        }
+                    }
+                }
+
                 return wrapper;
             });
         });
@@ -132,23 +140,41 @@ public final class MultiTypeWrapper {
 
     private static InstancesTracker<String, MultiTypeWrapper> wrapperTracker() {
         return new InstancesTracker<String, MultiTypeWrapper>(
-                String.class,
-                MultiTypeWrapper.class,
-                dbString -> {
-                    MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
-                    Object obj = wrapper.getObject() != null ? wrapper.getObject() : wrapper;
-                    // We need a unique key that allows us to place the instance into the
-                    // wrappedInstancesTracker as well, in case an Unknown object comes
-                    // along that matches the dbString for this (assuming this construction
-                    // was based soley on dbString)
+            String.class,
+            MultiTypeWrapper.class,
+            dbString -> {
+                MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
+                Object obj = wrapper.getObject() != null ? wrapper.getObject() : wrapper;
+                // We need a unique key that allows us to place the instance into the
+                // wrappedInstancesTracker as well, in case an Unknown object comes
+                // along that matches the dbString for this (assuming this construction
+                // was based soley on dbString)
 
-                    wrappedInstancesTracker.constructWith(obj, o -> wrapper);
+                if (!Objects.equals(dbString, wrapper.toDb())) {
+                    MultiTypeWrapper alt = wrapperTracker.get(wrapper.toDb());
+                    if (alt != null && alt != wrapper) {
+                        if (Objects.equals(wrapper, alt)) {
+                            return alt;
 
-                    if (!Objects.equals(dbString, wrapper.toDb())) {
-                        wrapperTracker.put(wrapper.toDb(), wrapper);
+                        } else {
+                            System.out.println("!wrapper.equals(alt) (2)");
+                        }
                     }
-                    return wrapper;
-                });
+
+                }
+
+                MultiTypeWrapper alt = wrappedInstancesTracker.getOrConstructWith(obj, o -> wrapper);
+                if (alt != null && alt != wrapper) {
+                    if (Objects.equals(wrapper, alt)) {
+                        return alt;
+
+                    } else {
+                        System.out.println("!wrapper.equals(alt) (3)");
+                    }
+                }
+
+                return wrapper;
+            });
     }
 
 
@@ -241,6 +267,8 @@ public final class MultiTypeWrapper {
         this.object = instance;
         this.typeString = null;
     }
+
+
 
 
 
@@ -416,7 +444,7 @@ public final class MultiTypeWrapper {
             }
 
         } else {
-            return Objects.equals(this.object, o);
+            return Objects.equals(this.dbString, makeDbStringForNotNull(o));
         }
     }
 
