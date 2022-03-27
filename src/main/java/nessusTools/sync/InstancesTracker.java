@@ -3,7 +3,6 @@ package nessusTools.sync;
 import org.apache.logging.log4j.*;
 
 import java.util.*;
-import java.util.concurrent.*;
 
 /**
  * Synchronizes and maps unique instances to a unique "key" (typically a String).
@@ -94,6 +93,21 @@ public class InstancesTracker<K, I> {
 
     public Set<K> keySet() {
         return this.keySetImmutable;
+    }
+
+    public int size() {
+        return instances.read(Integer.class, instances ->
+            underConstruction.read(Integer.class, underConstruction -> {
+                Set<I> counter = new LinkedHashSet<>(instances.keySet());
+                for (CreateLock lock : underConstruction.values()) {
+                    I instance = lock.run();
+                    if (instance != null) {
+                        counter.add(instance);
+                    }
+                }
+                return counter.size();
+            })
+        );
     }
 
     public I get(K key) {

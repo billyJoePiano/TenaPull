@@ -90,8 +90,8 @@ public final class MultiTypeWrapper {
         }
 
         String dbString = makeDbStringForNotNull(object);
-        return wrapperTracker.getOrConstructWith(dbString, dbs -> {
-            return wrappedInstancesTracker.getOrConstructWith(object, o -> {
+        return wrapperTracker.getOrConstructWith(dbString, dbs ->
+            wrappedInstancesTracker.getOrConstructWith(object, o -> {
                 MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
                 Object obj = wrapper.getObject();
 
@@ -103,14 +103,14 @@ public final class MultiTypeWrapper {
                             return alt;
 
                         } else {
-                            System.out.println("!wrapper.equals(alt) (1)");
+                            logger.warn("!wrapper.equals(alt) (1)");
                         }
                     }
                 }
 
                 return wrapper;
-            });
-        });
+            })
+        );
     }
 
 
@@ -157,7 +157,7 @@ public final class MultiTypeWrapper {
                             return alt;
 
                         } else {
-                            System.out.println("!wrapper.equals(alt) (2)");
+                            logger.warn("!wrapper.equals(alt) (2)");
                         }
                     }
 
@@ -169,7 +169,7 @@ public final class MultiTypeWrapper {
                         return alt;
 
                     } else {
-                        System.out.println("!wrapper.equals(alt) (3)");
+                        logger.warn("!wrapper.equals(alt) (3)");
                     }
                 }
 
@@ -178,6 +178,9 @@ public final class MultiTypeWrapper {
     }
 
 
+    public static int size() {
+        return wrapperTracker.size();
+    }
 
     //Counts the number of
     private static long counter = 0;

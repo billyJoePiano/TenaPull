@@ -250,7 +250,8 @@ public class SyncMultiTypeWrapper {
     }
 
     public void logCounter() {
-        logger.info("Constructed instances counter for MultiTypeWrapper: " + MultiTypeWrapper.getCounter());
+        logger.info("\nConstructed instances counter for MultiTypeWrapper: " + MultiTypeWrapper.getCounter()
+                    + "\nAlive instances in weak map: " + MultiTypeWrapper.size());
     }
 
     @Test
