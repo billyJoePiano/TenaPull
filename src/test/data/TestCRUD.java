@@ -32,7 +32,7 @@ public class TestCRUD {
             // { pojoClass, (optionals) dbPopulate script, jsonFile with params] }
             { Folder.class },
             { Scan.class } ,
-            { Scan.class, null, "ScanRest.extraJson.json"} // null = use default
+            { Scan.class, null, "Scan.extraJson.json"} // null = use default
 
     };
 
