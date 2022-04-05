@@ -3,6 +3,8 @@ function compare(expected, actual) {
     let aKeys = Object.keys(actual);
     let eKeys = Object.keys(expected);
 
+    console.group(expected, actual);
+
     if (aKeys.length !== eKeys.length) fail("Number of keys", "length", eKeys, aKeys)
     for (let key of eKeys) {
         if (!aKeys.includes(key)) fail("Presence of key", key)
@@ -18,6 +20,9 @@ function compare(expected, actual) {
             if (actual[key] !== expected[key]) fail("Values do not match", key);
         }
     }
+
+    console.groupEnd();
+
     return result;
 
     function fail(reason, key, expectedVal = expected[key], actualVal = actual[key]) {

@@ -41,7 +41,6 @@ public class Dao<POJO extends DbPojo> {
                     .getMetadataBuilder().build().getSessionFactoryBuilder();
 
         } catch(Throwable e) {
-            e.printStackTrace();
             staticLogger.error(e);
             return null;
         }
@@ -52,7 +51,6 @@ public class Dao<POJO extends DbPojo> {
             return sessionFactoryBuilder.build();
 
         } catch(Throwable e) {
-            e.printStackTrace();
             staticLogger.error(e);
             return null;
         }

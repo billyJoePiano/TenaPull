@@ -29,7 +29,7 @@ public class TestCRUD {
     // OR when file is a relative path i.e. doesn't start with "/"
 
     public static final Object[][] TESTS = {
-            // { pojoClass, (optionals) dbPopulate script, jsonFile with params] }
+            // { pojoClass, (optionals) dbPopulate script, jsonFile with params }
             { Folder.class },
             { Scan.class } ,
             { Scan.class, null, "Scan.extraJson.json"} // null = use default

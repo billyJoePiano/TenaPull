@@ -66,8 +66,10 @@ public class Scan extends NaturalIdPojo {
     @JsonProperty("user_permissions")
     private Integer userPermissions;
 
-    @Column
-    private String status;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="status_id")
+    @JsonProperty("status")
+    private ScanStatus status;
 
     @Column(name = "creation_date")
     @JsonProperty("creation_date")
@@ -202,11 +204,11 @@ public class Scan extends NaturalIdPojo {
         this.userPermissions = userPermissions;
     }
 
-    public String getStatus() {
+    public ScanStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(ScanStatus status) {
         this.status = status;
     }
 

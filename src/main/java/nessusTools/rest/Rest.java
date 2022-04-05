@@ -4,7 +4,7 @@ import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 import java.util.*;
 
-@ApplicationPath("/")
+@ApplicationPath("/service")
 public class Rest extends Application {
 
     @Override

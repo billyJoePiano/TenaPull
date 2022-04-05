@@ -15,12 +15,15 @@ import java.sql.Timestamp;
 
 public class EpochTimestamp {
     public static class Deserializer extends JsonDeserializer<Timestamp> {
-        Logger logger = LogManager.getLogger(Deserializer.class);
+        private static Logger logger = LogManager.getLogger(Deserializer.class);
 
         @Override
         public Timestamp deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
             String timestamp = jp.getText().trim();
+            return deserialize(timestamp);
+        }
 
+        public static Timestamp deserialize(String timestamp) {
             try {
                 return new Timestamp(Long.valueOf(timestamp + "000"));
 

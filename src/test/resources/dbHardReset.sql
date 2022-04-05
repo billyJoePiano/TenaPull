@@ -134,7 +134,7 @@ create table scan (
     enabled         boolean      null,
     control         boolean      null,
     user_permissions int         null,
-    status          varchar(255) null,
+    status_id       int          null,
     creation_date   timestamp    null,
     start_time      varchar(255) null,
     last_modification_date  timestamp null,
@@ -142,9 +142,10 @@ create table scan (
     live_results    int          null,
     _extra_json  longtext null,
     constraint scan_folder_id_fk foreign key (folder_id) references folder (id) on delete cascade on update cascade,
-    constraint scan_scan_owner_id_fk foreign key (owner_id) references scan_owner (id),
-    constraint scan_scan_type_id_fk foreign key (type_id) references scan_type (id),
-    constraint scan_timezone_id_fk foreign key (timezone_id) references timezone (id)
+    constraint scan_scan_owner_id_fk foreign key (owner_id) references scan_owner (id) on update cascade,
+    constraint scan_scan_type_id_fk foreign key (type_id) references scan_type (id) on update cascade,
+    constraint scan_status_id foreign key (status_id) references scan_status (id) on update cascade,
+    constraint scan_timezone_id_fk foreign key (timezone_id) references timezone (id) on update cascade
 );
 alter table scan disable keys;
 

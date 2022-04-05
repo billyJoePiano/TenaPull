@@ -2,14 +2,17 @@ package client;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.node.*;
 import nessusTools.client.*;
 import nessusTools.client.response.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.*;
 import nessusTools.data.entity.template.*;
 
 import org.junit.*;
 import testUtils.*;
 
+import java.sql.*;
 import java.util.*;
 
 
@@ -17,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.*;
 import org.apache.logging.log4j.*;
+
+import javax.json.*;
 
 
 public class TestNessusClient {
@@ -104,10 +109,52 @@ public class TestNessusClient {
         for (int i = 0; i < scans.size(); i++) {
             Scan scan = scans.get(i);
             JsonNode json = scansJson.get(i);
+
+            if (Objects.equals(scan.getStatus().toString(), "running")
+                    || !Objects.equals(scan.getLiveResults(), Integer.valueOf(0))) {
+
+                // indicates this scan is currently running ... set modification timestamps to the same
+                Timestamp timestamp = EpochTimestamp.Deserializer.deserialize(
+                                        json.get("last_modification_date").toString());
+
+                scan.setLastModificationDate(timestamp);
+            }
+
             assertEquals(json, scan.toJsonNode());
+
+
 
             JsonNode infoJson = client.fetchJson(ScanInfoResponse.pathFor(scan)).get("info");
             ScanInfo info = infos.get(i);
+
+            if (Objects.equals(info.getStatus().toString(), "running")) {
+                ObjectNode on = (ObjectNode) infoJson;
+
+                Timestamp scannerEnd = info.getScannerEnd();
+                if (scannerEnd != null) {
+                    on.put("scanner_end", scannerEnd.getTime() / 1000);
+
+                } else {
+                    on.putNull("scanner_end");
+                }
+
+                Timestamp scanEnd = info.getScanEnd();
+                if (scanEnd != null) {
+                    on.put("scan_end", scanEnd.getTime() / 1000);
+
+                } else {
+                    on.putNull("scan_end");
+                }
+
+                String severityProcessed = info.getSeverityProcessed();
+                if (severityProcessed != null) {
+                    on.put("severity_processed", severityProcessed);
+
+                } else {
+                    on.putNull("severity_processed");
+                }
+            }
+
             assertEquals(infoJson, info.toJsonNode());
         }
     }

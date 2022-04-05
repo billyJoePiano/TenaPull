@@ -3,6 +3,7 @@ package nessusTools.data.entity.template;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
@@ -59,8 +60,8 @@ public abstract class ExtensibleJsonPojo {
     }
 
 
-    public JsonNode toJsonNode() {
-        return new ObjectMapper().convertValue(this, JsonNode.class);
+    public ObjectNode toJsonNode() {
+        return new ObjectMapper().convertValue(this, ObjectNode.class);
     }
 
     public String toJsonString() throws JsonProcessingException {
