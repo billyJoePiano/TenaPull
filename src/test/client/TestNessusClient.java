@@ -10,7 +10,6 @@ import nessusTools.data.entity.*;
 import nessusTools.data.entity.template.*;
 
 import org.junit.*;
-import testUtils.*;
 
 import java.sql.*;
 import java.util.*;
@@ -20,8 +19,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.*;
 import org.apache.logging.log4j.*;
-
-import javax.json.*;
 
 
 public class TestNessusClient {
@@ -124,7 +121,7 @@ public class TestNessusClient {
 
 
 
-            JsonNode infoJson = client.fetchJson(ScanInfoResponse.pathFor(scan)).get("info");
+            JsonNode infoJson = client.fetchJson(ScanResponse.pathFor(scan)).get("info");
             ScanInfo info = infos.get(i);
 
             if (Objects.equals(info.getStatus().toString(), "running")) {

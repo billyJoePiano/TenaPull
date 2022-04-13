@@ -9,6 +9,8 @@ drop table if exists `severity_base`;
 drop table if exists `acl`;
 drop table if exists `license`;
 
+drop table if exists `scan_host_severity_count`;
+drop table if exists `scan_host`;
 drop table if exists `scan_owner_id`;
 drop table if exists `scan_owner`;
 drop table if exists `scan_type`;
@@ -29,7 +31,7 @@ create table scan_owner (
 );
 
 create table scan_owner_id (
-    nessus_id int primary key,
+    id int primary key, -- nessus id
     lookup_id int unique,
     constraint foreign key (lookup_id) references scan_owner (id)
 );
@@ -59,6 +61,21 @@ create table scan_status (
     value varchar(255) not null unique
 );
 
+create table scan_schedule_type (
+    id int auto_increment primary key,
+    value varchar(255) not null unique
+);
+
+create table scan_uuid (
+    id int auto_increment primary key,
+    value varchar(255) not null unique
+);
+
+create table policy_template_uuid (
+    id int auto_increment primary key,
+    value varchar(255) not null unique
+);
+
 
 --
 -- COMPLEX LOOKUPS
@@ -75,7 +92,7 @@ create table acl
     _extra_json  json null
 );
 create unique index acl_uindix
-    on acl (name, type, permissions, display_name);
+    on acl (owner, name, type, permissions, display_name, _extra_json);
 
 create table severity_base
 (
@@ -100,6 +117,12 @@ create unique index license_uindex
     on license (`limit`, trimmed);
 
 
+create table scan_group (
+    id int primary key auto_increment,
+    _extra_json  longtext null
+);
+
+
 --
 -- DATA TABLES
 --
@@ -114,20 +137,14 @@ create table folder (
                         _extra_json  longtext null,
                         constraint folder_pk primary key (id)
 );
-alter table folder disable keys;
-
-create table scan_group (
-    id int primary key auto_increment,
-    _extra_json  longtext null
-);
 
 create table scan (
     id              int          not null primary key,
     name            varchar(255) null,
-    uuid            varchar(255) null,
+    uuid_id         int          null,
     folder_id       int          null,
-    owner_id        int          null,
-    type_id         int          null,
+    owner_id        int          null, -- SQL owner id in the varchar lookup table -- NOT nessus owner id
+    scan_type_id    int          null,
     rrules          varchar(255) null,
     `read`          boolean      null,
     shared          boolean      null,
@@ -141,19 +158,28 @@ create table scan (
     timezone_id     int          null,
     live_results    int          null,
     _extra_json  longtext null,
+    constraint scan_uuid_id_fk foreign key (uuid_id) references scan_uuid (id) on update cascade,
     constraint scan_folder_id_fk foreign key (folder_id) references folder (id) on delete cascade on update cascade,
     constraint scan_scan_owner_id_fk foreign key (owner_id) references scan_owner (id) on update cascade,
-    constraint scan_scan_type_id_fk foreign key (type_id) references scan_type (id) on update cascade,
+    constraint scan_scan_type_id_fk foreign key (scan_type_id) references scan_type (id) on update cascade,
     constraint scan_status_id foreign key (status_id) references scan_status (id) on update cascade,
     constraint scan_timezone_id_fk foreign key (timezone_id) references timezone (id) on update cascade
 );
-alter table scan disable keys;
+
+
+create table scan_response (
+    id int PRIMARY KEY,
+    timestamp Timestamp not null,
+    _extra_json longtext null,
+    constraint scan_response_scan_id_fk foreign key (id) references scan (id)
+);
+
 
 create table scan_info (
     id int primary key,
+    uuid_id int null,
     name varchar(255) null,
     folder_id int null,
-    uuid  varchar(255) null,
     scan_type_id int null,
     edit_allowed bool null,
     scan_group_id int null,
@@ -186,7 +212,7 @@ create table scan_info (
     node_id int null,
     alt_targets_used bool null,
     user_permissions int null,
-    policy_template_uuid varchar(255) null,
+    policy_template_uuid_id int null,
     known_accounts bool null,
     offline bool null,
     status_id int null,
@@ -194,20 +220,133 @@ create table scan_info (
     selected_severity_base_id int null,
     _extra_json  longtext null,
 
-    constraint scan_info_id_fk foreign key (id) references scan (id),
+    constraint scan_info_scan_response_id_fk foreign key (id) references scan_response (id),
+    constraint scan_info_uuid_id_fk foreign key (uuid_id) references scan_uuid (id) on update cascade,
     constraint scan_info_folder_id_fk foreign key (folder_id) references folder (id),
     constraint scan_info_scan_type_id_fk foreign key (scan_type_id) references scan_type(id) on update cascade,
     constraint scan_info_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
-    constraint scan_info_policy_id foreign key (policy_id) references scan_policy (id) on update cascade,
-    constraint scan_info_scanner_id foreign key (scanner_id) references scanner (id) on update cascade,
-    constraint scan_info_scan_type_id foreign key (scan_type_id) references scan_type (id) on update cascade,
+    constraint scan_info_policy_id_fk foreign key (policy_id) references scan_policy (id) on update cascade,
+    constraint scan_info_scanner_id_fk foreign key (scanner_id) references scanner (id) on update cascade,
     constraint scan_info_license_id_fk foreign key (license_id) references license (id) on update cascade,
-    constraint scan_info_status_id foreign key (status_id) references scan_status (id) on update cascade,
+    constraint scan_info_policy_template_uuid_id_fk foreign key (policy_template_uuid_id) references policy_template_uuid (id) on update cascade,
+    constraint scan_info_status_id_fk foreign key (status_id) references scan_status (id) on update cascade,
     constraint scan_info_current_severity_base_id_fk foreign key (current_severity_base_id) references severity_base (id) on update cascade,
     constraint scan_info_selected_severity_base_id_fk foreign key (selected_severity_base_id) references severity_base (id) on update cascade
 );
-alter table scan_info disable keys;
 
+
+create table scan_host (
+    id int PRIMARY KEY AUTO_INCREMENT,
+    scan_id int not null,
+    host_id int null,
+    total_checks_considered int null,
+    num_checks_considered int null,
+    scan_progress_total int null,
+    scan_progress_current int null,
+    host_index int null,
+    score int null,
+    progress varchar(255) null,
+    offline_critical int null,
+    offline_high int null,
+    offline_medium int null,
+    offline_low int null,
+    offline_info int null,
+    critical int null,
+    high int null,
+    medium int null,
+    low int null,
+    info int null,
+    severity int null,
+    hostname varchar(255) null,
+    _extra_json longtext null,
+    constraint scan_host_scan_response_id_fk foreign key (scan_id) references scan_response (id),
+    constraint scan_host__host_scan_unique unique (scan_id, host_id)
+);
+
+create table scan_host_severity_count (
+    id int PRIMARY KEY AUTO_INCREMENT,
+    scan_host_id int NOT NULL,
+    severity_level int null,
+    count int null,
+    _extra_json longtext null,
+    constraint scan_host_severity_count_scan_host_id_fk foreign key (scan_host_id) references scan_host (id),
+    constraint scan_host_severity_count__host_severity_level_unique unique (scan_host_id, severity_level)
+);
+
+create table scan_host_severity_count_container (
+    id int PRIMARY KEY AUTO_INCREMENT,
+    _extra_json longtext null,
+    constraint scan_host_severity_count_container_scan_response_id_fk foreign key (id) references scan_response (id)
+    -- the scan_host_severity_count rows are directly linked to the scan_host id
+    -- no need to link them to this, since this is a one-to-one record with scan_host
+);
+
+create table scan_vulnerability (
+    id int PRIMARY KEY AUTO_INCREMENT,
+    scan_id int not null,
+    count int null,
+    cpe int null,
+    offline bool null,
+    plugin_family varchar(255) null,
+    plugin_id int null,
+    score varchar(255) null,
+    severity int null,
+    severity_index int null,
+    snoozed int null,
+    vuln_index int null,
+    _extra_json longtext null,
+    __order_for_scan_response int not null,
+    constraint scan_vulnerability_scan_response_id_fk foreign key (scan_id) references scan_response (id)
+);
+
+create table scan_remediations_summary (
+    id int PRIMARY KEY,
+    num_hosts int null,
+    num_cves int null,
+    num_impacted_hosts int null,
+    num_remediated_cves int null,
+    _extra_json longtext null,
+    constraint scan_remediations_summary_scan_response_id_fk foreign key (id) references scan_response (id)
+);
+
+create table scan_remediation (
+    id int PRIMARY KEY AUTO_INCREMENT,
+    scan_id int not null,
+    remediation varchar(255) null,
+    hosts int null,
+    value varchar(255) null,
+    vulns int null,
+    _extra_json longtext null,
+    __order_for_scan_response int not null,
+    constraint scan_remediation_scan_response_id foreign key (scan_id) references scan_response (id)
+);
+
+create table scan_history (
+    id int PRIMARY KEY AUTO_INCREMENT,
+    alt_targets_used bool null,
+    scheduler int null,
+    node_name varchar(255) null,
+    node_host varchar(255) null,
+    scan_group_id int null,
+    node_id int null,
+    schedule_type_id int null,
+    status_id int null,
+    scan_type_id int null,
+    uuid_id int null,
+    last_modification_date timestamp null,
+    creation_date timestamp null,
+    owner_id int null, -- probably a foreign key to scan_owner_id (id)
+                -- but without knowing the owner name or if the corresponding record in scan_owner_id
+                -- has been created, it is possible a FK constraint would fail ???
+    history_id int null,
+    _extra_json longtext null,
+
+    constraint scan_history_scan_response_id_fk foreign key (id) references scan_response (id),
+    constraint scan_history_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
+    constraint scan_history_status_id_fk foreign key (status_id) references scan_status (id) on update cascade,
+    constraint scan_history_scan_type_id_fk foreign key (scan_type_id) references scan_type (id) on update cascade,
+    constraint scan_history_uuid_id_fk foreign key (uuid_id) references scan_uuid (id) on update cascade
+);
 
 
 --

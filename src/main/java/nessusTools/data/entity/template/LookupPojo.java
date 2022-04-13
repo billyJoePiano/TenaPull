@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import com.fasterxml.jackson.databind.node.*;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.NaturalId;
 
@@ -46,7 +47,7 @@ public abstract class LookupPojo implements DbPojo {
     }
 
     public JsonNode toJsonNode() {
-        return new ObjectMapper().convertValue(this.getValue(), JsonNode.class);
+        return new ObjectMapper().convertValue(this.getValue(), TextNode.class);
     }
 
     public String toJsonString() throws JsonProcessingException {
@@ -58,12 +59,9 @@ public abstract class LookupPojo implements DbPojo {
     }
 
     public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-
-        } else if (o == null || o.getClass() != this.getClass()) {
-            return false;
-        }
+        if (o == null) return false;
+        if (o == this) return true;
+        if(!Objects.equals(o.getClass(), this.getClass())) return false;
 
         LookupPojo other = (LookupPojo) o;
 

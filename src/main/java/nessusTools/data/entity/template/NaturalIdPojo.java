@@ -7,7 +7,7 @@ import org.hibernate.annotations.NaturalId;
 import javax.persistence.*;
 
 @MappedSuperclass
-public abstract class NaturalIdPojo extends ExtensibleJsonPojo implements DbPojo {
+public abstract class NaturalIdPojo extends ExtensibleJsonPojo {
     @Id
     @NaturalId
     @JsonProperty

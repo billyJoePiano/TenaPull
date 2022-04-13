@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.client.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import nessusTools.data.deserialize.*;
@@ -19,18 +20,17 @@ public class Scan extends NaturalIdPojo {
 
     public static final Logger logger = LogManager.getLogger(Scan.class);
 
-    /*
     @OneToOne
+    @JoinColumn(name = "id")
     @JsonIgnore
-    private ScanInfo scanInfo;
-     */
+    private ScanResponse scanResponse;
 
     @Column
     private String name;
 
-    @Column
-    @JsonProperty
-    private String uuid;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="uuid_id")
+    private ScanUuid uuid;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="folder_id")
@@ -44,7 +44,7 @@ public class Scan extends NaturalIdPojo {
     private ScanOwner owner;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="type_id")
+    @JoinColumn(name="scan_type_id")
     private ScanType type;
 
     @Column
@@ -106,15 +106,14 @@ public class Scan extends NaturalIdPojo {
       Standard getters/setters below
 ***********************************************/
 
-/*
-    public ScanInfo getScanInfo() {
-        return scanInfo;
+
+    public ScanResponse getScanResponse() {
+        return scanResponse;
     }
 
-    public void setScanInfo(ScanInfo scanInfo) {
-        this.scanInfo = scanInfo;
+    public void setScanResponse(ScanResponse scanResponse) {
+        this.scanResponse = scanResponse;
     }
- */
 
     public String getName() {
         return name;
@@ -124,11 +123,11 @@ public class Scan extends NaturalIdPojo {
         this.name = name;
     }
 
-    public String getUuid() {
+    public ScanUuid getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
+    public void setUuid(ScanUuid uuid) {
         this.uuid = uuid;
     }
 

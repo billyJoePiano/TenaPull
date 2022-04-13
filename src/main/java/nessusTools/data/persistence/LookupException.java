@@ -1,6 +1,6 @@
 package nessusTools.data.persistence;
 
-public class LookupException extends Exception {
+public class LookupException extends RuntimeException {
     private final Class pojoClass;
 
     public LookupException(String msg, final Class pojoClass) {

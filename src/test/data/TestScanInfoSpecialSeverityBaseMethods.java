@@ -3,7 +3,6 @@ package data;
 import nessusTools.client.response.*;
 import nessusTools.data.entity.*;
 import org.junit.runner.*;
-import testUtils.*;
 
 import com.fasterxml.jackson.databind.*;
 import org.junit.*;
@@ -43,7 +42,7 @@ public class TestScanInfoSpecialSeverityBaseMethods {
     @Test
     public void insertScanInfoAndVerifySeverityBaseEntries() {
         ObjectMapper mapper = new CustomObjectMapper();
-        ScanInfo deserialized = mapper.convertValue(response, ScanInfoResponse.class).getInfo();
+        ScanInfo deserialized = mapper.convertValue(response, ScanResponse.class).getInfo();
 
         // Make sure foreign key constraints will be satisfied before inserting ScanInfo
         Folder.dao.insert(deserialized.getFolder());

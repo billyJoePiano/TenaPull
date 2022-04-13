@@ -1,5 +1,6 @@
 package nessusTools.data.entity;
 
+import com.fasterxml.jackson.annotation.*;
 import nessusTools.data.entity.template.LookupPojo;
 import nessusTools.data.persistence.LookupDao;
 
@@ -11,16 +12,16 @@ public class ScanOwner extends LookupPojo {
     public static final LookupDao<ScanOwner> dao
             = new LookupDao<ScanOwner>(ScanOwner.class);
 
-    /*
     @OneToOne
-    private ScanOwnerId scanOwnerId;
+    @JoinColumn(name = "lookup_id")
+    @JsonIgnore
+    private ScanOwnerNessusId scanOwnerId;
 
-    public ScanOwnerId getScanOwnerId() {
+    public ScanOwnerNessusId getScanOwnerId() {
         return scanOwnerId;
     }
 
-    public void setScanOwnerId(ScanOwnerId scanOwnerId) {
+    public void setScanOwnerId(ScanOwnerNessusId scanOwnerId) {
         this.scanOwnerId = scanOwnerId;
     }
-     */
 }

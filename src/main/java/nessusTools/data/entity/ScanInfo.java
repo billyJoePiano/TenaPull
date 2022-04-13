@@ -1,5 +1,6 @@
 package nessusTools.data.entity;
 
+import nessusTools.client.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import nessusTools.data.deserialize.*;
@@ -22,17 +23,12 @@ import java.util.*;
 @Entity(name = "ScanInfo")
 @Table(name = "scan_info")
 @JsonIgnoreProperties({"id"})
-public class ScanInfo extends NaturalIdPojo {
+public class ScanInfo extends ScanResponse.ChildTemplate {
     public static final Dao<ScanInfo> dao
             = new Dao<ScanInfo>(ScanInfo.class);
 
     public static final Logger logger = LogManager.getLogger(ScanInfo.class);
 
-
-    @OneToOne
-    @JoinColumn(name = "id")
-    @JsonIgnore
-    private Scan scan;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="folder_id")
@@ -189,9 +185,10 @@ public class ScanInfo extends NaturalIdPojo {
     @JsonProperty("user_permissions")
     private Integer userPermissions;
 
-    @Column(name = "policy_template_uuid")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="policy_template_uuid_id")
     @JsonProperty("policy_template_uuid")
-    private String policyTemplateUuid;
+    private PolicyTemplateUuid policyTemplateUuid;
 
     @Column(name = "known_accounts")
     @JsonProperty("known_accounts")
@@ -421,14 +418,6 @@ public class ScanInfo extends NaturalIdPojo {
      * Standard getters/setters below
      *
      ******************************************/
-
-    public Scan getScan() {
-        return scan;
-    }
-
-    public void setScan(Scan scan) {
-        this.scan = scan;
-    }
 
 
     public Folder getFolder() {
@@ -738,11 +727,11 @@ public class ScanInfo extends NaturalIdPojo {
         this.userPermissions = userPermissions;
     }
 
-    public String getPolicyTemplateUuid() {
+    public PolicyTemplateUuid getPolicyTemplateUuid() {
         return policyTemplateUuid;
     }
 
-    public void setPolicyTemplateUuid(String policyTemplateUuid) {
+    public void setPolicyTemplateUuid(PolicyTemplateUuid policyTemplateUuid) {
         this.policyTemplateUuid = policyTemplateUuid;
     }
 

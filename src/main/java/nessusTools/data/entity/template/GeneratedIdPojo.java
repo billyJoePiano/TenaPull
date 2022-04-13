@@ -7,7 +7,7 @@ import javax.persistence.*;
 
 
 @MappedSuperclass
-public abstract class GeneratedIdPojo extends ExtensibleJsonPojo implements DbPojo {
+public abstract class GeneratedIdPojo extends ExtensibleJsonPojo {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO, generator="native")
     @GenericGenerator(name = "native",strategy = "native")

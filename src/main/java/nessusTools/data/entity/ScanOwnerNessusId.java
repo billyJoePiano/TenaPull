@@ -1,5 +1,6 @@
 package nessusTools.data.entity;
 
+import com.fasterxml.jackson.annotation.*;
 import nessusTools.data.entity.template.*;
 
 import javax.persistence.Entity;
@@ -9,9 +10,10 @@ import javax.persistence.Table;
 
 @Entity(name = "ScanOwnerId")
 @Table(name = "scan_owner_id")
-public class ScanOwnerId extends NaturalIdPojo {
+public class ScanOwnerNessusId extends NaturalIdPojo {
     @OneToOne
     @JoinColumn(name = "lookup_id")
+    @JsonIgnore
     private ScanOwner scanOwner;
 
     public ScanOwner getScanOwner() {

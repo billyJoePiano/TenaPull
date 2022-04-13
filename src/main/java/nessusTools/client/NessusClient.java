@@ -75,8 +75,8 @@ public class NessusClient extends GenericClient {
         }
 
         for (Scan scan: scans) {
-            ScanInfoResponse infoResponse = fetchScanInfo(scan);
-            ScanInfoResponse.logger.info(infoResponse);
+            ScanResponse infoResponse = fetchScanInfo(scan);
+            ScanResponse.logger.info(infoResponse);
 
             if (infoResponse == null) {
                 continue;
@@ -89,7 +89,7 @@ public class NessusClient extends GenericClient {
         }
     }
 
-    public ScanInfoResponse fetchScanInfo (Scan scan) {
+    public ScanResponse fetchScanInfo (Scan scan) {
         if (scan != null) {
             return fetchScanInfo(scan.getId());
 
@@ -98,11 +98,11 @@ public class NessusClient extends GenericClient {
         }
     }
 
-    public ScanInfoResponse fetchScanInfo(int scanId) {
+    public ScanResponse fetchScanInfo(int scanId) {
         try {
-            ScanInfoResponse response = fetchJson(
-                    ScanInfoResponse.pathFor(scanId),
-                    ScanInfoResponse.class);
+            ScanResponse response = fetchJson(
+                    ScanResponse.getUrlPath(scanId),
+                    ScanResponse.class);
 
             if (response != null) {
                 response.setId(scanId);

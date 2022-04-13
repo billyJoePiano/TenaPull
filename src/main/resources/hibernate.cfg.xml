@@ -21,7 +21,7 @@
         <mapping class="nessusTools.data.entity.Scan" />
         <mapping class="nessusTools.data.entity.Folder" />
         <mapping class="nessusTools.data.entity.ScanOwner" />
-        <mapping class="nessusTools.data.entity.ScanOwnerId" />
+        <mapping class="nessusTools.data.entity.ScanOwnerNessusId" />
         <mapping class="nessusTools.data.entity.ScanType" />
         <mapping class="nessusTools.data.entity.Timezone" />
         <mapping class="nessusTools.data.entity.ScanInfo" />

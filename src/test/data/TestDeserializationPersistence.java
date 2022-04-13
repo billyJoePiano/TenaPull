@@ -1,9 +1,8 @@
 package data;
 
 import nessusTools.client.response.*;
-import nessusTools.data.entity.*;
-import nessusTools.data.entity.template.DbPojo;
-import nessusTools.data.persistence.Dao;
+import nessusTools.data.entity.template.*;
+import nessusTools.data.persistence.*;
 import org.junit.*;
 import testUtils.*;
 
@@ -29,7 +28,7 @@ import org.apache.logging.log4j.*;
 //@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
-public class TestDeserializationPersistence {
+public class TestDeserializationPersistence<R extends NessusResponse> {
     public static final String PARAMS_DIR = "deserializationPersistence-params/";
 
 
@@ -47,24 +46,9 @@ public class TestDeserializationPersistence {
 
         Database.hardReset();
 
-        return Arrays.asList(new Object[][] { {
-
-            new TestParams(IndexResponse.class, "indexResponse.json",
-                List.of(
-                    new ExpectedData<Folder>("folders", Folder.class, 2),
-                    new ExpectedData<Scan>("scans", Scan.class, 5)
-                )
-            )
-
-        }, {
-
-            new TestParams(ScanInfoResponse.class, "ScanInfo.json",
-                List.of(
-                    new ExpectedData<ScanInfo>("info", ScanInfo.class, null)
-                )
-            )
-        }
-
+        return Arrays.asList(new Object[][] {
+            { IndexResponse.class, "indexResponse.json" },
+            { ScanResponse.class, "ScanInfo.json" }
         });
     }
 
@@ -73,33 +57,14 @@ public class TestDeserializationPersistence {
      *******************************/
 
     private final Logger logger;
-    private final TestParams params;
 
-    private String origJson = "";
-    private JsonNode origNode = null;
-    private NessusResponse deserialized = null;
-    private List<NessusResponse.PojoData> actualData = null;
-    private NessusResponse persistedContainer = null;
+    private final Class<R> responseType;
+    private final String jsonFile;
 
-    public TestDeserializationPersistence(TestParams params) {
-        this.logger = LogManager.getLogger(params.responseClass);
-        this.params = params;
-
-        if (params.lastInstance != null && params.lastInstance != this) {
-            // Unfortunately, these variables have to be passed between instances because
-            // JUnit insists on creating a new instance for each method with a @Test annotation,
-            // but the methods rely upon an order of execution and the results of the
-            // previous test.
-
-            this.origJson = params.lastInstance.origJson;
-            this.origNode = params.lastInstance.origNode;
-            this.deserialized = params.lastInstance.deserialized;
-            this.actualData = params.lastInstance.actualData;
-            this.persistedContainer = params.lastInstance.persistedContainer;
-        }
-
-        params.lastInstance = this;
-
+    public TestDeserializationPersistence(Class<R> responseType, String jsonFile) {
+        this.logger = LogManager.getLogger(responseType);
+        this.responseType = responseType;
+        this.jsonFile = jsonFile;
     }
 
     @BeforeAll
@@ -114,9 +79,20 @@ public class TestDeserializationPersistence {
      *
      */
     @Test
-    public void _1_getDummyJson() {
+    public void run()
+            throws InvocationTargetException, NoSuchMethodException,
+                    InstantiationException, IllegalAccessException {
+
+        String origJson = this.fetchJson();
+        NodeAndResponse deserialized = deserialize(origJson);
+        persist(deserialized);
+    }
+
+    public String fetchJson() {
         // extract the dummy json out of the test file
-        try (BufferedReader reader = new BufferedReader(new FileReader(params.filename))) {
+        String origJson = "";
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(this.jsonFile))) {
             String line;
 
             while ((line = reader.readLine()) != null) {
@@ -125,234 +101,67 @@ public class TestDeserializationPersistence {
 
         } catch (IOException e) {
             fail(e);
-            return;
+            return null;
         }
 
         assertNotNull(origJson);
         assertNotEquals("", origJson);
+
+        return origJson;
     }
 
-    @Test
-    public void _2_testDeserialize() {
+    public NodeAndResponse deserialize(String origJson) {
         // To standardize the json string's format, first put into a JsonNode
         // then re-stringify to remove "prettifying" whitespace.
         // With the standardized/minified json, serialize it into the appropriate
         // DbPojo objects
+
+        JsonNode origNode;
+        R deserialized;
+
 
         try {
             ObjectMapper mapper = new CustomObjectMapper();
 
             // https://stackoverflow.com/questions/12173416/how-do-i-get-the-compact-form-of-pretty-printed-json-code
             origNode = mapper.readValue(origJson, JsonNode.class);
-            origJson = origNode.toString(); //removes the 'pretty printed' white space'
 
-            deserialized = mapper.readValue(origJson, params.responseClass);
+            deserialized = mapper.readValue(origJson, this.responseType);
 
         } catch (JsonProcessingException e) {
             fail(e);
-            return;
+            return null;
         }
 
+        assertNotNull(origNode);
         assertNotNull(deserialized);
 
-        Iterator<ExpectedData> expectedIterator = params.expectedData.iterator();
-        actualData = deserialized.getData();
+        assertEquals(origNode, deserialized.toJsonNode());
 
-        assertEquals(params.expectedData.size(), actualData.size());
-
-        for (NessusResponse.PojoData actual : actualData) {
-            assertTrue(expectedIterator.hasNext());
-            ExpectedData expected = expectedIterator.next();
-            assertEquals(expected, actual);
-        }
-
-        assertFalse(expectedIterator.hasNext());
+        return new NodeAndResponse(origNode, deserialized);
     }
 
-    @Test
-    public void _3_testPersistence()
-        throws NoSuchFieldException,
-            IllegalAccessException,
-            NoSuchMethodException,
-            InvocationTargetException,
-            InstantiationException {
+    private class NodeAndResponse {
+        private final JsonNode node;
+        private final R res;
+
+        private NodeAndResponse(JsonNode node, R res) {
+            this.node = node;
+            this.res = res;
+        }
+    }
+
+    public void persist(NodeAndResponse deserialized) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
         // Put the deserialized objects into the persistence layer
+        Dao<R> dao = Dao.get(responseType);
 
-        for (NessusResponse.PojoData actual : actualData) {
-            Dao dao = (Dao) actual.getPojoClass().getDeclaredField("dao").get(null);
-            if (actual.isIndividual()) {
-                dao.insert(actual.getIndividualPojo());
-                continue;
-            }
+        int id = dao.insert(deserialized.res);
 
-            for (DbPojo pojo : (List<DbPojo>) actual.getPojoList()) {
-                dao.insert(pojo);
-            }
-        }
+        R persisted = dao.getById(id);
 
-        // Fetch back out of the persistence layer.
-        // First create a NessusResponse container to hold the fetched data ...
-        persistedContainer = params.response.getClass().getDeclaredConstructor().newInstance();
-
-        // Set the timestamp and id the same.  Normally this would be handled by the NessusClient
-        persistedContainer.setId(deserialized.getId());
-        persistedContainer.setTimestamp(deserialized.getTimestamp());
-
-        for (NessusResponse.PojoData actual : actualData) {
-            Class<? extends DbPojo> pojoClass = actual.getPojoClass();
-            Dao dao = (Dao) pojoClass.getDeclaredField("dao").get(null);
-
-            if (actual.isIndividual()) {
-                DbPojo pojo = dao.getById(actual.getIndividualPojo().getId());
-
-                persistedContainer.setData(new NessusResponse.PojoData(
-                        actual.getFieldName(),
-                        pojo != null ? pojo.getClass() : pojoClass,
-                        pojo
-                    )   );
-                continue;
-            }
-
-            // ... else, if actual.isList() ....
-
-            pojoClass = null;
-            List<DbPojo> list = new ArrayList();
-
-            // Sort the arrays to have the same order as the original input
-
-            for (DbPojo orig : (List<DbPojo>) actual.getPojoList()) {
-                DbPojo pojo = dao.getById(orig.getId());
-                if (pojoClass == null && pojo != null) {
-                    pojoClass = pojo.getClass();
-                }
-                list.add(pojo);
-            }
-
-            if (pojoClass == null) {
-                // prefer to take from the first non-null instance in the list...
-                // but failing that, take from the original
-                pojoClass = actual.getPojoClass();
-            }
-
-            persistedContainer.setData(new NessusResponse.PojoData(
-                    actual.getFieldName(),
-                    pojoClass,
-                    list
-                ));
-        }
-
-
-
-        // Now re-serialize then deserialize into a JsonNode, and compare against the original
-        // NOTE: JsonNode equality does not care about the order of properties.  They will almost
-        // certainly appear in a different order than the original
-
-        // https://stackoverflow.com/questions/2253750/testing-two-json-objects-for-equality-ignoring-child-order-in-java
-        try {
-            ObjectMapper mapper = new CustomObjectMapper();
-            String reserialized = mapper.writeValueAsString(persistedContainer);
-            JsonNode reserializedNode = mapper.readValue(reserialized, JsonNode.class);
-            assertEquals(origNode, reserializedNode);
-
-        } catch (JsonProcessingException e) {
-            fail(e);
-        }
-    }
-
-
-
-
-
-    /**************************************
-     *  Test Params inner class
-     **************************************/
-
-    static class TestParams {
-        private final String filename;
-        private final NessusResponse response;
-        private final List<ExpectedData> expectedData;
-        private final Class<? extends NessusResponse> responseClass;
-
-        private TestDeserializationPersistence lastInstance;
-
-        private TestParams(
-                Class<? extends NessusResponse> responseClass,
-                String filename,
-                List<ExpectedData> expectedData)
-            throws NoSuchMethodException, InvocationTargetException,
-                InstantiationException, IllegalAccessException {
-
-            this.responseClass = responseClass;
-
-            if (filename.substring(0, 1).equals("/")) {
-                this.filename = filename;
-
-            } else {
-                this.filename = PARAMS_DIR + filename;
-            }
-
-            this.expectedData = expectedData;
-
-            this.response = responseClass.getDeclaredConstructor().newInstance();
-        }
-    }
-
-
-    /**************************************
-     *  Expected Data inner class
-     * @param <POJO> pojo type for the expected data
-     **************************************/
-
-
-    static class ExpectedData<POJO extends DbPojo> {
-        private final String fieldname;
-        private final Class<POJO> pojoClass;
-        private final Integer listCount; //null indicates individual PojoData, not list PojoData
-
-        private ExpectedData(
-                String fieldname,
-                Class<POJO> pojoClass,
-                Integer listCount
-        )  {
-
-            this.fieldname = fieldname;
-            this.pojoClass = pojoClass;
-            this.listCount = listCount;
-        }
-
-        public boolean equals(Object o) {
-            if (o == null) return false;
-            if (o == this) return true;
-
-            if (o instanceof NessusResponse.PojoData) {
-                NessusResponse.PojoData data = (NessusResponse.PojoData) o;
-
-                if (!this.fieldname.equals(data.getFieldName())) return false;
-                if (!this.pojoClass.equals(data.getPojoClass())) return false;
-
-                if (this.listCount == null) {
-                    return !data.isList();
-
-                } else {
-                    List list = data.getPojoList();
-                    if (this.listCount > 0) {
-                        return list != null && list.size() == this.listCount.intValue();
-
-                    } else {
-                        return list == null || list.size() == 0;
-                    }
-                }
-
-
-            } else if (o.getClass() == this.getClass()) {
-                ExpectedData other = (ExpectedData) o;
-                return this.fieldname.equals(other.fieldname)
-                        && this.pojoClass.equals(other.pojoClass)
-                        && (Objects.equals(this.listCount, other.listCount));
-
-            }
-            return false;
-        }
+        assertNotNull(persisted);
+        assertEquals(deserialized.res, persisted);
+        assertEquals(deserialized.node, persisted.toJsonNode());
     }
 }
