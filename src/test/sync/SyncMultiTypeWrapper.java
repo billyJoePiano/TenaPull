@@ -2,7 +2,7 @@ package sync;
 
 import data.*;
 import nessusTools.data.persistence.*;
-import nessusTools.sync.*;
+import nessusTools.util.*;
 import org.apache.logging.log4j.*;
 
 import java.math.*;

@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class AbstractContextualPojoDeserializer<POJO extends DbPojo, DAO extends Dao<POJO>>
         extends AbstractContextualDeserializer<POJO> {
 
-    protected Class<POJO> pojoClass = null;
+    protected Class<POJO> pojoType = null;
     protected DAO dao = null;
 
     protected abstract Logger getLogger();
@@ -23,15 +23,15 @@ public abstract class AbstractContextualPojoDeserializer<POJO extends DbPojo, DA
 
         super.createContextual(deserializationContext, beanProperty);
 
-        this.pojoClass = this.getType();
+        this.pojoType = this.getType();
 
-         if (this.pojoClass != null) {
-            this.dao = Dao.get(pojoClass);
+         if (this.pojoType != null) {
+            this.dao = Dao.get(pojoType);
 
             if (this.dao == null) {
                 Logger logger = this.getLogger();
                 logger.error("Could not find dao for raw class");
-                logger.error(this.pojoClass);
+                logger.error(this.pojoType);
                 logger.error(this.getJavaType());
                 logger.error(deserializationContext);
                 logger.error(beanProperty);

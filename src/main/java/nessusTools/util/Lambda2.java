@@ -1,6 +1,8 @@
-package nessusTools.sync;
+package nessusTools.util;
 
 /**
+ * Two-argument lambda with a return value
+ *
  * Type parameters:
  *
  * A  : argument1 -- the type of the first argument to be passed to the run method

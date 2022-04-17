@@ -1,5 +1,7 @@
 package nessusTools.sync;
 
+import nessusTools.util.*;
+
 import java.lang.ref.*;
 import java.util.*;
 

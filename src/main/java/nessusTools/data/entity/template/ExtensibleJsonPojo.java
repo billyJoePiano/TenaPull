@@ -77,15 +77,4 @@ public abstract class ExtensibleJsonPojo implements DbPojo {
                     + e.getMessage();
         }
     }
-
-    public boolean equals(Object o) {
-        if (o == null) return false;
-        if (o == this) return true;
-        if (!Objects.equals(o.getClass(), this.getClass())) return false;
-
-        ExtensibleJsonPojo other = (ExtensibleJsonPojo) o;
-        return  (this.getId() == 0 || other.getId() == 0 || this.getId() == other.getId())
-                && Objects.equals(this.toJsonNode(), other.toJsonNode());
-
-    }
 }

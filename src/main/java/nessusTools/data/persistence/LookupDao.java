@@ -5,10 +5,10 @@ import nessusTools.data.entity.template.DbPojo;
 import org.hibernate.*;
 
 
-public class LookupDao<POJO extends LookupPojo> extends ObjectLookupDao<POJO> {
+public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
 
-    public LookupDao(Class<POJO> pojoClass) {
-        super(pojoClass);
+    public LookupDao(Class<POJO> pojoType) {
+        super(pojoType);
     }
 
     public POJO getOrCreate(String string) throws LookupException {
@@ -17,7 +17,7 @@ public class LookupDao<POJO extends LookupPojo> extends ObjectLookupDao<POJO> {
         }
 
         Session session = sessionFactory.openSession();
-        POJO obj = session.byNaturalId(this.getPojoClass())
+        POJO obj = session.byNaturalId(this.getPojoType())
                 .using(LookupPojo.FIELD_NAME, string).load();
         // https://stackoverflow.com/questions/14977018/jpa-how-to-get-entity-based-on-field-value-other-than-id
 
@@ -28,15 +28,15 @@ public class LookupDao<POJO extends LookupPojo> extends ObjectLookupDao<POJO> {
         POJO pojo = null;
 
         try {
-            pojo = this.getPojoClass().getDeclaredConstructor().newInstance();
+            pojo = this.getPojoType().getDeclaredConstructor().newInstance();
 
         } catch(Exception e) {
-            throw new LookupException(e, this.getPojoClass());
+            throw new LookupException(e, this.getPojoType());
         }
 
         if (pojo == null) {
             throw new LookupException("Null pojo returned for '" + string + "'",
-                    this.getPojoClass());
+                    this.getPojoType());
         }
 
         pojo.setValue(string);
@@ -46,18 +46,18 @@ public class LookupDao<POJO extends LookupPojo> extends ObjectLookupDao<POJO> {
 
         } else {
             throw new LookupException("Couldn't create pojo '" + string + "'",
-                    this.getPojoClass());
+                    this.getPojoType());
         }
     }
 
     public String toString() {
-        return "[LookupDao for " + this.getPojoClass().getSimpleName() + "]";
+        return "[LookupDao for " + this.getPojoType().getSimpleName() + "]";
     }
 
     public static <P extends DbPojo, D extends Dao<P>> D
-            get(Class<P> lookupPojoClass) {
+            get(Class<P> lookupPojoType) {
 
-        D dao = Dao.get(lookupPojoClass);
+        D dao = Dao.get(lookupPojoType);
         if (dao != null && dao instanceof LookupDao) {
             return dao;
 

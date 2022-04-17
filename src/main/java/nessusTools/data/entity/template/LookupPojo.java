@@ -18,7 +18,7 @@ import nessusTools.data.deserialize.Lookup;
 @MappedSuperclass
 @JsonDeserialize(using = Lookup.Deserializer.class)
 @JsonSerialize(using = Lookup.Serializer.class)
-public abstract class LookupPojo implements DbPojo {
+public abstract class LookupPojo implements ObjectLookupPojo<LookupPojo> {
     public static final String FIELD_NAME = "value";
 
     @Id
@@ -66,5 +66,11 @@ public abstract class LookupPojo implements DbPojo {
         LookupPojo other = (LookupPojo) o;
 
         return Objects.equals(other.toString(), this.toString());
+    }
+
+    @Override
+    public void _set(LookupPojo lookupPojo) {
+        this.setId(lookupPojo.getId());
+        this.setValue(lookupPojo.getValue());
     }
 }

@@ -1,7 +1,7 @@
 package nessusTools.sync;
 
+import nessusTools.util.*;
 import org.apache.logging.log4j.*;
-import org.jboss.jandex.*;
 
 import javax.ejb.*;
 import java.util.*;
@@ -63,25 +63,42 @@ public class ReadWriteLock<O, R> {
         return new ReadWriteLock<>(collection, view);
     }
 
+    private static final ReadWriteLock<Map<ReadWriteLock, Void>, Void>
+             instances = new ReadWriteLock<>();
+
     private final O object;
     private final O view;
 
     private final Map<Thread, Lock> readLocks = new WeakHashMap<>();
     private final Lock writeLock = new Lock();
+
+    private final Set<Thread> waitingForRead = new LinkedHashSet<>();
+    private final Set<Thread> waitingForWrite = new LinkedHashSet<>();
+
+    private final ReadThreadsSet readThreads = new ReadThreadsSet();
     private Thread currentWriteThread = null;
+
     private Thread garbageCollector = null;
     private final Lock addLock = new Lock();
     private final Lock removeLock = new Lock();
     private final Lock gcLock = new Lock();
 
+    private ReadWriteLock() {
+        // static instances ReadWriteLock only
+        Map map = new WeakHashMap<>();
+        this.object = (O) map;
+        this.view = (O) Collections.unmodifiableMap(map);
+        map.put(this, null);
+    }
+
     public ReadWriteLock(O objectToLock) {
-        this.object = objectToLock;
-        this.view = objectToLock;
+        this(objectToLock, objectToLock);
     }
 
     public ReadWriteLock(O objectToLock, O unmodifiableView) {
         this.object = objectToLock;
         this.view = unmodifiableView;
+        instances.write(instances -> instances.put(this, null));
     }
 
     private class Lock {
@@ -89,41 +106,6 @@ public class ReadWriteLock<O, R> {
         private boolean active = true;
         public boolean equals(Object o) {
             return o == this;
-        }
-    }
-
-    public final boolean holdsWriteLock() {
-        return Thread.holdsLock(writeLock);
-    }
-
-    public final boolean holdsWriteLock(Thread thread) {
-        return Thread.holdsLock(writeLock);
-    }
-
-    public final boolean holdsReadLock() {
-        synchronized (removeLock) {
-            Thread current = Thread.currentThread();
-            Lock lock = this.readLocks.get(current);
-            if (lock == null) {
-                return false;
-            }
-
-            return lock.active && Thread.holdsLock(lock);
-        }
-    }
-
-    public final boolean holdsReadLock(Thread thread) {
-        if (thread == null) {
-            return false;
-        }
-
-        synchronized (removeLock) {
-            Lock lock = this.readLocks.get(thread);
-            if (lock == null) {
-                return false;
-            }
-
-            return lock.active;
         }
     }
 
@@ -141,10 +123,6 @@ public class ReadWriteLock<O, R> {
             return lock;
         }
     }
-
-    public final boolean holdsLock() {
-        return this.holdsWriteLock() || this.holdsReadLock();
-    }
     
     public final R read(Lambda1<O, R> lambda) {
         return (R) this.read(null, lambda);
@@ -156,7 +134,6 @@ public class ReadWriteLock<O, R> {
 
     public final <T> T read(Class<T> returnType, Lambda1<O, T> lambda) {
         Lock readLock = this.getCurrentLock();
-
         if (readLock != null) {
             //could also be the write lock, but that's ok
             // a write lock can also grab a read lock
@@ -168,6 +145,10 @@ public class ReadWriteLock<O, R> {
         }
 
         readLock = new Lock();
+        synchronized (this.waitingForRead) {
+            this.waitingForRead.add(readLock.thread);
+        }
+
         synchronized (readLock) {
             try {
                 synchronized (addLock) {
@@ -175,12 +156,16 @@ public class ReadWriteLock<O, R> {
                         readLocks.put(readLock.thread, readLock);
                     }
                 }
+                synchronized (this.waitingForRead) {
+                    this.waitingForRead.remove(readLock.thread);
+                }
 
                 return lambda.call(view);
 
             } finally {
                 readLock.active = false;
                 readLock.thread = null;
+                this.readThreads.mutated = true;
                 // don't hold up the current thread with removing the read lock from the map
                 // setting readLock.thread to null will allow for garbage collection of the entry
                 // once the thread dies (or maybe even sooner?) since readLock is a WeakHashMap ????
@@ -206,10 +191,18 @@ public class ReadWriteLock<O, R> {
                     "A thread cannot grab a write lock until it has released all its read locks!");
 
         } else {
+            Thread currentThread = Thread.currentThread();
+            synchronized (this.waitingForWrite) {
+                this.waitingForWrite.add(currentThread);
+            }
             synchronized (addLock) {
                 waitForWriteLock();
                 synchronized (writeLock) {
-                    this.currentWriteThread = Thread.currentThread();
+                    this.currentWriteThread = currentThread;
+                    synchronized (this.waitingForWrite) {
+                        this.waitingForWrite.remove(currentThread);
+                    }
+
                     try {
                         return lambda.call(this.object);
 
@@ -266,6 +259,238 @@ public class ReadWriteLock<O, R> {
             }
         }
     }
+
+    public final boolean holdsWriteLock() {
+        return Thread.holdsLock(writeLock);
+    }
+
+    public final boolean holdsWriteLock(Thread thread) {
+        synchronized (this.waitingForWrite) {
+            return this.currentWriteThread != null
+                    && Objects.equals(this.currentWriteThread, thread);
+        }
+
+    }
+
+    public final boolean holdsReadLock() {
+        synchronized (removeLock) {
+            Thread current = Thread.currentThread();
+            Lock lock = this.readLocks.get(current);
+            if (lock == null) {
+                return false;
+            }
+
+            return lock.active && Thread.holdsLock(lock);
+        }
+    }
+
+    public final boolean holdsReadLock(Thread thread) {
+        if (thread == null) {
+            return false;
+        }
+
+        synchronized (removeLock) {
+            Lock lock = this.readLocks.get(thread);
+            if (lock == null) {
+                return false;
+            }
+
+            return lock.active;
+        }
+    }
+
+    public final boolean holdsLock() {
+        return this.holdsWriteLock() || this.holdsReadLock();
+    }
+
+    public final Thread getCurrentWriteThread() {
+        return this.currentWriteThread;
+    }
+
+    /**
+     * Returns whether the current thread is blocking the passed thread from obtaining
+     * a read or write lock
+     *
+     * @param thread
+     * @return
+     */
+    public final boolean isCurrentBlocking(Thread thread) {
+        return this.isCurrentBlocking(Thread.currentThread(), thread);
+    }
+
+    private final boolean isCurrentBlocking(Thread current, Thread thread) {
+        if (Objects.equals(thread, current)) {
+            return false;
+        }
+
+        if (this.isWaitingForReadLock(thread)) {
+            return this.holdsWriteLock();
+        }
+
+        if (this.isWaitingForReadLock(thread)) {
+            return this.holdsLock();
+
+        }
+
+        return false;
+    }
+
+    public boolean isWaitingForReadLock(Thread thread) {
+        synchronized (this.waitingForRead) {
+            return this.waitingForRead.contains(thread);
+        }
+    }
+
+    public boolean isWaitingForWriteLock(Thread thread) {
+        synchronized (this.waitingForWrite) {
+            return this.waitingForWrite.contains(thread);
+        }
+    }
+
+    public boolean isWaitingForLock(Thread thread) {
+        return this.isWaitingForReadLock(thread) ||
+                this.isWaitingForWriteLock(thread);
+    }
+
+    public Set<Thread> getThreadsBlockedBy(Thread thread) {
+        Set<Thread> blocked = new LinkedHashSet<>();
+        getThreadsBlockedBy(thread, blocked);
+        return blocked;
+    }
+
+    // *immediately* blocked by
+    private void getThreadsBlockedBy(Thread thread, Set<Thread> blocked) {
+        boolean holdsWrite;
+        boolean holdsRead;
+        synchronized (this.removeLock) {
+            holdsWrite = this.currentWriteThread != null
+                    && Objects.equals(thread, this.currentWriteThread);
+
+            if (holdsWrite) {
+                holdsRead = false;
+
+            } else {
+                Lock lock = this.readLocks.get(thread);
+                holdsRead = lock != null && lock.active;
+            }
+        }
+
+        if (holdsWrite || holdsRead) {
+            synchronized (this.waitingForWrite) {
+                blocked.addAll(waitingForWrite);
+            }
+        }
+
+        if (holdsWrite) {
+            synchronized (this.waitingForRead) {
+                blocked.addAll(this.waitingForRead);
+            }
+        }
+    }
+
+    // puts thread blocking relationships into a RecursiveMap
+    private void putThreadBlocks(RecursiveMap<Thread> threadMap) {
+        Set<Thread> readLocks = new LinkedHashSet<>();
+        Thread writeLock;
+        synchronized (this.removeLock) {
+            for (Map.Entry<Thread, Lock> entry : this.readLocks.entrySet()) {
+                if (entry.getValue().active) {
+                    readLocks.add(entry.getKey());
+                }
+            }
+            writeLock = this.currentWriteThread;
+        }
+
+        if (writeLock != null) {
+            synchronized (this.waitingForRead) {
+                for (Thread waiting : this.waitingForRead) {
+                    threadMap.putChild(writeLock, waiting);
+                }
+            }
+            synchronized (this.waitingForWrite) {
+                for (Thread waiting : this.waitingForWrite) {
+                    threadMap.putChild(writeLock, waiting);
+                    for (Thread readLock : readLocks) {
+                        threadMap.putChild(readLock, waiting);
+                    }
+                }
+            }
+
+        } else {
+            synchronized (this.waitingForWrite) {
+                for (Thread waiting : this.waitingForWrite) {
+                    for (Thread readLock : readLocks) {
+                        threadMap.putChild(readLock, waiting);
+                    }
+                }
+            }
+        }
+    }
+
+    public static RecursiveMap<Thread> getThreadBlockingMap() {
+        RecursiveMap<Thread> threadMap = new RecursiveMap<>();
+
+        instances.read(instances -> {
+            for (ReadWriteLock rwl : instances.keySet()) {
+                rwl.putThreadBlocks(threadMap);
+            }
+            return null;
+        });
+        return threadMap;
+    }
+
+
+    // Does the current thread block the given thread from obtaining any locks?
+    public static boolean isBlockingAnyLock(Thread thread) {
+        return instances.read(Boolean.class, instances -> {
+            Thread current = Thread.currentThread();
+            for (ReadWriteLock rwl : instances.keySet()) {
+                if (rwl.isCurrentBlocking(thread, current)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    public static boolean isWaitingForAnyReadLock(Thread thread) {
+        return instances.read(Boolean.class, instances -> {
+            for (ReadWriteLock rwl : instances.keySet()) {
+                if (rwl.isWaitingForReadLock(thread)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    public static boolean isWaitingForAnyWriteLock(Thread thread) {
+        return instances.read(Boolean.class, instances -> {
+            for (ReadWriteLock rwl : instances.keySet()) {
+                if (rwl.isWaitingForWriteLock(thread)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    public static boolean isWaitingForAnyLock(Thread thread) {
+        return instances.read(Boolean.class, instances -> {
+            for (ReadWriteLock rwl : instances.keySet()) {
+                if (rwl.isWaitingForLock(thread)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    public final Set<Thread> getCurrentReadThreads() {
+        return this.readThreads;
+    }
+
+
 
     private void clearGarbageCollector() {
         this.garbageCollector = null;
@@ -372,5 +597,134 @@ public class ReadWriteLock<O, R> {
 
         }
         inactive.clear();
+    }
+
+    private class ReadThreadsSet implements Set<Thread> {
+        private Set<Thread> keySet = ReadWriteLock.this.readLocks.keySet();
+        private boolean mutated = false;
+
+        private <T> T clearInactive(Class<T> returnType, Lambda0<T> returnGetter) {
+            while (true) {
+                synchronized (ReadWriteLock.this.removeLock) {
+                    if (!this.mutated) {
+                        return returnGetter.call();
+                    }
+                    this.mutated = false;
+
+                    ReadWriteLock.this.readLocks.entrySet().removeIf(
+                            entry -> !entry.getValue().active);
+                }
+            }
+        }
+
+        @Override
+        public int size() {
+            return clearInactive(Integer.class, () -> keySet.size());
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return clearInactive(Boolean.class, () -> keySet.isEmpty());
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return clearInactive(Boolean.class, () -> keySet.contains(o));
+        }
+
+        @Override
+        public Iterator<Thread> iterator() {
+            return new ReadThreadsIterator();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return clearInactive(Object[].class, () -> keySet.toArray());
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a) {
+            return (T[]) clearInactive(Object[].class, () -> keySet.toArray(a));
+        }
+
+        @Override
+        public boolean add(Thread thread) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            return clearInactive(Boolean.class, () -> keySet.containsAll(c));
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends Thread> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    public class ReadThreadsIterator implements Iterator<Thread> {
+        private final Map<Thread, Void> alreadyUsed = new WeakHashMap();
+        private final ReadThreadsSet rtSet = ReadWriteLock.this.readThreads;
+        private final Map<Thread, Lock> map = ReadWriteLock.this.readLocks;
+
+        private Thread next;
+        private boolean done = false;
+
+        private ReadThreadsIterator() { }
+
+        @Override
+        public boolean hasNext() {
+            if (done) {
+                return false;
+
+            } else if (this.next != null) {
+                return true;
+            }
+
+            return rtSet.clearInactive(Boolean.class, () -> {
+                for (Map.Entry<Thread, Lock> entry : this.map.entrySet()) {
+                    Thread thread = entry.getKey();
+                    if (!alreadyUsed.containsKey(thread) && entry.getValue().active) {
+                        this.next = thread;
+                        alreadyUsed.put(thread, null);
+                        return true;
+                    }
+                }
+                done = true;
+                return false;
+            });
+        }
+
+        @Override
+        public Thread next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+
+            Thread next = this.next;
+            this.next = null;
+            return next;
+        }
     }
 }

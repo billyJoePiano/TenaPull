@@ -25,11 +25,11 @@ public class TestCRUD {
 
     // directory with .json files matching class names, with test params
     public static final String PARAMS_DIR = "crud-params/";
-    // ...used when no file is provided (JSON_DIR/pojoClassName.json)
+    // ...used when no file is provided (JSON_DIR/pojoTypeName.json)
     // OR when file is a relative path i.e. doesn't start with "/"
 
     public static final Object[][] TESTS = {
-            // { pojoClass, (optionals) dbPopulate script, jsonFile with params }
+            // { pojoType, (optionals) dbPopulate script, jsonFile with params }
             { Folder.class },
             { Scan.class } ,
             { Scan.class, null, "Scan.extraJson.json"} // null = use default
@@ -55,27 +55,27 @@ public class TestCRUD {
     }
 
     private List<DbPojo> convertFromJsonNode(List<JsonNode> nodeList) {
-        return convertFromJsonNode(params.pojoClass, nodeList);
+        return convertFromJsonNode(params.pojoType, nodeList);
     }
 
-    private static List<DbPojo> convertFromJsonNode(Class<? extends DbPojo> pojoClass,
+    private static List<DbPojo> convertFromJsonNode(Class<? extends DbPojo> pojoType,
                                                     List<JsonNode> paramNodes) {
         List<DbPojo> pojoList = new ArrayList();
         ObjectMapper mapper = new CustomObjectMapper();
         for (JsonNode node : paramNodes) {
-            pojoList.add(convertFromJsonNode(pojoClass, mapper, node));
+            pojoList.add(convertFromJsonNode(pojoType, mapper, node));
         }
         return pojoList;
     }
 
-    private static DbPojo convertFromJsonNode(Class<? extends DbPojo> pojoClass,
+    private static DbPojo convertFromJsonNode(Class<? extends DbPojo> pojoType,
                                               ObjectMapper mapper,
                                               JsonNode node) {
         if (mapper == null) {
             mapper = new CustomObjectMapper();
         }
 
-        return mapper.convertValue(node, pojoClass);
+        return mapper.convertValue(node, pojoType);
     }
 
     @Test
@@ -158,20 +158,20 @@ public class TestCRUD {
 
     private static class TestParams<POJO extends DbPojo> {
         private final String sqlPopulate;
-        private final Class<POJO> pojoClass;
+        private final Class<POJO> pojoType;
         private final Dao<POJO> dao;
         private final List<POJO> create;
         private final List<POJO> update;
         private final List<POJO> delete;
         private final List<Read<POJO>> read;
 
-        private TestParams(Class<POJO> pojoClass, String sqlPopulate,
-                           List<POJO> create,   List<POJO> update,
-                           List<POJO> delete,   List<Read<POJO>> read)
+        private TestParams(Class<POJO> pojoType, String sqlPopulate,
+                           List<POJO> create, List<POJO> update,
+                           List<POJO> delete, List<Read<POJO>> read)
                 throws NoSuchFieldException, IllegalAccessException {
 
-            this.pojoClass = pojoClass;
-            this.dao = (Dao<POJO>) pojoClass.getDeclaredField("dao").get(null);
+            this.pojoType = pojoType;
+            this.dao = (Dao<POJO>) pojoType.getDeclaredField("dao").get(null);
 
             this.sqlPopulate = sqlPopulate;
             this.create = create;
@@ -188,7 +188,7 @@ public class TestCRUD {
         }
 
         private final Type readType;
-        private final Class<POJO> pojoClass;
+        private final Class<POJO> pojoType;
 
         // For GET_ONE only
         private final JsonNode expected;
@@ -204,8 +204,8 @@ public class TestCRUD {
                 // Objects.equals() an entry in the return, after being converted to POJO
 
         // GET_ALL assumed, no search params.  NOTE: expected list can be null if not used. If expectedCount < 0 then it is not checked
-        private Read(Class<POJO> pojoClass, int expectedTotalCount, List<JsonNode> expectedList) {
-            this.pojoClass = pojoClass;
+        private Read(Class<POJO> pojoType, int expectedTotalCount, List<JsonNode> expectedList) {
+            this.pojoType = pojoType;
             this.readType = Read.Type.GET_ALL;
             this.expectedCount = expectedTotalCount;
             this.expectedList = expectedList;
@@ -216,13 +216,13 @@ public class TestCRUD {
         }
 
         //GET_SOME assumed, with search params.  NOTE: expected list can be null if not used. If expectedCount < 0 then it is not checked
-        private Read(Class<POJO> pojoClass, Map<String,Object> searchMap,
+        private Read(Class<POJO> pojoType, Map<String,Object> searchMap,
                      int expectedCount, List<JsonNode> expectedList) {
 
             if (searchMap == null) throw new IllegalArgumentException(
                     "Must provide a non-null search map for TestCRUD.Read of type GET_SOME");
 
-            this.pojoClass = pojoClass;
+            this.pojoType = pojoType;
             this.readType = Read.Type.GET_SOME;
             this.searchMap = searchMap;
             this.expectedCount = expectedCount;
@@ -232,8 +232,8 @@ public class TestCRUD {
         }
 
         //GET_ONE assumed, with individual DbPojo.
-        private Read(Class<POJO> pojoClass, int searchId, JsonNode expected) {
-            this.pojoClass = pojoClass;
+        private Read(Class<POJO> pojoType, int searchId, JsonNode expected) {
+            this.pojoType = pojoType;
             this.readType = Read.Type.GET_ONE;
             this.searchId = searchId;
             this.expected = expected;
@@ -260,7 +260,7 @@ public class TestCRUD {
         }
 
         private void assertOne(POJO actual) {
-            POJO expected = (POJO) convertFromJsonNode(this.pojoClass, null, this.expected);
+            POJO expected = (POJO) convertFromJsonNode(this.pojoType, null, this.expected);
             if (expected != null) {
                 assertEquals(expected, actual);
 
@@ -278,7 +278,7 @@ public class TestCRUD {
 
             if (expectedList != null) {
                 List<POJO> expectedList =
-                        (List<POJO>) convertFromJsonNode(this.pojoClass, this.expectedList);
+                        (List<POJO>) convertFromJsonNode(this.pojoType, this.expectedList);
 
                 for (POJO pojo : expectedList) {
                     if (!actual.contains(pojo)) {
@@ -296,12 +296,12 @@ public class TestCRUD {
         List<TestParams[]> paramsList = new ArrayList();
 
         for (Object[] test : TESTS) {
-            Class<? extends DbPojo> pojoClass = null;
+            Class<? extends DbPojo> pojoType = null;
             String dbPopulate = null;
             String jsonFile = null;
 
             if (test.length > 0) {
-                pojoClass = (Class<? extends DbPojo>) test[0];
+                pojoType = (Class<? extends DbPojo>) test[0];
 
             } else {
                 throw new IllegalStateException("Empty test parameters");
@@ -320,14 +320,14 @@ public class TestCRUD {
             }
 
             if (jsonFile == null) {
-                jsonFile = PARAMS_DIR + pojoClass.getSimpleName() + ".json";
+                jsonFile = PARAMS_DIR + pojoType.getSimpleName() + ".json";
 
             } else if (!jsonFile.substring(0, 1).equals("/")) {
                 jsonFile = PARAMS_DIR + jsonFile;
             }
 
             for (TestParams params :
-                    createParamsFromJson(pojoClass, dbPopulate, jsonFile)) {
+                    createParamsFromJson(pojoType, dbPopulate, jsonFile)) {
                 paramsList.add(new TestParams[] { params });
             }
         }
@@ -337,7 +337,7 @@ public class TestCRUD {
         return paramsList;
     }
 
-    private static List<TestParams> createParamsFromJson(Class<? extends DbPojo> pojoClass,
+    private static List<TestParams> createParamsFromJson(Class<? extends DbPojo> pojoType,
                                                          String sqlPopulate,
                                                          String jsonFile)
             throws IOException, NoSuchFieldException, IllegalAccessException {
@@ -356,11 +356,11 @@ public class TestCRUD {
                             + jsonFile + "'.  Must be an object:\n"
                             + node.toString());
                 }
-                list.add(createParams(pojoClass, sqlPopulate, node));
+                list.add(createParams(pojoType, sqlPopulate, node));
             }
 
         } else if (rootNode.isObject()) {
-            list.add(createParams(pojoClass, sqlPopulate, rootNode));
+            list.add(createParams(pojoType, sqlPopulate, rootNode));
 
         } else {
             throw new JsonException("Invalid json root node in file '"
@@ -371,7 +371,7 @@ public class TestCRUD {
         return list;
     }
 
-    private static TestParams createParams(Class<? extends DbPojo> pojoClass,
+    private static TestParams createParams(Class<? extends DbPojo> pojoType,
                                            String sqlPopulate,
                                            JsonNode rootNode)
             throws NoSuchFieldException, IllegalAccessException {
@@ -408,16 +408,16 @@ public class TestCRUD {
         n = rootNode.get("read");
         if (n != null) {
             for (JsonNode node : n) {
-                read.add(createReadParams(pojoClass, node));
+                read.add(createReadParams(pojoType, node));
             }
         }
 
-        return new TestParams(pojoClass, sqlPopulate, create, update, delete, read);
+        return new TestParams(pojoType, sqlPopulate, create, update, delete, read);
     }
 
     // delegation method for createParamsFromJson
     private static Read createReadParams(
-            Class<? extends DbPojo> pojoClass,
+            Class<? extends DbPojo> pojoType,
             JsonNode node) {
 
         JsonNode expected = null;
@@ -473,18 +473,18 @@ public class TestCRUD {
                 throw new JsonException(
                         "Invalid properties combination for TestParams\n" + node);
             }
-            return new Read(pojoClass, searchId, expected);
+            return new Read(pojoType, searchId, expected);
         }
 
         if (expectedCount == null) expectedCount = -1;
 
         if (searchMap != null) {
             // GET_SOME
-            return new Read(pojoClass, searchMap, expectedCount, expectedList);
+            return new Read(pojoType, searchMap, expectedCount, expectedList);
 
         } else {
             // GET_ALL
-            return new Read(pojoClass, expectedCount, expectedList);
+            return new Read(pojoType, expectedCount, expectedList);
         }
 
     }

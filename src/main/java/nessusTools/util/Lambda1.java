@@ -1,13 +1,17 @@
-package nessusTools.sync;
+package nessusTools.util;
 
 /**
+ * One-argument lambda with a return value
+ *
  * Type parameters:
+ *
+ * A  : argument -- the type of the argument to be passed to the run method
  *
  * R  : return -- the type of the return value from the Lambda1
  */
 
-public interface Lambda0<R> {
-    R call();
+public interface Lambda1<A, R> {
+    R call(A arg);
 
     public static abstract class NothingThrown extends RuntimeException {
         private NothingThrown() { }

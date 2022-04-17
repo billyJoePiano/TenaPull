@@ -61,7 +61,7 @@ public class IdReference {
             if (pojo == null) {
                 try {
                     //construct a dummy placeholder
-                    pojo = this.pojoClass.getDeclaredConstructor().newInstance();
+                    pojo = this.pojoType.getDeclaredConstructor().newInstance();
                     pojo.setId(id);
 
                 } catch (Exception e) {

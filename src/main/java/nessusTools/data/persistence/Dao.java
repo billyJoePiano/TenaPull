@@ -31,8 +31,8 @@ public class Dao<POJO extends DbPojo> {
     public static final SessionFactoryBuilder sessionFactoryBuilder = makeSessionFactoryBuilder();
     public static final SessionFactory sessionFactory = makeSessionFactory();
 
-    public static <P extends DbPojo, D extends Dao<P>> D get(Class<P> pojoClass) {
-        return (D) classMap.get(pojoClass);
+    public static <P extends DbPojo, D extends Dao<P>> D get(Class<P> pojoType) {
+        return (D) classMap.get(pojoType);
     }
 
     private static SessionFactoryBuilder makeSessionFactoryBuilder() {
@@ -57,7 +57,7 @@ public class Dao<POJO extends DbPojo> {
     }
 
     protected final Logger logger;
-    private final Class<POJO> pojoClass;
+    private final Class<POJO> pojoType;
 
     private Map<String, Attribute<? super POJO, ?>> attributeMap = null;
     private Map<String, PropertyAccess> accessMap = null;
@@ -66,19 +66,19 @@ public class Dao<POJO extends DbPojo> {
 
     private Map<String, Attribute<? super POJO, ?>> idMap = null;
 
-    public Dao(final Class<POJO> pojoClass) {
-        if (classMap.containsKey(pojoClass)) {
+    public Dao(final Class<POJO> pojoType) {
+        if (classMap.containsKey(pojoType)) {
             throw new IllegalArgumentException("A Dao for this class already exists: "
-                    + pojoClass.toString());
+                    + pojoType.toString());
         }
 
-        this.pojoClass = pojoClass;
-        classMap.put((Class<DbPojo>) pojoClass, (Dao<DbPojo>) this);
-        logger = LogManager.getLogger(pojoClass);
+        this.pojoType = pojoType;
+        classMap.put((Class<DbPojo>) pojoType, (Dao<DbPojo>) this);
+        logger = LogManager.getLogger(pojoType);
     }
 
-    public Class<POJO> getPojoClass() {
-        return this.pojoClass;
+    public Class<POJO> getPojoType() {
+        return this.pojoType;
     }
 
     public Logger getLogger() {
@@ -90,7 +90,7 @@ public class Dao<POJO extends DbPojo> {
      */
     public POJO getById(int id) {
         Session session = sessionFactory.openSession();
-        POJO pojo = session.get(this.getPojoClass(), id );
+        POJO pojo = session.get(this.getPojoType(), id );
         session.close();
         return pojo;
     }
@@ -166,8 +166,8 @@ public class Dao<POJO extends DbPojo> {
         Session session = sessionFactory.openSession();
 
         CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaQuery<POJO> query = builder.createQuery(this.getPojoClass());
-        Root<POJO> root = query.from(this.getPojoClass());
+        CriteriaQuery<POJO> query = builder.createQuery(this.getPojoType());
+        Root<POJO> root = query.from(this.getPojoType());
         List<POJO> pojos = session.createQuery(query).getResultList();
 
         session.close();
@@ -183,8 +183,8 @@ public class Dao<POJO extends DbPojo> {
     public List<POJO> findByPropertyEqual(String propertyName, Object value) {
         Session session = getSession();
         CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaQuery<POJO> query = builder.createQuery(pojoClass);
-        Root<POJO> root = query.from(pojoClass);
+        CriteriaQuery<POJO> query = builder.createQuery(pojoType);
+        Root<POJO> root = query.from(pojoType);
 
 
         /*
@@ -226,9 +226,9 @@ public class Dao<POJO extends DbPojo> {
     public List<POJO> findByPropertyEqual(Map<String, Object> propertyMap) {
         Session session = getSession();
         CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaQuery<POJO> query = builder.createQuery(pojoClass);
+        CriteriaQuery<POJO> query = builder.createQuery(pojoType);
 
-        Root<POJO> root = query.from(pojoClass);
+        Root<POJO> root = query.from(pojoType);
         List<Predicate> predicates = new ArrayList<Predicate>();
 
         //Map<String, Class<AttributeConverter>> converterMap = getConverterMap();
@@ -356,8 +356,8 @@ public class Dao<POJO extends DbPojo> {
 
     private void makeAccessorMaps() {
         MetamodelImplementor metamodel = (MetamodelImplementor)  sessionFactory.getMetamodel();
-        EntityTypeDescriptor<POJO> entity = metamodel.entity(this.getPojoClass());
-        SingleTableEntityPersister metadata = (SingleTableEntityPersister) metamodel.entityPersister(this.getPojoClass());
+        EntityTypeDescriptor<POJO> entity = metamodel.entity(this.getPojoType());
+        SingleTableEntityPersister metadata = (SingleTableEntityPersister) metamodel.entityPersister(this.getPojoType());
 
         Map<String, Attribute<? super POJO, ?>> attributeMap = new HashMap();
         Map<String, PropertyAccess> accessMap = new HashMap();
@@ -378,7 +378,7 @@ public class Dao<POJO extends DbPojo> {
             }
 
             PropertyAccess accessor =
-                    PropertyAccessStrategyFieldImpl.INSTANCE.buildPropertyAccess(this.getPojoClass(), fieldname);
+                    PropertyAccessStrategyFieldImpl.INSTANCE.buildPropertyAccess(this.getPojoType(), fieldname);
 
             attributeMap.put(fieldname, attribute);
             accessMap.put(fieldname, accessor);
@@ -435,7 +435,7 @@ public class Dao<POJO extends DbPojo> {
     }
 
     public String toString() {
-        return "[Dao for " + this.getPojoClass().getSimpleName() + "]";
+        return "[Dao for " + this.getPojoType().getSimpleName() + "]";
     }
 
 }

@@ -28,7 +28,7 @@ public class ObjectLookup {
                 return null;
             }
 
-            POJO searchPojo = jp.readValueAs(this.pojoClass);
+            POJO searchPojo = jp.readValueAs(this.pojoType);
 
             try {
                 return dao.getOrCreate(searchPojo); // TODO ??? what method to get the current object as JsonNode / JsonObject ???
