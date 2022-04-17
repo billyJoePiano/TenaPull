@@ -7,8 +7,6 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
     private final RecursiveMap<K> origin;
     private final K key;
 
-    K keyFor;
-
     private final Map<K, RecursiveMap<K>> map = new LinkedHashMap<>();
     private final Map<K, RecursiveMap<K>> view = Collections.unmodifiableMap(this.map);
     private final Set<K> parents;
@@ -130,7 +128,7 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
     }
 
     public Set<K> getParents() {
-        return this.parents;
+        return this.parentsView;
     }
 
     public RecursiveMap<K> getOrigin() {
