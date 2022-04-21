@@ -415,7 +415,8 @@ create table scan_vulnerability (
     count int null,
     cpe int null,
     offline bool null,
-    plugin_family varchar(255) null,
+    plugin_name_id int null,
+    plugin_family_id int null,
     plugin_id int null,
     score varchar(255) null,
     severity int null,
@@ -424,7 +425,9 @@ create table scan_vulnerability (
     vuln_index int null,
     _extra_json longtext null,
     __order_for_scan_response int not null,
-    constraint scan_vulnerability_scan_response_id_fk foreign key (scan_id) references scan_response (id)
+    constraint scan_vulnerability_scan_response_id_fk foreign key (scan_id) references scan_response (id),
+    constraint foreign key (plugin_family_id) references plugin_family (id),
+    constraint foreign key (plugin_name_id) references plugin_name (id)
 );
 
 create table scan_remediations_summary (
