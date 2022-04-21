@@ -71,8 +71,8 @@ public abstract class LookupPojo<POJO extends LookupPojo>
     }
 
     @Override
-    public void _set(POJO lookupPojo) {
-        this.setId(lookupPojo.getId());
-        this.setValue(lookupPojo.getValue());
+    public void _set(POJO other) {
+        this.setId(other.getId());
+        this.setValue(other.getValue());
     }
 }

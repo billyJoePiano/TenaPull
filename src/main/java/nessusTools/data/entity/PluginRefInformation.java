@@ -33,11 +33,37 @@ public class PluginRefInformation extends GeneratedIdPojo
 
     String url;
 
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public List<PluginRefValue> getValues() {
+        return values;
+    }
+
+    public void setValues(List<PluginRefValue> values) {
+        this.values = values;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
     @Override
     public void _set(PluginRefInformation o) {
         this.setId(o.getId());
         this.name = o.name;
         this.values = o.values;
         this.url = o.url;
+        this.setExtraJson(o.getExtraJson());
     }
 }

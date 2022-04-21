@@ -37,7 +37,7 @@ public class SeverityBase extends GeneratedIdPojo
 	}
 
     @Override
-    public void _set(SeverityBase objectLookup) {
+    public void _set(SeverityBase other) {
         //TODO
     }
 }

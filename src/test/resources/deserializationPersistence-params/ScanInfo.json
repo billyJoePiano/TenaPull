@@ -57,6 +57,720 @@
     "selected_severity_base": "system_default",
     "scan_group": null
   },
+  "compliance": [],
+  "filters": [
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "true",
+          "false"
+        ]
+      },
+      "name": "asset_inventory",
+      "readable_name": "Asset Inventory"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "NUMBER",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9]+$"
+      },
+      "name": "bid",
+      "readable_name": "Bugtraq ID"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "Cert VU reference (ie: 10031)",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9]+$"
+      },
+      "name": "cert",
+      "readable_name": "CERT Vulnerability ID"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "cpe",
+      "readable_name": "CPE"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "CVE-YYYY-ID (ie: CVE-2011-0018)",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^(CVE|CAN)-(1999|20[0-9][0-9])-[0-9]{4,}$"
+      },
+      "name": "cve",
+      "readable_name": "CVE"
+    },
+    {
+      "operators": [
+        "lt",
+        "gt",
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "7.5",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9]+(\\.[0-9]+)?$"
+      },
+      "name": "cvss_base_score",
+      "readable_name": "CVSS v2.0 Base Score"
+    },
+    {
+      "operators": [
+        "lt",
+        "gt",
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "4.2",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9]+(\\.[0-9]+)$"
+      },
+      "name": "cvss_temporal_score",
+      "readable_name": "CVSS v2.0 Temporal Score"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "cvss_temporal_vector",
+      "readable_name": "CVSS v2.0 Temporal Vector"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "cvss_vector",
+      "readable_name": "CVSS v2.0 Vector"
+    },
+    {
+      "operators": [
+        "lt",
+        "gt",
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "7.5",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9]+(\\.[0-9]+)?$"
+      },
+      "name": "cvss3_base_score",
+      "readable_name": "CVSS v3.0 Base Score"
+    },
+    {
+      "operators": [
+        "lt",
+        "gt",
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "4.2",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9]+(\\.[0-9]+)$"
+      },
+      "name": "cvss3_temporal_score",
+      "readable_name": "CVSS v3.0 Temporal Score"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "cvss3_temporal_vector",
+      "readable_name": "CVSS v3.0 Temporal Vector"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "cvss3_vector",
+      "readable_name": "CVSS v3.0 Vector"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "CWE reference (ie: 200)",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^([0-9]+)$"
+      },
+      "name": "cwe",
+      "readable_name": "CWE"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "true",
+          "false"
+        ]
+      },
+      "name": "exploit_available",
+      "readable_name": "Exploit Available"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "Exploits are available",
+          "No exploit is required",
+          "No known exploits are available"
+        ]
+      },
+      "name": "exploitability_ease",
+      "readable_name": "Exploitability Ease"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "true",
+          "false"
+        ]
+      },
+      "name": "exploited_by_nessus",
+      "readable_name": "Exploited By Nessus"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "hostname",
+      "readable_name": "Hostname"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "IAVB reference (ie: 2011-B-0151)",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9]+-[A-Za-z]-[0-9]+$"
+      },
+      "name": "iavb",
+      "readable_name": "IAVB ID"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "IAVM Severity (ie: IV)",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[ivIV]+"
+      },
+      "name": "stig_severity",
+      "readable_name": "IAVM Severity"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "IAVT reference (ie: 2011-A-0151)",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9]+-[A-Za-z]-[0-9]+$"
+      },
+      "name": "iavt",
+      "readable_name": "IAVT ID"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "true",
+          "false"
+        ]
+      },
+      "name": "in_the_news",
+      "readable_name": "In The News"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "true",
+          "false"
+        ]
+      },
+      "name": "exploit_framework_metasploit",
+      "readable_name": "Metasploit Exploit Framework"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "metasploit_name",
+      "readable_name": "Metasploit Name"
+    },
+    {
+      "operators": [
+        "date-lt",
+        "date-gt",
+        "date-eq",
+        "date-neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "YYYY-MM-DD",
+        "prefix": "filter",
+        "type": "datefield",
+        "regex": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      },
+      "name": "patch_publication_date",
+      "readable_name": "Patch Publication Date"
+    },
+    {
+      "operators": [
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "description",
+      "readable_name": "Plugin Description"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "AIX Local Security Checks",
+          "Alma Linux Local Security Checks",
+          "Amazon Linux Local Security Checks",
+          "Backdoors",
+          "CGI abuses",
+          "CGI abuses : XSS",
+          "CISCO",
+          "CentOS Local Security Checks",
+          "DNS",
+          "Databases",
+          "Debian Local Security Checks",
+          "Default Unix Accounts",
+          "Denial of Service",
+          "F5 Networks Local Security Checks",
+          "FTP",
+          "Fedora Local Security Checks",
+          "Firewalls",
+          "FreeBSD Local Security Checks",
+          "Gain a shell remotely",
+          "General",
+          "Gentoo Local Security Checks",
+          "HP-UX Local Security Checks",
+          "Huawei Local Security Checks",
+          "Junos Local Security Checks",
+          "MacOS X Local Security Checks",
+          "Mandriva Local Security Checks",
+          "Misc.",
+          "Mobile Devices",
+          "Netware",
+          "NewStart CGSL Local Security Checks",
+          "Oracle Linux Local Security Checks",
+          "OracleVM Local Security Checks",
+          "Palo Alto Local Security Checks",
+          "Peer-To-Peer File Sharing",
+          "PhotonOS Local Security Checks",
+          "Policy Compliance",
+          "Port scanners",
+          "RPC",
+          "Red Hat Local Security Checks",
+          "Rocky Linux Local Security Checks",
+          "SCADA",
+          "SMTP problems",
+          "SNMP",
+          "Scientific Linux Local Security Checks",
+          "Service detection",
+          "Settings",
+          "Slackware Local Security Checks",
+          "Solaris Local Security Checks",
+          "SuSE Local Security Checks",
+          "Tenable.ot",
+          "Ubuntu Local Security Checks",
+          "VMware ESX Local Security Checks",
+          "Virtuozzo Local Security Checks",
+          "Web Servers",
+          "Windows",
+          "Windows : Microsoft Bulletins",
+          "Windows : User management"
+        ]
+      },
+      "name": "plugin_family",
+      "readable_name": "Plugin Family"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "NUMBER",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9, ]+$"
+      },
+      "name": "plugin_id",
+      "readable_name": "Plugin ID"
+    },
+    {
+      "operators": [
+        "date-lt",
+        "date-gt",
+        "date-eq",
+        "date-neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "YYYY-MM-DD",
+        "prefix": "filter",
+        "type": "datefield",
+        "regex": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      },
+      "name": "plugin_modification_date",
+      "readable_name": "Plugin Modification Date"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "plugin_name",
+      "readable_name": "Plugin Name"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "plugin_output",
+      "readable_name": "Plugin Output"
+    },
+    {
+      "operators": [
+        "date-lt",
+        "date-gt",
+        "date-eq",
+        "date-neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "YYYY-MM-DD",
+        "prefix": "filter",
+        "type": "datefield",
+        "regex": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      },
+      "name": "plugin_publication_date",
+      "readable_name": "Plugin Publication Date"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "local",
+          "remote"
+        ]
+      },
+      "name": "plugin_type",
+      "readable_name": "Plugin Type"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "80",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": "^[0-9]+$"
+      },
+      "name": "port",
+      "readable_name": "Port"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "tcp",
+          "udp",
+          "icmp"
+        ]
+      },
+      "name": "protocol",
+      "readable_name": "Protocol"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq"
+      ],
+      "control": {
+        "prefix": "filter",
+        "type": "dropdown",
+        "list": [
+          "None",
+          "Low",
+          "Medium",
+          "High",
+          "Critical"
+        ]
+      },
+      "name": "risk_factor",
+      "readable_name": "Risk Factor"
+    },
+    {
+      "operators": [
+        "eq",
+        "neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "see_also",
+      "readable_name": "See Also"
+    },
+    {
+      "operators": [
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "solution",
+      "readable_name": "Solution"
+    },
+    {
+      "operators": [
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "TEXT",
+        "prefix": "filter",
+        "type": "entry",
+        "regex": ".*"
+      },
+      "name": "synopsis",
+      "readable_name": "Synopsis"
+    },
+    {
+      "operators": [
+        "date-lt",
+        "date-gt",
+        "date-eq",
+        "date-neq",
+        "match",
+        "nmatch"
+      ],
+      "control": {
+        "readable_regex": "YYYY-MM-DD",
+        "prefix": "filter",
+        "type": "datefield",
+        "regex": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      },
+      "name": "vuln_publication_date",
+      "readable_name": "Vulnerability Publication Date"
+    }
+  ],
+  "comphosts": [],
   "history": [
     {
       "alt_targets_used": false,

@@ -44,7 +44,8 @@ public class License extends GeneratedIdPojo
     }
 
     @Override
-    public void _set(License objectLookup) {
+    public void _set(License o) {
         //TODO
+        this.setExtraJson(o.getExtraJson());
     }
 }

@@ -22,9 +22,27 @@ public class PluginVulnInformation extends GeneratedIdPojo
     @JsonProperty("vuln_publication_date")
     String vulnPublicationDate;
 
+
+    public String getInTheNews() {
+        return inTheNews;
+    }
+
+    public void setInTheNews(String inTheNews) {
+        this.inTheNews = inTheNews;
+    }
+
+    public String getVulnPublicationDate() {
+        return vulnPublicationDate;
+    }
+
+    public void setVulnPublicationDate(String vulnPublicationDate) {
+        this.vulnPublicationDate = vulnPublicationDate;
+    }
+
     @Override
     public void _set(PluginVulnInformation o) {
         this.setId(o.getId());
-
+        //TODO
+        this.setExtraJson(o.getExtraJson());
     }
 }

@@ -56,7 +56,11 @@ public class ScanPluginHost extends ScanResponse.ChildListTemplate
 
 
     @Override
-    public void _set(ScanPluginHost objectLookup) {
-
+    public void _set(ScanPluginHost o) {
+        this.setId(o.getId());
+        this.hostId = o.hostId;
+        this.hostFqdn = o.hostFqdn;
+        this.hostname = o.hostname;
+        this.setExtraJson(o.getExtraJson());
     }
 }

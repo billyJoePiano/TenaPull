@@ -16,8 +16,8 @@ import javax.persistence.Table;
 @Entity(name = "SeverityCount")
 @Table(name = "scan_host_severity_count")
 @JsonIgnoreProperties({"id"})
-public class SeverityCount extends GeneratedIdPojo {
-    public static final Dao<SeverityCount> dao = new Dao(SeverityCount.class);
+public class SeverityLevelCount extends GeneratedIdPojo {
+    public static final Dao<SeverityLevelCount> dao = new Dao(SeverityLevelCount.class);
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="scan_host_id")

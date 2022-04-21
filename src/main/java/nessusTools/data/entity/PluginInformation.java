@@ -38,6 +38,55 @@ public class PluginInformation extends GeneratedIdPojo
     @JsonProperty("plugin_modifications")
     private String pluginModificationDate;
 
+
+    public String getPluginVersion() {
+        return pluginVersion;
+    }
+
+    public void setPluginVersion(String pluginVersion) {
+        this.pluginVersion = pluginVersion;
+    }
+
+    public Integer getPluginId() {
+        return pluginId;
+    }
+
+    public void setPluginId(Integer pluginId) {
+        this.pluginId = pluginId;
+    }
+
+    public String getPluginType() {
+        return pluginType;
+    }
+
+    public void setPluginType(String pluginType) {
+        this.pluginType = pluginType;
+    }
+
+    public String getPluginPublicationDate() {
+        return pluginPublicationDate;
+    }
+
+    public void setPluginPublicationDate(String pluginPublicationDate) {
+        this.pluginPublicationDate = pluginPublicationDate;
+    }
+
+    public String getPluginFamily() {
+        return pluginFamily;
+    }
+
+    public void setPluginFamily(String pluginFamily) {
+        this.pluginFamily = pluginFamily;
+    }
+
+    public String getPluginModificationDate() {
+        return pluginModificationDate;
+    }
+
+    public void setPluginModificationDate(String pluginModificationDate) {
+        this.pluginModificationDate = pluginModificationDate;
+    }
+
     @Override
     public void _set(PluginInformation o) {
         this.setId(o.getId());
@@ -47,5 +96,6 @@ public class PluginInformation extends GeneratedIdPojo
         this.pluginPublicationDate = o.pluginPublicationDate;
         this.pluginFamily = o.pluginFamily;
         this.pluginModificationDate = o.pluginModificationDate;
+        this.setExtraJson(o.getExtraJson());
     }
 }

@@ -1,10 +1,9 @@
 package nessusTools.data.entity;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.annotation.*;
 import nessusTools.client.response.*;
-import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
+import org.hibernate.annotations.*;
 
 import java.util.*;
 
@@ -13,6 +12,7 @@ import java.util.*;
 import javax.persistence.*;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
 @Entity(name = "ScanHost")
@@ -46,9 +46,16 @@ public class ScanHost extends ScanResponse.ChildListTemplate {
 
     private Integer score;
 
-    @OneToOne(mappedBy= "scanHost") //, cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JsonProperty("severitycount")
-    private SeverityCountContainer severityCount;
+    @ManyToMany(cascade = CascadeType.ALL)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @JoinTable(
+            name = "scan_host_severity_level_count",
+            joinColumns = { @JoinColumn(name = "scan_host_id") },
+            inverseJoinColumns = { @JoinColumn(name = "severity_id") }
+    )
+    @OrderBy("severityLevel ASC")
+    @JsonProperty("severitycount") // TODO flatten "item"
+    private List<SeverityLevelCount> severityCount;
 
     private String progress;
 
@@ -85,38 +92,6 @@ public class ScanHost extends ScanResponse.ChildListTemplate {
     private Integer severity;
 
     private String hostname;
-
-
-
-    @Table(name = "scan_host_severity_count_container")
-    @Entity(name = "ScanHost.SeverityCountCounter")
-    @JsonIgnoreProperties({"id"})
-    public static class SeverityCountContainer extends NaturalIdPojo {
-        @OneToOne
-        @JoinColumn(name = "id")
-        @JsonIgnore
-        private ScanHost scanHost;
-
-        @OneToMany(mappedBy = "scanHost", targetEntity = SeverityCount.class)
-        @OrderColumn(name = "severity_level")
-        private List<SeverityCount> item;
-
-        public ScanHost getScanHost() {
-            return scanHost;
-        }
-
-        public void setScanHost(ScanHost scanHost) {
-            this.scanHost = scanHost;
-        }
-
-        public List<SeverityCount> getItem() {
-            return item;
-        }
-
-        public void setItem(List<SeverityCount> item) {
-            this.item = item;
-        }
-    }
 
 
     public Integer getHostId() {
@@ -175,11 +150,11 @@ public class ScanHost extends ScanResponse.ChildListTemplate {
         this.score = score;
     }
 
-    public SeverityCountContainer getSeverityCount() {
+    public List<SeverityLevelCount> getSeverityCount() {
         return severityCount;
     }
 
-    public void setSeverityCount(SeverityCountContainer severityCount) {
+    public void setSeverityCount(List<SeverityLevelCount> severityCount) {
         this.severityCount = severityCount;
     }
 

@@ -67,7 +67,8 @@ public class Acl extends NullableIdPojo<Acl> {
 	}
 
     @Override
-    public void _set(Acl objectLookup) {
+    public void _set(Acl o) {
         //TODO
+        this.setExtraJson(o.getExtraJson());
     }
 }

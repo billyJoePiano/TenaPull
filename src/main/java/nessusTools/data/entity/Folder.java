@@ -37,7 +37,7 @@ public class Folder extends NaturalIdPojo {
 
     @OneToMany(mappedBy="folder", cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonIgnore
-    private Set<Scan> scans;
+    private List<Scan> scans;
 
     public Folder() { }
 
@@ -47,7 +47,7 @@ public class Folder extends NaturalIdPojo {
                   Integer defaultTag,
                   Integer custom,
                   Integer unreadCount,
-                  Set<Scan> scans) {
+                  List<Scan> scans) {
 
         this.setId(id);
         this.name = name;
@@ -98,11 +98,11 @@ public class Folder extends NaturalIdPojo {
         this.unreadCount = unreadCount;
     }
 
-    public Set<Scan> getScans() {
+    public List<Scan> getScans() {
         return scans;
     }
 
-    public void setScans(Set<Scan> scans) {
+    public void setScans(List<Scan> scans) {
         this.scans = scans;
     }
 }

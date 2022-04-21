@@ -117,6 +117,184 @@ public class PluginAttributes extends GeneratedIdPojo
     @JsonProperty("exploit_code_maturity")
     String exploitCodeMaturity;
 
+
+
+    public String getThreatIntensityLast28() {
+        return threatIntensityLast28;
+    }
+
+    public void setThreatIntensityLast28(String threatIntensityLast28) {
+        this.threatIntensityLast28 = threatIntensityLast28;
+    }
+
+    public String getSynposis() {
+        return synposis;
+    }
+
+    public void setSynposis(String synposis) {
+        this.synposis = synposis;
+    }
+
+    public String getScriptCopyright() {
+        return scriptCopyright;
+    }
+
+    public void setScriptCopyright(String scriptCopyright) {
+        this.scriptCopyright = scriptCopyright;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public PluginRiskInformation getRiskInformation() {
+        return riskInformation;
+    }
+
+    public void setRiskInformation(PluginRiskInformation riskInformation) {
+        this.riskInformation = riskInformation;
+    }
+
+    public List<PluginRefInformation> getRefInformation() {
+        return refInformation;
+    }
+
+    public void setRefInformation(List<PluginRefInformation> refInformation) {
+        this.refInformation = refInformation;
+    }
+
+    public String getThreatSourcesLast28() {
+        return threatSourcesLast28;
+    }
+
+    public void setThreatSourcesLast28(String threatSourcesLast28) {
+        this.threatSourcesLast28 = threatSourcesLast28;
+    }
+
+    public PluginName getPluginName() {
+        return pluginName;
+    }
+
+    public void setPluginName(PluginName pluginName) {
+        this.pluginName = pluginName;
+    }
+
+    public String getVprScore() {
+        return vprScore;
+    }
+
+    public void setVprScore(String vprScore) {
+        this.vprScore = vprScore;
+    }
+
+    public String getCvssScoreSource() {
+        return cvssScoreSource;
+    }
+
+    public void setCvssScoreSource(String cvssScoreSource) {
+        this.cvssScoreSource = cvssScoreSource;
+    }
+
+    public List<PluginSeeAlso> getSeeAlso() {
+        return seeAlso;
+    }
+
+    public void setSeeAlso(List<PluginSeeAlso> seeAlso) {
+        this.seeAlso = seeAlso;
+    }
+
+    public String getProductCoverage() {
+        return productCoverage;
+    }
+
+    public void setProductCoverage(String productCoverage) {
+        this.productCoverage = productCoverage;
+    }
+
+    public String getThreatRecency() {
+        return threatRecency;
+    }
+
+    public void setThreatRecency(String threatRecency) {
+        this.threatRecency = threatRecency;
+    }
+
+    public String getFname() {
+        return fname;
+    }
+
+    public void setFname(String fname) {
+        this.fname = fname;
+    }
+
+    public String getCvssV3ImpactScore() {
+        return cvssV3ImpactScore;
+    }
+
+    public void setCvssV3ImpactScore(String cvssV3ImpactScore) {
+        this.cvssV3ImpactScore = cvssV3ImpactScore;
+    }
+
+    public PluginInformation getPluginInformation() {
+        return pluginInformation;
+    }
+
+    public void setPluginInformation(PluginInformation pluginInformation) {
+        this.pluginInformation = pluginInformation;
+    }
+
+    public String getRequiredPort() {
+        return requiredPort;
+    }
+
+    public void setRequiredPort(String requiredPort) {
+        this.requiredPort = requiredPort;
+    }
+
+    public String getDependency() {
+        return dependency;
+    }
+
+    public void setDependency(String dependency) {
+        this.dependency = dependency;
+    }
+
+    public String getSolution() {
+        return solution;
+    }
+
+    public void setSolution(String solution) {
+        this.solution = solution;
+    }
+
+    public PluginVulnInformation getPluginVulnInformation() {
+        return pluginVulnInformation;
+    }
+
+    public void setPluginVulnInformation(PluginVulnInformation pluginVulnInformation) {
+        this.pluginVulnInformation = pluginVulnInformation;
+    }
+
+    public String getAgeOfVuln() {
+        return ageOfVuln;
+    }
+
+    public void setAgeOfVuln(String ageOfVuln) {
+        this.ageOfVuln = ageOfVuln;
+    }
+
+    public String getExploitCodeMaturity() {
+        return exploitCodeMaturity;
+    }
+
+    public void setExploitCodeMaturity(String exploitCodeMaturity) {
+        this.exploitCodeMaturity = exploitCodeMaturity;
+    }
+
     @Override
     public void _set(PluginAttributes o) {
         this.setId(o.getId());
@@ -139,5 +317,6 @@ public class PluginAttributes extends GeneratedIdPojo
         this.solution = o.solution;
         this.ageOfVuln = o.ageOfVuln;
         this.exploitCodeMaturity = o.exploitCodeMaturity;
+        this.setExtraJson(o.getExtraJson());
     }
 }

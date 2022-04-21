@@ -1,13 +1,19 @@
 package nessusTools.client.response;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.util.List;
 
 @Entity(name = "ScanInfoResponse")
@@ -57,9 +63,16 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     @JoinColumn(name = "id")
     private ScanRemediationsSummary remediations;
 
-    @OneToMany(mappedBy = "scanResponse")
-    @OrderColumn(name = "__order_for_scan_response")
-    private List<ScanVulnerability> vulnerabilities;
+    @ManyToMany(cascade = CascadeType.ALL)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @JoinTable(
+            name = "scan_vulerability",
+            joinColumns = { @JoinColumn(name = "scan_id") },
+            inverseJoinColumns = { @JoinColumn(name = "vulnerability_id") }
+    )
+    @OrderColumn(name = "__order_for_scan_response_vulnerability", nullable = false)
+    @JsonDeserialize(contentAs = PluginVulnerability.class, contentUsing = ObjectLookup.Deserializer.class)
+    private List<PluginVulnerability> vulnerabilities;
 
     @OneToMany(mappedBy = "scanResponse")
     @OrderColumn(name = "__order_for_scan_response")
@@ -124,11 +137,11 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         this.hosts = hosts;
     }
 
-    public List<ScanVulnerability> getVulnerabilities() {
+    public List<PluginVulnerability> getVulnerabilities() {
         return vulnerabilities;
     }
 
-    public synchronized void setVulnerabilities(List<ScanVulnerability> vulnerabilities) {
+    public synchronized void setVulnerabilities(List<PluginVulnerability> vulnerabilities) {
         this.vulnerabilities = vulnerabilities;
     }
 

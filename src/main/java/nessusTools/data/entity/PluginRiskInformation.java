@@ -46,6 +46,73 @@ public class PluginRiskInformation extends GeneratedIdPojo
     @JsonProperty("cvss3_vector")
     String cvss3Vector;
 
+
+
+
+    public String getCvssTemporalVector() {
+        return cvssTemporalVector;
+    }
+
+    public void setCvssTemporalVector(String cvssTemporalVector) {
+        this.cvssTemporalVector = cvssTemporalVector;
+    }
+
+    public String getRiskFactor() {
+        return riskFactor;
+    }
+
+    public void setRiskFactor(String riskFactor) {
+        this.riskFactor = riskFactor;
+    }
+
+    public String getCvssVector() {
+        return cvssVector;
+    }
+
+    public void setCvssVector(String cvssVector) {
+        this.cvssVector = cvssVector;
+    }
+
+    public String getCvssTemporalScore() {
+        return cvssTemporalScore;
+    }
+
+    public void setCvssTemporalScore(String cvssTemporalScore) {
+        this.cvssTemporalScore = cvssTemporalScore;
+    }
+
+    public String getCvss3BaseScore() {
+        return cvss3BaseScore;
+    }
+
+    public void setCvss3BaseScore(String cvss3BaseScore) {
+        this.cvss3BaseScore = cvss3BaseScore;
+    }
+
+    public String getCvss3TemporalVector() {
+        return cvss3TemporalVector;
+    }
+
+    public void setCvss3TemporalVector(String cvss3TemporalVector) {
+        this.cvss3TemporalVector = cvss3TemporalVector;
+    }
+
+    public String getCvss3TemporalScore() {
+        return cvss3TemporalScore;
+    }
+
+    public void setCvss3TemporalScore(String cvss3TemporalScore) {
+        this.cvss3TemporalScore = cvss3TemporalScore;
+    }
+
+    public String getCvss3Vector() {
+        return cvss3Vector;
+    }
+
+    public void setCvss3Vector(String cvss3Vector) {
+        this.cvss3Vector = cvss3Vector;
+    }
+
     @Override
     public void _set(PluginRiskInformation o) {
         this.setId(o.getId());
@@ -57,5 +124,6 @@ public class PluginRiskInformation extends GeneratedIdPojo
         this.cvss3BaseScore = o.cvss3BaseScore;
         this.cvss3Vector = o.cvss3Vector;
         this.cvss3TemporalScore = o.cvss3TemporalScore;
+        this.setExtraJson(o.getExtraJson());
     }
 }
