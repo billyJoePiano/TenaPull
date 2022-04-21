@@ -9,7 +9,9 @@ import javax.persistence.*;
 
 @Entity(name = "License")
 @Table(name = "license")
-public class License extends GeneratedIdPojo {
+public class License extends GeneratedIdPojo
+        implements ObjectLookupPojo<License> {
+
 	public static final ObjectLookupDao<License> dao
 			= new ObjectLookupDao<License>(License.class);
 
@@ -41,4 +43,8 @@ public class License extends GeneratedIdPojo {
         this.trimmed = trimmed;
     }
 
+    @Override
+    public void _set(License objectLookup) {
+        //TODO
+    }
 }

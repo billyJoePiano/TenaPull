@@ -7,7 +7,7 @@ import javax.persistence.*;
 
 @Entity(name = "Timezone")
 @Table(name = "timezone")
-public class Timezone extends LookupPojo {
+public class Timezone extends LookupPojo<Timezone> {
     public static final LookupDao<Timezone> dao
             = new LookupDao<Timezone>(Timezone.class);
 }

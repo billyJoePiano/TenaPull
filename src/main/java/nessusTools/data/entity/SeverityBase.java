@@ -8,7 +8,8 @@ import javax.persistence.*;
 
 @Entity(name = "SeverityBase")
 @Table(name = "severity_base")
-public class SeverityBase extends GeneratedIdPojo {
+public class SeverityBase extends GeneratedIdPojo
+        implements ObjectLookupPojo<SeverityBase> {
 	public static final ObjectLookupDao<SeverityBase> dao = new ObjectLookupDao<SeverityBase>(SeverityBase.class);
 
 	@Column
@@ -34,4 +35,9 @@ public class SeverityBase extends GeneratedIdPojo {
 	public void setValue(String value) {
 		this.value = value;
 	}
+
+    @Override
+    public void _set(SeverityBase objectLookup) {
+        //TODO
+    }
 }

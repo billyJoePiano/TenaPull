@@ -1,13 +1,15 @@
 package client;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.node.*;
 import nessusTools.client.*;
 import nessusTools.client.response.*;
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.*;
 import nessusTools.data.entity.template.*;
+import testUtils.*;
+
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.node.*;
 
 import org.junit.*;
 
@@ -121,7 +123,7 @@ public class TestNessusClient {
 
 
 
-            JsonNode infoJson = client.fetchJson(ScanResponse.pathFor(scan)).get("info");
+            JsonNode infoJson = client.fetchJson(ScanResponse.getUrlPath(scan.getId())).get("info");
             ScanInfo info = infos.get(i);
 
             if (Objects.equals(info.getStatus().toString(), "running")) {

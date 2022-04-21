@@ -33,6 +33,8 @@
 
         <servlet-version>4.0.1</servlet-version>
 
+        <jetbrains-version>23.0.0</jetbrains-version>
+
     </properties>
 
     <dependencies>
@@ -177,6 +179,14 @@
             <artifactId>javax.servlet-api</artifactId>
             <version>${servlet-version}</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.jetbrains/annotations -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>${jetbrains-version}</version>
+        </dependency>
+
 
     </dependencies>
 

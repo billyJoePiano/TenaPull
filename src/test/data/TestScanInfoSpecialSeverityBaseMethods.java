@@ -2,6 +2,9 @@ package data;
 
 import nessusTools.client.response.*;
 import nessusTools.data.entity.*;
+import testUtils.*;
+
+
 import org.junit.runner.*;
 
 import com.fasterxml.jackson.databind.*;

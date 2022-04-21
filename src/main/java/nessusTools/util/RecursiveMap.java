@@ -1,4 +1,4 @@
-package nessusTools.sync;
+package nessusTools.util;
 
 import java.util.*;
 
@@ -11,6 +11,8 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
     private final Map<K, RecursiveMap<K>> view = Collections.unmodifiableMap(this.map);
     private final Set<K> parents;
     private final Set<K> parentsView;
+
+    private int maxSizeToPrint = 10; // for toString() method ... if the keyset is larger than this size, it just prints the size
 
     public RecursiveMap() {
         this.key = null;
@@ -59,7 +61,7 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
         }
         if (this != this.origin) {
             this.map.put(key, child);
-            child.parents.add(key);
+            child.parents.add(this.key);
         }
         return child;
     }
@@ -82,11 +84,14 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
                     child.map.remove(key);
                 }
 
-                this.map.get(key).parents.clear();
+                RecursiveMap<K> removed = this.get(key);
+                removed.parents.clear();
+                return removed;
             }
+            return null;
 
         } else if (this.containsKey(key)) {
-            this.origin.get(key).parents.remove(key);
+            this.get(key).parents.remove(this.key);
         }
         return map.remove(key);
     }
@@ -129,6 +134,10 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
 
     public Set<K> getParents() {
         return this.parentsView;
+    }
+
+    public K getKey() {
+        return this.key;
     }
 
     public RecursiveMap<K> getOrigin() {
@@ -238,5 +247,33 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
 
     public boolean containsUpOrDownstream(K key) {
         return this.containsDownstream(key) || this.containsUpstream(key);
+    }
+
+    public int getMaxSizeToPrint() {
+        return this.maxSizeToPrint;
+    }
+
+    public void setMaxSizeToPrint(int maxSizeToPrint) {
+        this.maxSizeToPrint = maxSizeToPrint;
+    }
+
+    public String toString() {
+        Set<K> keySet = this.map.keySet();
+        int size = keySet.size();
+
+        String keySetStr;
+
+        if (size > this.maxSizeToPrint) {
+            keySetStr = size + ": { <not listed>  }";
+        } else {
+            keySetStr = size + ": " + keySet.toString();
+        }
+
+        if (this.origin == this) {
+            return "RecursiveMap (origin) " + keySetStr;
+
+        } else {
+            return "RecursiveMap[" + this.key + "] " + keySetStr;
+        }
     }
 }

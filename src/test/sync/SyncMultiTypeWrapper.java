@@ -13,6 +13,7 @@ import org.apache.logging.log4j.core.config.*;
 import org.junit.*;
 import org.junit.runner.*;
 import org.junit.runners.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -361,7 +362,7 @@ public class SyncMultiTypeWrapper {
 
 
             Integer number = i - WARM_UP_ITERATIONS;
-            Thread[] thread = new Thread[]{null};
+            Var<Thread> thread = new Var();
 
             Runnable executor = () -> {
                 List<Runnable> tests = new ArrayList<Runnable>(List.of(
@@ -377,7 +378,7 @@ public class SyncMultiTypeWrapper {
 
                     } catch (Throwable e) {
                         logger.error(e);
-                        if (thread[0] != null) {
+                        if (thread.value != null) {
                             // don't count exceptions unless they are part of the multi-threaded test
                             synchronized (exceptions) {
                                 exceptions.add(e);
@@ -387,16 +388,20 @@ public class SyncMultiTypeWrapper {
                     }
                 }
 
-                if (thread[0] == null) return;
                 synchronized (staged) {
-                    staged.remove(thread[0]);
+                    staged.remove(thread.value);
                     int size = staged.size();
-                    logger.info("Finished thread # " + number
-                            + "\t" + size + " remaining");
+                    if (number >= 0 && size % 50 == 0) {
+                        logger.info("Finished thread # " + number
+                                + "\t" + size + " remaining");
 
 
-                    if (size == 255 || size % 50 == 0) {
-                        logCounter();
+
+                        logCounter(); // THIS INTENTIONALLY GENERATES DEADLOCK THAT NEEDS TO BE BROKEN
+                        // ... by InstancesTracker.deadlockBreaker thread
+                    }
+                    if (size == 0) {
+                        staged.notifyAll();
                     }
                 }
             };
@@ -407,8 +412,8 @@ public class SyncMultiTypeWrapper {
 
             } else {
                 this.tests.add(test);
-                thread[0] = new Thread(executor);
-                this.staged.add(thread[0]);
+                thread.value = new Thread(executor);
+                this.staged.add(thread.value);
             }
         }
     }
@@ -492,6 +497,8 @@ public class SyncMultiTypeWrapper {
             }
         }
 
+        StackTracePrinter.startThread(80000);
+
         // monitoring/logging thread ...
         new Thread(() -> {
             synchronized (staged) {
@@ -515,25 +522,10 @@ public class SyncMultiTypeWrapper {
                 if (staged.size() <= 0) {
                     break;
                 }
-                test = staged.get(0);
-            }
-
-            if (test.isAlive()) {
                 try {
-                    test.join();
-
-                } catch (Throwable e) {
-                    synchronized (staged) {
-                        staged.remove(test);
-                    }
-                    synchronized (exceptions) {
-                        exceptions.add(e);
-                    }
-                }
-
-            } else {
-                synchronized (staged) {
-                    staged.remove(test);
+                    staged.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }

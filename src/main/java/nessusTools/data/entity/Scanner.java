@@ -8,7 +8,7 @@ import javax.persistence.Table;
 
 @Entity(name = "Scanner")
 @Table(name = "scanner")
-public class Scanner extends LookupPojo {
+public class Scanner extends LookupPojo<Scanner> {
     public static final LookupDao<Scanner> dao
             = new LookupDao<Scanner>(Scanner.class);
 

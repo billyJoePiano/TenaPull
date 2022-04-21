@@ -48,7 +48,7 @@ public class Var<T> {
     }
 
     public static class Double {
-        double value;
+        public double value;
 
         public Double() { }
 
@@ -58,7 +58,7 @@ public class Var<T> {
     }
 
     public static class Char {
-        char value;
+        public char value;
 
         public Char() { }
 
@@ -68,7 +68,7 @@ public class Var<T> {
     }
 
     public static class Byte {
-        byte value;
+        public byte value;
 
         public Byte() { }
 
@@ -78,7 +78,7 @@ public class Var<T> {
     }
 
     public static class Long {
-        long value;
+        public long value;
 
         public Long() { }
 
@@ -88,7 +88,7 @@ public class Var<T> {
     }
 
     public static class Float {
-        float value;
+        public float value;
 
         public Float() { }
 
@@ -98,7 +98,7 @@ public class Var<T> {
     }
 
     public static class Short {
-        short value;
+        public short value;
 
         public Short() { }
 

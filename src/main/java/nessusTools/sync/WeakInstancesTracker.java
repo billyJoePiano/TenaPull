@@ -15,21 +15,30 @@ public class WeakInstancesTracker<K, I> {
     public WeakInstancesTracker(Class<K> keyType,
                                 Class<I> instanceType,
                                 Lambda1<K, I> constructLambda) {
+        this(new Type(keyType), new Type(instanceType), constructLambda);
+    }
 
-        this.keyType = keyType;
+    public WeakInstancesTracker(Type<K> keyType,
+                                Type<I> instanceType,
+                                Lambda1<K, I> constructLambda) {
+
+        this.keyType = keyType.getType();
         //this.keysComparable = Comparable.class.isAssignableFrom(keyType);
 
-        this.tracker = new InstancesTracker<WeakInstancesTracker.WeakRef, I>(
-                WeakInstancesTracker.WeakRef.class, instanceType, wr -> {
+        Type<WeakRef> weakKeyType = new Type(WeakRef.class, keyType);
 
-            K key = (K) wr.get();
+        Lambda1<WeakRef, I> construct = wr -> {
+            K key = wr.get();
             if (key != null) {
                 return constructLambda.call(key);
             } else {
                 throw new IllegalStateException(
-                        "WeakRef was garbage collected while instance was under construction.");
+                        "WeakRef was garbage collected while instance was under construction.  "
+                    + "The caller must maintain a strong reference to the key while the instance is being constructed");
             }
-        });
+        };
+
+        this.tracker = new InstancesTracker(weakKeyType, instanceType, construct);
     }
 
     /*

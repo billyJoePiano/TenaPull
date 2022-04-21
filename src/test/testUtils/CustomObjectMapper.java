@@ -46,14 +46,16 @@ public class CustomObjectMapper extends ObjectMapper {
         @Override
         public void serializeAsField(Object o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider, PropertyWriter propertyWriter) throws Exception {
             NessusResponse n = (NessusResponse) o;
-            if (Objects.equals(propertyWriter.getName(), "id") && n.getId() == null) return;
+            //TODO had to comment out below...
+            //if (Objects.equals(propertyWriter.getName(), "id") && n.getId() == null) return;
             propertyWriter.serializeAsField(o, jsonGenerator, serializerProvider);
         }
 
         @Override
         public void serializeAsElement(Object o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider, PropertyWriter propertyWriter) throws Exception {
             NessusResponse n = (NessusResponse) o;
-            if (Objects.equals(propertyWriter.getName(), "id") && n.getId() == null) return;
+            //TODO had to comment out below...
+            //if (Objects.equals(propertyWriter.getName(), "id") && n.getId() == null) return;
             propertyWriter.serializeAsField(o, jsonGenerator, serializerProvider);
         }
 

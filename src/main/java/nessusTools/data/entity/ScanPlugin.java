@@ -16,63 +16,48 @@ import java.util.*;
 
 @Entity(name = "ScanPlugin")
 @Table(name = "scan_plugin")
-public class ScanPlugin extends ScanResponse.ChildListTemplate {
-    Integer hostCount;
+public class ScanPlugin extends ScanResponse.ChildListTemplate
+        implements ObjectLookupPojo<ScanPlugin> {
+
+    public static final ObjectLookupDao<PluginAttributes> dao
+            = new ObjectLookupDao<PluginAttributes>(PluginAttributes.class);
 
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
             name = "scan_plugin_scan_host",
             joinColumns = { @JoinColumn(name = "scan_id") },
-            inverseJoinColumns = { @JoinColumn(name = "acl_id") }
+            inverseJoinColumns = { @JoinColumn(name = "host_id") }
     )
-    @OrderColumn(name = "host_id")
-    @JsonDeserialize(contentAs = Host.class, contentUsing = ObjectLookup.Deserializer.class)
-    List<Host> hosts;
+    @OrderColumn(name = "__order_for_scan_plugin_host")
+    @JsonDeserialize(contentAs = ScanPluginHost.class, contentUsing = ObjectLookup.Deserializer.class)
+    List<ScanPluginHost> hosts;
 
+    Integer severity;
 
-    @Entity(name = "ScanPlugin.Host")
-    @Table(name = "scan_plugin_host")
-    @JsonIgnoreProperties({"id"})
-    public static class Host extends ScanResponse.ChildListTemplate {
-        public static final Dao<Host> dao = new ObjectLookupDao(Host.class);
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="plugin_name_id")
+    PluginName pluginName;
 
-        // TODO ManyToMany and ObjectLookup logic
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="plugin_attritubes_id")
+    PluginAttributes pluginAttributes;
 
-        @Column(name = "host_id")
-        @JsonProperty("id")
-        Integer hostId;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="plugin_family_id")
+    @JsonProperty("pluginfamily")
+    PluginFamily pluginFamily;
 
-        @Column(name = "host_fqdn")
-        @JsonProperty("host_fqdn")
-        String hostFqdn;
+    @Column(name = "host_count")
+    @JsonProperty("host_count")
+    Integer hostCount;
 
-        String hostname;
+    @Column(name = "plugin_id")
+    @JsonProperty("pluginid")
+    String pluginId;
 
-        public Integer getHostId() {
-            return hostId;
-        }
-
-        public void setHostId(Integer hostId) {
-            this.hostId = hostId;
-        }
-
-        public String getHostFqdn() {
-            return hostFqdn;
-        }
-
-        public void setHostFqdn(String hostFqdn) {
-            this.hostFqdn = hostFqdn;
-        }
-
-        public String getHostname() {
-            return hostname;
-        }
-
-        public void setHostname(String hostname) {
-            this.hostname = hostname;
-        }
-
-
+    @Override
+    public void _set(ScanPlugin objectLookup) {
+        //TODO
     }
 }

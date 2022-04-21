@@ -40,11 +40,9 @@ public class IndexResponse extends NessusResponseWithTimestamp {
         this.scans = scans;
     }
 
-    public Timestamp getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(Timestamp timestamp) {
-        this.timestamp = timestamp;
+    @Override
+    public String getUrlPath() {
+        //TODO
+        return null;
     }
 }

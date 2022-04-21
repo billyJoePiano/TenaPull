@@ -66,6 +66,8 @@ public class ReadWriteLock<O, R> {
     private static final ReadWriteLock<Map<ReadWriteLock, Void>, Void>
              instances = new ReadWriteLock<>();
 
+    private static final Var.Long counter = new Var.Long(1);
+
     private final O object;
     private final O view;
 
@@ -83,12 +85,15 @@ public class ReadWriteLock<O, R> {
     private final Lock removeLock = new Lock();
     private final Lock gcLock = new Lock();
 
+    private final long id;
+
     private ReadWriteLock() {
         // static instances ReadWriteLock only
         Map map = new WeakHashMap<>();
         this.object = (O) map;
         this.view = (O) Collections.unmodifiableMap(map);
         map.put(this, null);
+        this.id = 0;
     }
 
     public ReadWriteLock(O objectToLock) {
@@ -98,6 +103,9 @@ public class ReadWriteLock<O, R> {
     public ReadWriteLock(O objectToLock, O unmodifiableView) {
         this.object = objectToLock;
         this.view = unmodifiableView;
+        synchronized (counter) {
+            this.id = counter.value++;
+        }
         instances.write(instances -> instances.put(this, null));
     }
 
@@ -188,7 +196,7 @@ public class ReadWriteLock<O, R> {
             }
         } else if (this.holdsReadLock()) {
             throw new ConcurrentAccessException(
-                    "A thread cannot grab a write lock until it has released all its read locks!");
+                    "A thread cannot grab a write lock until it has released all of its read locks!");
 
         } else {
             Thread currentThread = Thread.currentThread();
@@ -196,9 +204,9 @@ public class ReadWriteLock<O, R> {
                 this.waitingForWrite.add(currentThread);
             }
             synchronized (addLock) {
+                this.currentWriteThread = currentThread;
                 waitForWriteLock();
                 synchronized (writeLock) {
-                    this.currentWriteThread = currentThread;
                     synchronized (this.waitingForWrite) {
                         this.waitingForWrite.remove(currentThread);
                     }
@@ -225,27 +233,28 @@ public class ReadWriteLock<O, R> {
         // iterate over the existing read locks and wait for all of them to be released
         while (true) {
             int size;
+            List<Lock> readLocksCopy;
 
             synchronized (removeLock) {
-                // this.readLocks list cannot be modified externally once inside this code block.
-                // Since both addLock and removeLock are held by this thread, we can
-                // guarantee it will not change during iteration.  However, it is still
-                // possible that the state of individual readLocks within the list may change
-                // which is why we wait for a lock on each individually before inspecting
-                boolean allInactive = true;
+                readLocksCopy = new ArrayList(this.readLocks.values());
+            }
+            boolean allInactive = true;
 
-                for (Lock lock : this.readLocks.values()) {
-                    synchronized (lock) {
-                        if (lock.active) {
-                            // In theory this should be unreachable ...
-                            // All "read" threads set lock.active = false before releasing
-                            // their lock
-                            allInactive = false;
-                            break;
-                        }
+            for (Lock lock : readLocksCopy) {
+                synchronized (lock) {
+                    if (lock.active) {
+                        // In theory this should be unreachable ...
+                        // All "read" threads set lock.active = false before releasing
+                        // their lock
+                        allInactive = false;
+                        break;
                     }
                 }
-                if (allInactive) {
+            }
+
+
+            if (allInactive) {
+                synchronized (removeLock) {
                     if (readLocks.size() > 0) {
                         this.readLocks.clear();
                         // Makes the GC's job easier, since this is basically doing the same thing
@@ -254,11 +263,41 @@ public class ReadWriteLock<O, R> {
                         // It would be started the next time a read lock is created
                         // and finished, and wouldn't be needed until that time anyways.
                     }
-                    return;
                 }
+                return;
             }
         }
     }
+
+    /* TODO ???
+    public void waitLock()
+            throws InterruptedException, IllegalMonitorStateException {
+
+        Lock currentLock = this.getCurrentLock();
+        if (currentLock == null) {
+            throw new IllegalMonitorStateException();
+        }
+
+    }
+
+    public void waitLock(long timeoutMillis)
+            throws InterruptedException, IllegalMonitorStateException {
+
+        Lock currentLock = this.getCurrentLock();
+        if (currentLock == null) {
+            throw new IllegalMonitorStateException();
+        }
+
+    }
+
+    public void notifyWriteLock() {
+
+    }
+
+    public void notifyLock(Thread thread) {
+
+    }
+     */
 
     public final boolean holdsWriteLock() {
         return Thread.holdsLock(writeLock);
@@ -378,6 +417,12 @@ public class ReadWriteLock<O, R> {
         if (holdsWrite || holdsRead) {
             synchronized (this.waitingForWrite) {
                 blocked.addAll(waitingForWrite);
+
+                if (holdsWrite) {
+                    // a thread may both hold the addLock AND be waiting for full write lock at the same time
+                    // ... it is not blocking itself, however
+                    blocked.remove(thread);
+                }
             }
         }
 
@@ -391,25 +436,29 @@ public class ReadWriteLock<O, R> {
     // puts thread blocking relationships into a RecursiveMap
     private void putThreadBlocks(RecursiveMap<Thread> threadMap) {
         Set<Thread> readLocks = new LinkedHashSet<>();
-        Thread writeLock;
+        Thread writeThread;
         synchronized (this.removeLock) {
             for (Map.Entry<Thread, Lock> entry : this.readLocks.entrySet()) {
                 if (entry.getValue().active) {
                     readLocks.add(entry.getKey());
                 }
             }
-            writeLock = this.currentWriteThread;
+            writeThread = this.currentWriteThread;
         }
 
-        if (writeLock != null) {
+        if (writeThread != null) {
             synchronized (this.waitingForRead) {
                 for (Thread waiting : this.waitingForRead) {
-                    threadMap.putChild(writeLock, waiting);
+                    threadMap.putChild(writeThread, waiting);
                 }
             }
             synchronized (this.waitingForWrite) {
                 for (Thread waiting : this.waitingForWrite) {
-                    threadMap.putChild(writeLock, waiting);
+                    if (!Objects.equals(writeThread, waiting)) {
+                        // a thread may both hold the addLock AND be waiting for full write lock at the same time
+                        // ... it is not blocking itself, however
+                        threadMap.putChild(writeThread, waiting);
+                    }
                     for (Thread readLock : readLocks) {
                         threadMap.putChild(readLock, waiting);
                     }
@@ -499,6 +548,8 @@ public class ReadWriteLock<O, R> {
     private void startGarbageCollector() {
         this.garbageCollector = new Thread(() -> {
             try {
+                Thread garbageCollector = Thread.currentThread();
+                garbageCollector.setPriority(Thread.MIN_PRIORITY);
                 int zeroLocksCounter = 0;
                 Map<Thread, Lock> inactive = new WeakHashMap<>();
                 while (true) {
@@ -536,7 +587,9 @@ public class ReadWriteLock<O, R> {
                         zeroLocksCounter = 0;
                     }
 
+                    garbageCollector.setPriority(Thread.MAX_PRIORITY);
                     this.clear(inactive);
+                    garbageCollector.setPriority(Thread.MIN_PRIORITY);
 
                     // size is used as divisor for sleep time
                     // the more locks are present, the more active the GC should be
@@ -561,7 +614,7 @@ public class ReadWriteLock<O, R> {
                     }
                 }
             }
-        });
+        }, "ReadWriteLock (" + this.id + ") garbage collector");
 
         this.garbageCollector.start();
     }

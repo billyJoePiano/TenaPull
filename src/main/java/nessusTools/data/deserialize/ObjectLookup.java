@@ -12,7 +12,7 @@ import java.io.IOException;
 public class ObjectLookup {
     private ObjectLookup() { }
 
-    public static class Deserializer<POJO extends DbPojo>
+    public static class Deserializer<POJO extends ObjectLookupPojo<POJO>>
             extends AbstractContextualPojoDeserializer<POJO, ObjectLookupDao<POJO>> {
 
         private static final Logger logger = LogManager.getLogger(ObjectLookup.Deserializer.class);

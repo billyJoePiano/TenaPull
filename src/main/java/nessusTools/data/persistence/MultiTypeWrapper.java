@@ -4,7 +4,6 @@ import nessusTools.sync.*;
 import org.apache.logging.log4j.*;
 
 import javax.persistence.*;
-import javax.swing.plaf.multi.*;
 import java.math.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
@@ -90,13 +89,13 @@ public final class MultiTypeWrapper {
         }
 
         String dbString = makeDbStringForNotNull(object);
-        return wrapperTracker.getOrConstructWith(dbString, dbs ->
-            wrappedInstancesTracker.getOrConstructWith(object, o -> {
+        return byDbString.getOrConstructWith(dbString, dbs ->
+            byInstanceWrapped.getOrConstructWith(object, o -> {
                 MultiTypeWrapper wrapper = new MultiTypeWrapper(dbString);
                 Object obj = wrapper.getObject();
 
                 if (!(obj instanceof MultiTypeWrapper || Objects.equals(obj, object))) {
-                    MultiTypeWrapper alt = wrappedInstancesTracker.put(obj, wrapper);
+                    MultiTypeWrapper alt = byInstanceWrapped.put(obj, wrapper);
 
                     if (alt != null && alt != wrapper) {
                         if (Objects.equals(wrapper, alt)) {
@@ -120,25 +119,25 @@ public final class MultiTypeWrapper {
 
         }
 
-        return wrapperTracker.getOrConstruct(dbString);
+        return byDbString.getOrConstruct(dbString);
     }
 
 
     // Maps all instances passed to "wrap" to their respective dbStrings
     // these dbStrings can then be used to access a MultiTypeWrapper in the wrapperTracker
     private static WeakInstancesTracker<Object, MultiTypeWrapper>
-            wrappedInstancesTracker = wrappedInstancesTracker();
+            byInstanceWrapped = byInstanceWrapped();
 
 
 
     private static InstancesTracker<String, MultiTypeWrapper>
-            wrapperTracker = wrapperTracker();
+            byDbString = byDbString();
 
-    private static WeakInstancesTracker<Object, MultiTypeWrapper> wrappedInstancesTracker() {
+    private static WeakInstancesTracker<Object, MultiTypeWrapper> byInstanceWrapped() {
         return new WeakInstancesTracker(Object.class, MultiTypeWrapper.class, null);
     }
 
-    private static InstancesTracker<String, MultiTypeWrapper> wrapperTracker() {
+    private static InstancesTracker<String, MultiTypeWrapper> byDbString() {
         return new InstancesTracker<String, MultiTypeWrapper>(
             String.class,
             MultiTypeWrapper.class,
@@ -151,7 +150,7 @@ public final class MultiTypeWrapper {
                 // was based soley on dbString)
 
                 if (!Objects.equals(dbString, wrapper.toDb())) {
-                    MultiTypeWrapper alt = wrapperTracker.get(wrapper.toDb());
+                    MultiTypeWrapper alt = byDbString.get(wrapper.toDb());
                     if (alt != null && alt != wrapper) {
                         if (Objects.equals(wrapper, alt)) {
                             return alt;
@@ -163,7 +162,7 @@ public final class MultiTypeWrapper {
 
                 }
 
-                MultiTypeWrapper alt = wrappedInstancesTracker.getOrConstructWith(obj, o -> wrapper);
+                MultiTypeWrapper alt = byInstanceWrapped.getOrConstructWith(obj, o -> wrapper);
                 if (alt != null && alt != wrapper) {
                     if (Objects.equals(wrapper, alt)) {
                         return alt;
@@ -179,7 +178,7 @@ public final class MultiTypeWrapper {
 
 
     public static int size() {
-        return wrapperTracker.size();
+        return byDbString.size();
     }
 
     //Counts the number of
@@ -191,8 +190,8 @@ public final class MultiTypeWrapper {
         counter = 0;
     }
     public static void clearInstances() {
-        wrapperTracker = wrapperTracker();
-        wrappedInstancesTracker = wrappedInstancesTracker();
+        byDbString = byDbString();
+        byInstanceWrapped = byInstanceWrapped();
     }
 
     private final Object object;

@@ -51,3 +51,6 @@ fabric.properties
 notes/api-fetch-1.json
 nessus-api.properties
 nessus-api.properties.bak
+
+ScanInfo.json
+database.properties
