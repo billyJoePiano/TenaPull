@@ -17,7 +17,8 @@ import javax.persistence.Table;
 
 @Entity(name = "ScanHost")
 @Table(name = "scan_host")
-public class ScanHost extends ScanResponse.ChildListTemplate {
+public class ScanHost extends ScanResponse.MultiChild<ScanHost> {
+
     public static final Dao<ScanHost> dao = new Dao(ScanHost.class);
 
     @Column(name = "host_id")

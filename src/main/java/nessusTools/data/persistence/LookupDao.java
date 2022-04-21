@@ -5,7 +5,7 @@ import nessusTools.data.entity.template.DbPojo;
 import org.hibernate.*;
 
 
-public class LookupDao<POJO extends LookupPojo> extends Dao<POJO> {
+public class LookupDao<POJO extends LookupPojo<POJO>> extends ObjectLookupDao<POJO> {
 
     public LookupDao(Class<POJO> pojoType) {
         super(pojoType);

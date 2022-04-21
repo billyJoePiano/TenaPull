@@ -29,9 +29,6 @@ public class ScanInfo extends ScanResponse.ChildTemplate {
 
     public static final Logger logger = LogManager.getLogger(ScanInfo.class);
 
-    @OneToOne(mappedBy = "id")
-    private Scan scan;
-
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="folder_id")
     @JsonProperty("folder_id")
@@ -745,11 +742,4 @@ public class ScanInfo extends ScanResponse.ChildTemplate {
         this.knownAccounts = knownAccounts;
     }
 
-    public Scan getScan() {
-        return scan;
-    }
-
-    public void setScan(Scan scan) {
-        this.scan = scan;
-    }
 }

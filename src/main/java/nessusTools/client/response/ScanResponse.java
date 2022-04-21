@@ -14,7 +14,8 @@ import javax.persistence.*;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import java.util.List;
+import java.lang.reflect.*;
+import java.util.*;
 
 @Entity(name = "ScanInfoResponse")
 @Table(name = "scan_info_response")
@@ -71,47 +72,118 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
             inverseJoinColumns = { @JoinColumn(name = "vulnerability_id") }
     )
     @OrderColumn(name = "__order_for_scan_response_vulnerability", nullable = false)
-    @JsonDeserialize(contentAs = PluginVulnerability.class, contentUsing = ObjectLookup.Deserializer.class)
-    private List<PluginVulnerability> vulnerabilities;
+    @JsonDeserialize(contentAs = Vulnerability.class, contentUsing = ObjectLookup.Deserializer.class)
+    private List<Vulnerability> vulnerabilities;
 
     @OneToMany(mappedBy = "scanResponse")
     @OrderColumn(name = "__order_for_scan_response")
     private List<ScanHistory> history;
 
+    @OneToOne
+    @JoinColumn(name = "id")
+    private ScanPrioritization prioritization;
+
+
 
     @MappedSuperclass
-    @JsonIgnoreProperties({"id"})
-    public static abstract class ChildTemplate extends NaturalIdPojo {
-        @OneToOne
+    private static abstract class Child extends ChildTemplate<ScanResponse> {
+        @Transient
+        @JsonIgnore
+        public Class<ScanResponse> _getResponseType() {
+            return ScanResponse.class;
+        }
+
+        @Transient
+        @JsonIgnore
+        public Scan getScan() {
+            ScanResponse response = this._getResponse();
+            if (response == null) return null;
+            return response.getScan();
+        }
+    }
+
+    @MappedSuperclass
+    public static abstract class SingleChild extends Child {
+        @OneToOne(mappedBy = "id")
         @JoinColumn(name = "id")
         @JsonIgnore
-        private ScanResponse scanResponse;
-
         public ScanResponse getScanResponse() {
-            return scanResponse;
+            return this._getResponse();
         }
 
+        @JsonIgnore
         public void setScanResponse(ScanResponse scanResponse) {
-            this.scanResponse = scanResponse;
+            this._setResponse(scanResponse);
         }
     }
 
     @MappedSuperclass
-    @JsonIgnoreProperties({"id"})
-    public static abstract class ChildListTemplate extends NaturalIdPojo {
-        @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    public static abstract class MultiChild extends Child {
+        @ManyToOne
         @JoinColumn(name = "scan_id")
         @JsonIgnore
-        private ScanResponse scanResponse;
-
         public ScanResponse getScanResponse() {
-            return scanResponse;
+            return this._getResponse();
         }
 
+        @JsonIgnore
         public void setScanResponse(ScanResponse scanResponse) {
-            this.scanResponse = scanResponse;
+            this._setResponse(scanResponse);
         }
     }
+
+    private static abstract class ChildLookup<POJO extends ChildLookup>
+            extends ChildLookupTemplate<POJO, ScanResponse> {
+
+        @Transient
+        @JsonIgnore
+        public Class<ScanResponse> _getResponseType() {
+            return ScanResponse.class;
+        }
+
+        @Transient
+        @JsonIgnore
+        public Scan getScan() {
+            ScanResponse response = this._getResponse();
+            if (response == null) return null;
+            return response.getScan();
+        }
+    }
+
+    @MappedSuperclass
+    public static abstract class SingleChildLookup<POJO extends SingleChildLookup>
+            extends ChildLookup<POJO> {
+
+        @OneToOne(mappedBy = "id")
+        @JoinColumn(name = "id")
+        @JsonIgnore
+        public ScanResponse getScanResponse() {
+            return this._getResponse();
+        }
+
+        @JsonIgnore
+        public void setScanResponse(ScanResponse scanResponse) {
+            this._setResponse(scanResponse);
+        }
+    }
+
+    @MappedSuperclass
+    public static abstract class MultiChildLookup<POJO extends MultiChildLookup>
+            extends ChildLookup<POJO> {
+
+        @ManyToOne
+        @JoinColumn(name = "scan_id")
+        @JsonIgnore
+        public ScanResponse getScanResponse() {
+            return this._getResponse();
+        }
+
+        @JsonIgnore
+        public void setScanResponse(ScanResponse scanResponse) {
+            this._setResponse(scanResponse);
+        }
+    }
+
 
     public Scan getScan() {
         return scan;
@@ -137,11 +209,11 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         this.hosts = hosts;
     }
 
-    public List<PluginVulnerability> getVulnerabilities() {
+    public List<Vulnerability> getVulnerabilities() {
         return vulnerabilities;
     }
 
-    public synchronized void setVulnerabilities(List<PluginVulnerability> vulnerabilities) {
+    public synchronized void setVulnerabilities(List<Vulnerability> vulnerabilities) {
         this.vulnerabilities = vulnerabilities;
     }
 

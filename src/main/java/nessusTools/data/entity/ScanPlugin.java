@@ -16,11 +16,11 @@ import java.util.*;
 
 @Entity(name = "ScanPlugin")
 @Table(name = "scan_plugin")
-public class ScanPlugin extends ScanResponse.ChildListTemplate
-        implements ObjectLookupPojo<ScanPlugin> {
+@JsonDeserialize(using = ObjectLookup.ResponseChildLookupDeserializer.class)
+public class ScanPlugin extends ScanResponse.ChildLookup<ScanPlugin> {
 
-    public static final ObjectLookupDao<PluginAttributes> dao
-            = new ObjectLookupDao<PluginAttributes>(PluginAttributes.class);
+    public static final ObjectLookupDao<ScanPlugin> dao
+            = new ObjectLookupDao<ScanPlugin>(ScanPlugin.class);
 
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
@@ -30,7 +30,7 @@ public class ScanPlugin extends ScanResponse.ChildListTemplate
             inverseJoinColumns = { @JoinColumn(name = "host_id") }
     )
     @OrderColumn(name = "__order_for_scan_plugin_host")
-    @JsonDeserialize(contentAs = ScanPluginHost.class, contentUsing = ObjectLookup.Deserializer.class)
+    @JsonDeserialize(contentAs = ScanPluginHost.class)
     List<ScanPluginHost> hosts;
 
     Integer severity;

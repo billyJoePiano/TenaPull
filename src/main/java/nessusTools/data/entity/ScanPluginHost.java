@@ -13,12 +13,9 @@ import javax.persistence.*;
 @Table(name = "scan_plugin_host")
 @JsonIgnoreProperties({"id"})
 @JsonDeserialize(using = ObjectLookup.Deserializer.class)
-public class ScanPluginHost extends ScanResponse.ChildListTemplate
-        implements ObjectLookupPojo<ScanPluginHost> {
+public class ScanPluginHost extends ScanResponse.ChildLookup<ScanPluginHost> {
 
     public static final Dao<ScanPluginHost> dao = new ObjectLookupDao<ScanPluginHost>(ScanPluginHost.class);
-
-    // TODO ManyToMany and ObjectLookup logic
 
     @Column(name = "host_id")
     @JsonProperty("id")
