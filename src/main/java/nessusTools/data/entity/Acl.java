@@ -9,7 +9,8 @@ import javax.persistence.*;
 
 @Entity(name = "Acl")
 @Table(name = "acl")
-public class Acl extends NullableIdPojo {
+public class Acl extends NullableIdPojo<Acl> {
+
 	public static final ObjectLookupDao<Acl> dao
 			= new ObjectLookupDao<Acl>(Acl.class, true);
 
@@ -64,4 +65,9 @@ public class Acl extends NullableIdPojo {
 	public void setType(String type) {
 		this.type = type;
 	}
+
+    @Override
+    public void _set(Acl objectLookup) {
+        //TODO
+    }
 }
