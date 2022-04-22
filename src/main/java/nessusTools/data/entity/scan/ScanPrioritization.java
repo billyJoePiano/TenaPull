@@ -1,12 +1,10 @@
-package nessusTools.data.entity;
+package nessusTools.data.entity.scan;
 
 import com.fasterxml.jackson.annotation.*;
 
 import com.fasterxml.jackson.databind.annotation.*;
-import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
-import org.hibernate.annotations.*;
 
 import javax.persistence.*;
 import javax.persistence.Entity;

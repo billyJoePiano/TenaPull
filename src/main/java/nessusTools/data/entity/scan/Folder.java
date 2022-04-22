@@ -1,11 +1,10 @@
-package nessusTools.data.entity;
+package nessusTools.data.entity.scan;
 
 import javax.persistence.*;
 import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.Dao;
 import org.apache.logging.log4j.*;

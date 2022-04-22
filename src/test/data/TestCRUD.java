@@ -3,7 +3,7 @@ package data;
 import java.io.*;
 import java.util.*;
 
-import nessusTools.data.entity.*;
+import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.DbPojo;
 import nessusTools.data.persistence.*;
 import testUtils.*;

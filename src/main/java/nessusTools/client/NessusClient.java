@@ -3,13 +3,11 @@ package nessusTools.client;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import nessusTools.data.entity.response.*;
+import nessusTools.data.entity.scan.*;
 import org.apache.logging.log4j.*;
 
 import java.io.*;
 import java.util.*;
-
-
-import nessusTools.data.entity.*;
 
 
 public class NessusClient extends GenericClient {

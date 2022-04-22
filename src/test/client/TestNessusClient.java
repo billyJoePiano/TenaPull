@@ -3,8 +3,8 @@ package client;
 import nessusTools.client.*;
 
 import nessusTools.data.deserialize.*;
-import nessusTools.data.entity.*;
 import nessusTools.data.entity.response.*;
+import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.*;
 import testUtils.*;
 

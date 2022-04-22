@@ -19,7 +19,7 @@
         <property name="hibernate.c3p0.idle_test_period">3000</property>
 
 
-        <mapping class="nessusTools.data.entity.Folder" />
+        <mapping class="nessusTools.data.entity.scan.Folder" />
 
         <mapping class="nessusTools.data.entity.lookup.HostIp" />
         <mapping class="nessusTools.data.entity.lookup.OperatingSystem" />
@@ -52,15 +52,15 @@
         <mapping class="nessusTools.data.entity.objectLookup.Vulnerability" />
 
 
-        <mapping class="nessusTools.data.entity.Scan" />
-        <mapping class="nessusTools.data.entity.ScanGroup" />
-        <mapping class="nessusTools.data.entity.ScanHistory" />
-        <mapping class="nessusTools.data.entity.ScanHost" />
-        <mapping class="nessusTools.data.entity.ScanHostInfo" />
-        <mapping class="nessusTools.data.entity.ScanInfo" />
-        <mapping class="nessusTools.data.entity.ScanPlugin" />
-        <mapping class="nessusTools.data.entity.ScanPrioritization" />
-        <mapping class="nessusTools.data.entity.ScanRemediationsSummary" />
+        <mapping class="nessusTools.data.entity.scan.Scan" />
+        <mapping class="nessusTools.data.entity.scan.ScanGroup" />
+        <mapping class="nessusTools.data.entity.scan.ScanHistory" />
+        <mapping class="nessusTools.data.entity.host.ScanHost" />
+        <mapping class="nessusTools.data.entity.scan.ScanHostInfo" />
+        <mapping class="nessusTools.data.entity.scan.ScanInfo" />
+        <mapping class="nessusTools.data.entity.scan.ScanPlugin" />
+        <mapping class="nessusTools.data.entity.scan.ScanPrioritization" />
+        <mapping class="nessusTools.data.entity.scan.ScanRemediationsSummary" />
 
         <mapping class="nessusTools.data.entity.response.ScanResponse" />
 

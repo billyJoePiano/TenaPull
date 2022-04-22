@@ -12,7 +12,9 @@ import javax.persistence.Table;
 
 @Entity(name = "ScanOwnerId")
 @Table(name = "scan_owner_id")
-public class ScanOwnerNessusId extends NaturalIdPojo implements ObjectLookupPojo<ScanOwnerNessusId> {
+public class ScanOwnerNessusId extends NaturalIdPojo
+        implements ObjectLookupPojo<ScanOwnerNessusId> {
+
     public static final ObjectLookupDao<ScanOwnerNessusId>
             dao = new ObjectLookupDao<>(ScanOwnerNessusId.class);
 

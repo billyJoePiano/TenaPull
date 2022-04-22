@@ -2,7 +2,7 @@ package nessusTools.data.entity.response;
 
 import java.util.*;
 
-import nessusTools.data.entity.*;
+import nessusTools.data.entity.scan.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

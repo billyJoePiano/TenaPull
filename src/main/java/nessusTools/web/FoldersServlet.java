@@ -1,6 +1,6 @@
 package nessusTools.web;
 
-import nessusTools.data.entity.*;
+import nessusTools.data.entity.scan.*;
 import org.apache.logging.log4j.*;
 
 import javax.servlet.*;
