@@ -1,7 +1,9 @@
 package nessusTools.data.entity;
 
 import com.fasterxml.jackson.annotation.*;
-import nessusTools.client.response.*;
+
+import nessusTools.data.entity.objectLookup.*;
+import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
 import org.hibernate.annotations.*;
 

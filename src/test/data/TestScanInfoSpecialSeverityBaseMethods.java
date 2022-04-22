@@ -1,7 +1,9 @@
 package data;
 
-import nessusTools.client.response.*;
+
 import nessusTools.data.entity.*;
+import nessusTools.data.entity.objectLookup.*;
+import nessusTools.data.entity.response.*;
 import testUtils.*;
 
 

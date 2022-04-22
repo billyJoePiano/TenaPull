@@ -1,21 +1,32 @@
 package nessusTools.data.entity;
 
 import com.fasterxml.jackson.annotation.*;
-import nessusTools.client.response.*;
-import nessusTools.data.entity.template.*;
+
+import nessusTools.data.entity.objectLookup.*;
+import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.util.*;
 
 @Entity(name = "ScanRemediationsSummary")
 @Table(name = "scan_remediations_summary")
-public class ScanRemediationsSummary extends ScanResponse.ChildTemplate {
+public class ScanRemediationsSummary extends ScanResponse.SingleChild<ScanRemediationsSummary> {
     public static final Dao<ScanRemediationsSummary> dao = new Dao(ScanRemediationsSummary.class);
 
-    @OneToMany(mappedBy="scanResponse") //, cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
-    @OrderColumn(name = "__order_for_scan_info_response")
-    private List<ScanRemediation> remediations;
+    @ManyToMany(cascade = CascadeType.ALL)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @JoinTable(
+            name = "scan_info_acl",
+            joinColumns = { @JoinColumn(name = "scan_id") },
+            inverseJoinColumns = { @JoinColumn(name = "remediation_id") }
+    )
+    @OrderColumn(name = "__order_for_scan_remediation", nullable = false)
+    private List<Remediation> remediations;
 
     @Column(name = "num_hosts")
     @JsonProperty("num_hosts")
@@ -33,11 +44,11 @@ public class ScanRemediationsSummary extends ScanResponse.ChildTemplate {
     @JsonProperty("num_remediated_cves")
     private Integer numRemediatedCves;
 
-    public List<ScanRemediation> getRemediations() {
+    public List<Remediation> getRemediations() {
         return remediations;
     }
 
-    public void setRemediations(List<ScanRemediation> remediations) {
+    public void setRemediations(List<Remediation> remediations) {
         this.remediations = remediations;
     }
 

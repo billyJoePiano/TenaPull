@@ -497,7 +497,7 @@ public class SyncMultiTypeWrapper {
             }
         }
 
-        StackTracePrinter.startThread(80000);
+        StackTracePrinter.startThread(60000);
 
         // monitoring/logging thread ...
         new Thread(() -> {

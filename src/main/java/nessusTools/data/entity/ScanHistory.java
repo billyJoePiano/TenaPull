@@ -2,9 +2,11 @@ package nessusTools.data.entity;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.*;
-import nessusTools.client.response.*;
+
 import nessusTools.data.deserialize.*;
-import nessusTools.data.entity.template.*;
+import nessusTools.data.entity.lookup.*;
+import nessusTools.data.entity.objectLookup.*;
+import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
@@ -12,7 +14,7 @@ import java.sql.*;
 
 @Table(name = "scan_history")
 @Entity(name = "ScanHistory")
-public class ScanHistory extends ScanResponse.ChildListTemplate {
+public class ScanHistory extends ScanResponse.MultiChild<ScanHistory> {
     public static final Dao<ScanHistory> dao = new Dao(ScanHistory.class);
 
     @Column(name = "alt_targets_used")

@@ -3,15 +3,12 @@ package testUtils;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.introspect.*;
 import com.fasterxml.jackson.databind.jsonFormatVisitors.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.fasterxml.jackson.databind.ser.*;
 import com.fasterxml.jackson.databind.ser.impl.*;
-import nessusTools.client.response.*;
 
-import javax.persistence.*;
-import java.util.*;
+import nessusTools.data.entity.template.*;
 
 /*
 Adds special Jackson behavior for certain unit tests, to serialize/deserialize the id

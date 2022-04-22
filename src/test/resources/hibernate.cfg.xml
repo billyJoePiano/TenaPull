@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="connection.url">jdbc:mysql://localhost:3306/NessusTools</property>
+        <property name="connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+
+        <property name="connection.username">student</property>
+        <property name="connection.password">uY?)qH$FmZ(8}{\/%xl82&quot;`eg&gt;Rp3j&gt;N</property>
+
+        <property name="dialect">org.hibernate.dialect.MySQLDialect</property>
+
+        <property name="hibernate.c3p0.min_size">5</property>
+        <property name="hibernate.c3p0.max_size">20</property>
+        <property name="hibernate.c3p0.timeout">300</property>
+        <property name="hibernate.c3p0.max_statements">50</property>
+        <property name="hibernate.c3p0.idle_test_period">3000</property>
+
+
+        <mapping class="nessusTools.data.entity.Folder" />
+
+        <mapping class="nessusTools.data.entity.lookup.HostIp" />
+        <mapping class="nessusTools.data.entity.lookup.OperatingSystem" />
+        <mapping class="nessusTools.data.entity.lookup.PluginFamily" />
+        <mapping class="nessusTools.data.entity.lookup.PluginName" />
+        <mapping class="nessusTools.data.entity.lookup.PluginRefValue" />
+        <mapping class="nessusTools.data.entity.lookup.PluginSeeAlso" />
+        <mapping class="nessusTools.data.entity.lookup.PolicyTemplateUuid" />
+        <mapping class="nessusTools.data.entity.lookup.ScanPolicy" />
+        <mapping class="nessusTools.data.entity.lookup.ScanScheduleType" />
+        <mapping class="nessusTools.data.entity.lookup.ScanStatus" />
+        <mapping class="nessusTools.data.entity.lookup.ScanType" />
+        <mapping class="nessusTools.data.entity.lookup.ScanUuid" />
+        <mapping class="nessusTools.data.entity.lookup.Timezone" />
+        <mapping class="nessusTools.data.entity.lookup.Scanner" />
+        <mapping class="nessusTools.data.entity.lookup.ScanOwner" />
+
+        <mapping class="nessusTools.data.entity.objectLookup.ScanOwnerNessusId" />
+        <mapping class="nessusTools.data.entity.objectLookup.Acl" />
+        <mapping class="nessusTools.data.entity.objectLookup.PluginAttributes" />
+        <mapping class="nessusTools.data.entity.objectLookup.PluginInformation" />
+        <mapping class="nessusTools.data.entity.objectLookup.PluginRefInformation" />
+        <mapping class="nessusTools.data.entity.objectLookup.PluginRiskInformation" />
+        <mapping class="nessusTools.data.entity.objectLookup.PluginVulnInformation" />
+        <mapping class="nessusTools.data.entity.objectLookup.PluginHost" />
+        <mapping class="nessusTools.data.entity.objectLookup.License" />
+        <mapping class="nessusTools.data.entity.objectLookup.Remediation" />
+        <mapping class="nessusTools.data.entity.objectLookup.SeverityBase" />
+        <mapping class="nessusTools.data.entity.objectLookup.SeverityLevelCount" />
+        <mapping class="nessusTools.data.entity.objectLookup.Vulnerability" />
+
+
+        <mapping class="nessusTools.data.entity.Scan" />
+        <mapping class="nessusTools.data.entity.ScanGroup" />
+        <mapping class="nessusTools.data.entity.ScanHistory" />
+        <mapping class="nessusTools.data.entity.ScanHost" />
+        <mapping class="nessusTools.data.entity.ScanHostInfo" />
+        <mapping class="nessusTools.data.entity.ScanInfo" />
+        <mapping class="nessusTools.data.entity.ScanPlugin" />
+        <mapping class="nessusTools.data.entity.ScanPrioritization" />
+        <mapping class="nessusTools.data.entity.ScanRemediationsSummary" />
+
+        <mapping class="nessusTools.data.entity.response.ScanResponse" />
+
+    </session-factory>
+
+</hibernate-configuration>

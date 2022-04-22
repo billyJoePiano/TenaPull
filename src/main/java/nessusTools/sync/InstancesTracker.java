@@ -16,7 +16,7 @@ import java.util.*;
  */
 
 /**
- * Synchronizes and maps unique instances to a unique "key" (typically a String).
+ * Synchronizes and maps unique instances to a unique "key" (typically a String or Number).
  * Instances are held as weak references via a WeakHashMap which is synchronized via ReadWriteLock.
  *
  *

@@ -2,8 +2,9 @@ package nessusTools.rest;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import nessusTools.client.response.*;
+
 import nessusTools.data.entity.*;
+import nessusTools.data.entity.response.*;
 import org.apache.logging.log4j.*;
 
 import javax.ws.rs.*;

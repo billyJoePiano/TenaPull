@@ -1,6 +1,7 @@
 package data;
 
-import nessusTools.client.response.*;
+
+import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import org.junit.*;
@@ -64,11 +65,12 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
     public TestDeserializationPersistence(Class<R> responseType, String jsonFile) {
         this.logger = LogManager.getLogger(responseType);
         this.responseType = responseType;
-        this.jsonFile = jsonFile;
+        this.jsonFile = PARAMS_DIR + jsonFile;
     }
 
     @BeforeAll
     public static void dbReset() {
+        System.out.println("Working Directory = " + System.getProperty("user.dir"));
         Database.reset();
     }
 
@@ -89,7 +91,6 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
     }
 
     public String fetchJson() {
-        // extract the dummy json out of the test file
         String origJson = "";
 
         try (BufferedReader reader = new BufferedReader(new FileReader(this.jsonFile))) {

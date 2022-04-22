@@ -1,9 +1,10 @@
 -- Drop tables in reverse order from create
 
 -- Join tables
+drop table if exists `scan_remediation`;
 drop table if exists `scan_host_vulnerability`;
 drop table if exists `scan_vulnerability`;
-drop table if exists `scan_plugin_scan_host`;
+drop table if exists `scan_plugin_host`;
 drop table if exists `scan_host_severity_level_count`;
 drop table if exists `scan_info_severity_base_selection`;
 drop table if exists `scan_info_acl`;
@@ -15,9 +16,7 @@ drop table if exists `plugin_attributes_ref_information`;
 drop table if exists `scan_host_info`;
 drop table if exists `scan_host_response`;
 drop table if exists `scan_history`;
-drop table if exists `scan_remediation`;
 drop table if exists `scan_remediations_summary`;
-drop table if exists `scan_plugin_host`;
 drop table if exists `scan_plugin`;
 drop table if exists `scan_prioritization`;
 drop table if exists `scan_host`;
@@ -28,11 +27,13 @@ drop table if exists `folder`;
 
 -- Plugin lookups, and other complex lookups
 drop table if exists `vulnerability`;
+drop table if exists `remediation`;
 drop table if exists `plugin_ref_information`;
 drop table if exists `plugin_attributes`;
 drop table if exists `plugin_vuln_information`;
 drop table if exists `plugin_information`;
 drop table if exists `plugin_risk_information`;
+drop table if exists `plugin_host`;
 drop table if exists `severity_level_count`;
 drop table if exists `scan_group`;
 drop table if exists `license`;
@@ -191,6 +192,14 @@ create table severity_level_count (
     _extra_json longtext null
 );
 
+create table plugin_host (
+    id int primary key auto_increment,
+    host_id int null,
+    host_fqdn varchar(255) null,
+    hostname varchar(255) null,
+    _extra_json varchar(255) null
+);
+
 create table plugin_risk_information (
     id int auto_increment primary key,
     cvss_temporal_vector varchar(255) null,
@@ -257,6 +266,15 @@ create table plugin_ref_information (
     id int auto_increment primary key,
     name varchar(255) null,
     url varchar(255) null,
+    _extra_json longtext null
+);
+
+create table remediation (
+    id int PRIMARY KEY AUTO_INCREMENT,
+    remediation varchar(255) null,
+    hosts int null,
+    value varchar(255) null,
+    vulns int null,
     _extra_json longtext null
 );
 
@@ -428,6 +446,7 @@ create table scan_prioritization (
 
 create table scan_plugin (
     id int primary key auto_increment,
+    scan_id int not null,
     severity int null,
     plugin_name_id int null,
     plugin_attributes_id int null,
@@ -435,20 +454,11 @@ create table scan_plugin (
     host_count int null,
     plugin_id varchar(255) null,
     _extra_json longtext null,
+    __order_for_scan_plugin int not null,
+    constraint foreign key (scan_id) references scan_response(id),
     constraint foreign key scan_plugin_plugin_name_id_fk (plugin_name_id) references plugin_name (id),
     constraint foreign key scan_plugin_plugin_attributes_id_fk (plugin_attributes_id) references plugin_attributes (id),
     constraint foreign key scan_plugin_plugin_family_id_fk (plugin_family_id) references plugin_family (id)
-);
-
-create table scan_plugin_host (
-    id int primary key auto_increment,
-    scan_id int not null,
-    host_id int null,
-    host_fqdn varchar(255) null,
-    hostname varchar(255) null,
-    _extra_json varchar(255) null,
-    constraint foreign key (scan_id) references scan_response(id),
-    constraint unique (scan_id, host_id)
 );
 
 create table scan_remediations_summary (
@@ -459,18 +469,6 @@ create table scan_remediations_summary (
     num_remediated_cves int null,
     _extra_json longtext null,
     constraint scan_remediations_summary_scan_response_id_fk foreign key (id) references scan_response (id)
-);
-
-create table scan_remediation (
-    id int PRIMARY KEY AUTO_INCREMENT,
-    scan_id int not null,
-    remediation varchar(255) null,
-    hosts int null,
-    value varchar(255) null,
-    vulns int null,
-    _extra_json longtext null,
-    __order_for_scan_response int not null,
-    constraint scan_remediation_scan_response_id foreign key (scan_id) references scan_response (id)
 );
 
 create table scan_history (
@@ -550,8 +548,7 @@ create table plugin_attributes_see_also (
     constraint foreign key (see_also_id) references plugin_see_also (id)
 );
 
-create table scan_info_acl
-(
+create table scan_info_acl (
     scan_id int not null,
     acl_id  int not null,
     __order_for_scan_info int not null,
@@ -579,13 +576,13 @@ create table scan_host_severity_level_count (
     constraint foreign key (severity_id) references severity_level_count (id)
 );
 
-create table scan_plugin_scan_host (
+create table scan_plugin_host (
     plugin_id int not null,
     host_id int not null,
     __order_for_scan_plugin_host int not null,
     constraint primary key (plugin_id, host_id),
     constraint foreign key (plugin_id) references scan_plugin (id),
-    constraint foreign key (host_id) references scan_plugin_host (id)
+    constraint foreign key (host_id) references plugin_host (id)
 );
 
 create table scan_vulnerability (
@@ -604,4 +601,12 @@ create table scan_host_vulnerability (
     constraint primary key (host_id, vulnerability_id),
     constraint foreign key (host_id) references scan_host_response (id),
     constraint foreign key (vulnerability_id) references vulnerability (id)
+);
+
+create table scan_remediation (
+    scan_id int not null,
+    remediation_id int not null,
+    __order_for_scan_remediation int not null,
+    constraint foreign key (scan_id) references scan_response (id),
+    constraint foreign key (remediation_id) references remediation(id)
 );

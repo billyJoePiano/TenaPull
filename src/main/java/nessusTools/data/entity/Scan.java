@@ -4,7 +4,8 @@ import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.*;
-import nessusTools.client.response.*;
+import nessusTools.data.entity.lookup.*;
+import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import nessusTools.data.deserialize.*;

@@ -1,20 +1,27 @@
 package nessusTools.data.entity;
 
 import com.fasterxml.jackson.annotation.*;
-import nessusTools.client.response.*;
-import nessusTools.data.entity.template.*;
+
+import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.deserialize.*;
+import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.util.*;
 
 @Entity(name = "ScanPrioritization")
 @Table(name = "scan_prioritization")
 @JsonIgnoreProperties({"id"})
-public class ScanPrioritization extends ScanResponse.ChildTemplate {
+public class ScanPrioritization extends ScanResponse.SingleChild<ScanPrioritization> {
     public static final Dao<ScanPrioritization> dao = new Dao(ScanPrioritization.class);
 
-    @OneToMany(mappedBy = "scanResponse", targetEntity = ScanPlugin.class)
+    @OneToMany(mappedBy = "scan_id")
+    @OrderColumn(name = "__order_for_scan_plugin")
+    @JsonDeserialize(contentAs = ScanPlugin.class)
     private List<ScanPlugin> plugins;
 
     @Column(name = "threat_level")

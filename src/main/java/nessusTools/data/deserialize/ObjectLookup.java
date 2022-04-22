@@ -3,7 +3,7 @@ package nessusTools.data.deserialize;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
-import nessusTools.client.response.*;
+
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import org.apache.logging.log4j.*;
@@ -43,8 +43,9 @@ public class ObjectLookup {
         }
     }
 
-    public static class ResponseChildLookupDeserializer<POJO extends NessusResponse.ChildLookupTemplate<POJO, R>,
-                                                        R extends NessusResponse>
+    public static class ResponseChildLookupDeserializer
+                    <POJO extends NessusResponse.ResponseChild<POJO, R> & ObjectLookupPojo<POJO>,
+                        R extends NessusResponse>
                 extends Deserializer<POJO> {
 
         private static final Logger logger = LogManager.getLogger(ObjectLookup.ResponseChildLookupDeserializer.class);
@@ -68,7 +69,7 @@ public class ObjectLookup {
             while (jsc != null) {
                 Object value = jsc.getCurrentValue();
                 if (value != null && Objects.equals(value.getClass(), type)) {
-                    searchPojo._setResponse((R)value);
+                    searchPojo.setResponse((R)value);
                     success = true;
                     break;
                 }

@@ -14,7 +14,7 @@ import java.io.IOException;
 public class Lookup {
     private Lookup() { }
 
-    public static class Deserializer<POJO extends LookupPojo>
+    public static class Deserializer<POJO extends LookupPojo<POJO>>
             extends AbstractContextualPojoDeserializer<POJO, LookupDao<POJO>> {
 
         private static final Logger logger = LogManager.getLogger(Deserializer.class);

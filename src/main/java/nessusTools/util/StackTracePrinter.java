@@ -41,6 +41,8 @@ public class StackTracePrinter extends Thread {
     }
 
     public static void print() {
+        System.err.println("STARTING STACK TRACE PRINTER ...");
+
         Map<String, StackTrace> stackTraces = new LinkedHashMap<>();
         LocalDateTime startLdt = LocalDateTime.now();
         long start = System.currentTimeMillis();

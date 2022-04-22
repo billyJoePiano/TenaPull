@@ -1,7 +1,10 @@
 package nessusTools.data.entity;
 
-import nessusTools.client.response.*;
-import nessusTools.data.entity.template.*;
+
+import nessusTools.data.entity.lookup.*;
+import nessusTools.data.entity.lookup.Scanner;
+import nessusTools.data.entity.objectLookup.*;
+import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
 import nessusTools.data.deserialize.*;
 
@@ -23,7 +26,8 @@ import java.util.*;
 @Entity(name = "ScanInfo")
 @Table(name = "scan_info")
 @JsonIgnoreProperties({"id"})
-public class ScanInfo extends ScanResponse.ChildTemplate {
+public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
+
     public static final Dao<ScanInfo> dao
             = new Dao<ScanInfo>(ScanInfo.class);
 

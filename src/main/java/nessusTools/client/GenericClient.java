@@ -2,7 +2,7 @@ package nessusTools.client;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import nessusTools.client.response.*;
+
 import nessusTools.data.entity.*;
 import org.apache.logging.log4j.*;
 

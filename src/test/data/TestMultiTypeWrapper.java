@@ -1,6 +1,6 @@
 package data;
 
-import nessusTools.data.entity.*;
+import nessusTools.data.entity.lookup.*;
 import nessusTools.data.persistence.*;
 
 import java.math.*;
@@ -9,7 +9,6 @@ import java.util.*;
 import org.apache.logging.log4j.*;
 import org.junit.*;
 import org.junit.Test;
-import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -54,7 +53,7 @@ public class TestMultiTypeWrapper {
                         new BigDecimal("1234567890987654321234567890987654321.1234567890987654321234567890987654321"));
                     put("D-1234567890987654321234567890987654321.1234567890987654321234567890987654321",
                         new BigDecimal("-1234567890987654321234567890987654321.1234567890987654321234567890987654321"));
-                    put("Uclass nessusTools.data.entity.ScanType\nthis is a test",
+                    put("Uclass nessusTools.data.entity.lookup.ScanType\nthis is a test",
                             MultiTypeWrapper.wrap(createUnknownType()));
                     // need to be able to replace ^^^ this instance on reset of the instance trackers, for multi-threaded test
                     // that's why this map isn't immutable
@@ -73,7 +72,7 @@ public class TestMultiTypeWrapper {
         );
 
     public static Map<Object, String> TEST_TO_DB = Map.of(
-            createUnknownType(), "Uclass nessusTools.data.entity.ScanType\nthis is a test"
+            createUnknownType(), "Uclass nessusTools.data.entity.lookup.ScanType\nthis is a test"
         );
 
     public Map<String, Object> testBothDirections;
