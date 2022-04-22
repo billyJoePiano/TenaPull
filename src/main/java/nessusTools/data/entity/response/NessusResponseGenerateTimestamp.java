@@ -14,7 +14,7 @@ public abstract class NessusResponseGenerateTimestamp
 
     @UpdateTimestamp
     @JsonIgnore
-    Timestamp timestamp;
+    private Timestamp timestamp;
 
     @Override
     public Timestamp getTimestamp() {
