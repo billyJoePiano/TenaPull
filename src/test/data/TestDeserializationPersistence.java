@@ -4,6 +4,7 @@ package data;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
+import nessusTools.util.*;
 import org.junit.*;
 import testUtils.*;
 
@@ -45,7 +46,10 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
             throws InvocationTargetException, NoSuchMethodException,
             InstantiationException, IllegalAccessException {
 
-        Database.hardReset();
+        System.out.println("Working Directory = " + System.getProperty("user.dir"));
+        StackTracePrinter.startThread(30000);
+
+        //Database.hardReset();
 
         return Arrays.asList(new Object[][] {
             { IndexResponse.class, "indexResponse.json" },
@@ -70,7 +74,6 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
 
     @BeforeAll
     public static void dbReset() {
-        System.out.println("Working Directory = " + System.getProperty("user.dir"));
         Database.reset();
     }
 

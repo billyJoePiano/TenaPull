@@ -3,63 +3,50 @@ package nessusTools.data.entity.scan;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.*;
 import nessusTools.data.deserialize.*;
-import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.objectLookup.*;
-import nessusTools.data.entity.response.*;
+import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import org.hibernate.annotations.*;
 
-import javax.persistence.*;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.*;
 
 @Entity(name = "ScanPlugin")
 @Table(name = "scan_plugin")
-@JsonDeserialize(using = ObjectLookup.ResponseChildLookupDeserializer.class)
-public class ScanPlugin extends ScanResponse.MultiChild<ScanPlugin> {
+@JsonDeserialize(using = ObjectLookup.Deserializer.class)
+public class ScanPlugin extends GeneratedIdPojo
+        implements LookupSearchMapProvider<ScanPlugin> {
 
-    public static final Dao<ScanPlugin> dao = new Dao<ScanPlugin>(ScanPlugin.class);
+    public static final ObjectLookupDao<ScanPlugin>
+            dao = new ObjectLookupDao<ScanPlugin>(ScanPlugin.class);
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @LazyCollection(LazyCollectionOption.FALSE)
-    @JoinTable(
-            name = "scan_plugin_host",
-            joinColumns = { @JoinColumn(name = "plugin_id") },
-            inverseJoinColumns = { @JoinColumn(name = "host_id") }
-    )
-    @OrderColumn(name = "__order_for_scan_plugin_host")
-    @JsonDeserialize(contentAs = PluginHost.class)
-    List<PluginHost> hosts;
+    @ManyToOne
+    @JoinColumn(name = "prioritization_id")
+    @JsonIgnore
+    ScanPrioritization scanPrioritization;
 
-    Integer severity;
-
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="plugin_name_id")
-    PluginName pluginName;
-
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="plugin_attritubes_id")
-    PluginAttributes pluginAttributes;
-
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="plugin_family_id")
-    @JsonProperty("pluginfamily")
-    PluginFamily pluginFamily;
+    @ManyToOne
+    @JoinColumn(name = "plugin_id")
+    // TODO Json flatten (other direction flatten...)
+    Plugin plugin;
 
     @Column(name = "host_count")
     @JsonProperty("host_count")
     Integer hostCount;
 
-    @Column(name = "plugin_id")
-    @JsonProperty("pluginid")
-    String pluginId;
-
-    @ManyToOne
-    @JoinColumn(name = "scan_id")
-    @JsonIgnore
-    ScanPrioritization scanPrioritization;
+    @ManyToMany(cascade = CascadeType.ALL)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @JoinTable(
+            name = "scan_plugin_host",
+            joinColumns = { @JoinColumn(name = "scan_plugin_id") },
+            inverseJoinColumns = { @JoinColumn(name = "plugin_host_id") }
+    )
+    @OrderColumn(name = "__order_for_scan_plugin_host")
+    @JsonDeserialize(contentAs = PluginHost.class)
+    List<PluginHost> hosts;
 
     public ScanPrioritization getScanPrioritization() {
         return this.scanPrioritization;
@@ -77,51 +64,52 @@ public class ScanPlugin extends ScanResponse.MultiChild<ScanPlugin> {
         this.hosts = hosts;
     }
 
-    public Integer getSeverity() {
-        return severity;
+
+    @Override
+    public void _set(ScanPlugin o) {
+        this.setId(o.getId());
+        this.scanPrioritization = o.scanPrioritization;
+        this.plugin = o.plugin;
+        this.hosts = o.hosts;
+        this.setExtraJson(this.getExtraJson());
     }
 
-    public void setSeverity(Integer severity) {
-        this.severity = severity;
+    @Override
+    public boolean _lookupMatch(ScanPlugin other) {
+        if (other == null) return false;
+        if (other == this) return true;
+        if (this.scanPrioritization == null || other.scanPrioritization == null
+            || this.plugin == null || other.plugin == null) {
+
+            return false;
+        }
+
+        int mySPid = this.scanPrioritization.getId();
+        int theirSPid = other.scanPrioritization.getId();
+        int myPid = this.plugin.getId();
+        int theirPid = other.plugin.getId();
+
+        if (mySPid != 0 && theirSPid != 0) {
+            if (mySPid != theirSPid) {
+                return false;
+            }
+        } else if (!Objects.equals(this.scanPrioritization, other.scanPrioritization)) {
+            return false;
+        }
+
+        if (myPid != 0 && theirPid != 0) {
+            return myPid == theirPid;
+
+        } else {
+            return Objects.equals(this.plugin, other.plugin);
+        }
     }
 
-    public PluginName getPluginName() {
-        return pluginName;
-    }
-
-    public void setPluginName(PluginName pluginName) {
-        this.pluginName = pluginName;
-    }
-
-    public PluginAttributes getPluginAttributes() {
-        return pluginAttributes;
-    }
-
-    public void setPluginAttributes(PluginAttributes pluginAttributes) {
-        this.pluginAttributes = pluginAttributes;
-    }
-
-    public PluginFamily getPluginFamily() {
-        return pluginFamily;
-    }
-
-    public void setPluginFamily(PluginFamily pluginFamily) {
-        this.pluginFamily = pluginFamily;
-    }
-
-    public Integer getHostCount() {
-        return hostCount;
-    }
-
-    public void setHostCount(Integer hostCount) {
-        this.hostCount = hostCount;
-    }
-
-    public String getPluginId() {
-        return pluginId;
-    }
-
-    public void setPluginId(String pluginId) {
-        this.pluginId = pluginId;
+    @Override
+    @Transient
+    @JsonIgnore
+    public Map<String, Object> _getSearchMap() {
+        return Map.of("scanPrioritization", this.scanPrioritization,
+                        "plugin", this.plugin);
     }
 }

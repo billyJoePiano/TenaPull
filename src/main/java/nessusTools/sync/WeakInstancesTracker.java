@@ -1,16 +1,27 @@
 package nessusTools.sync;
 
 import nessusTools.util.*;
+import org.apache.logging.log4j.*;
 
+import javax.persistence.criteria.*;
 import java.lang.ref.*;
 import java.util.*;
 
-// TODO This needs a garbage collector, to remove defunct WeakRefs !!!!!!
 public class WeakInstancesTracker<K, I> {
+    private static final Logger logger = LogManager.getLogger(WeakInstancesTracker.class);
+
+    private static final ReadWriteLock<Map<WeakInstancesTracker, Void>,
+                                        Map<WeakInstancesTracker, Void>>
+            trackers = ReadWriteLock.forMap(new WeakHashMap<>());
+
+    private static final Object gcMonitor = new Object();
+
+
     private final Class<K> keyType;
-    private final InstancesTracker<WeakInstancesTracker.WeakRef, I> tracker;
+    private final InstancesTracker<WeakInstancesTracker<K, I>.WeakRef, I> tracker;
     //private final boolean keysComparable;
-    private final Set<WeakRef> toDiscard = new LinkedHashSet<>();
+    private final ReadWriteLock<Map<WeakRef, Void>, Map<WeakRef, Void>>
+            toDiscard = ReadWriteLock.forMap(new WeakHashMap<>());
 
     public WeakInstancesTracker(Class<K> keyType,
                                 Class<I> instanceType,
@@ -39,20 +50,22 @@ public class WeakInstancesTracker<K, I> {
         };
 
         this.tracker = new InstancesTracker(weakKeyType, instanceType, construct);
+        trackers.write(Void.class, trackers -> trackers.put(this, null));
     }
 
-    /*
-    public interface WR<K> {
-        K get();
-    }
-     */
-
-    public class WeakRef extends WeakReference<K>
-            /*implements WR<K>*/ {
+    public class WeakRef implements InstancesTracker.KeyFinalizer<WeakRef, I> {
+        WeakReference<K> ref;
+        K tempStrongRef;
 
         private WeakRef(K referent) {
-            super(referent);
+            this.ref = new WeakReference<K>(referent);
+            this.tempStrongRef = referent;
         }
+
+        public K get() {
+            return this.ref.get();
+        }
+
         public boolean equals(Object o) {
             if (o == this) return true;
             if (o == null) return false;
@@ -61,55 +74,21 @@ public class WeakInstancesTracker<K, I> {
             }
 
             WeakRef other = (WeakRef) o;
-            K myReferent = this.get();
-            K otherReferent = other.get();
+            K mine = this.get();
+            K theirs = other.get();
 
-            if (myReferent == null || otherReferent == null) {
+            if (mine == null || theirs == null) {
                 return false;
             }
-            return Objects.equals(myReferent, otherReferent);
+            return Objects.equals(mine, theirs);
 
-        }
-    }
-    /*
-    private int counter = 0;
-    // to ensure that null dereferences can still be not equal and return something consistent
-    // that is other than zero
-    public class WeakRefComparable extends WeakRef
-            implements WR<K>, Comparable {
-
-        private int id;
-        private WeakRefComparable(K referent) {
-            super(referent);
-            this.id = counter++;
         }
 
         @Override
-        public int compareTo(Object o) throws NullPointerException {
-            if (!o.getClass().equals(this.getClass())) {
-                return -1;
-            }
-
-            if (o == this) return 0;
-
-            WeakRefComparable other = (WeakRefComparable) o;
-            Comparable myKey = (Comparable) this.get();
-            Comparable otherKey = (Comparable) other.get();
-
-            if (myKey == null) {
-                if (otherKey == null) {
-                    return this.id < other.id ? -1 : 1;
-                } else {
-                    return -1;
-                }
-            } else if (otherKey == null) {
-                return 1;
-            }
-
-            return myKey.compareTo(otherKey);
+        public void finalizeKey(I instance) {
+            this.tempStrongRef = null;
         }
     }
-     */
 
     private WeakRef make(K key) {
         /*if (keysComparable) {
@@ -129,9 +108,15 @@ public class WeakInstancesTracker<K, I> {
     }
 
     public I getOrConstructWith(K key, Lambda1<K, I> lambda) {
-        return tracker.getOrConstructWith(make(key), wr ->
-            lambda.call(key)
-        );
+        return tracker.getOrConstructWith(make(key), wr -> {
+            K ref = wr.get();
+
+            if (ref == null) {
+                ref = wr.tempStrongRef;
+            }
+
+            return lambda.call(ref);
+        });
     }
 
     public I put(K key, I instance) {
@@ -154,6 +139,18 @@ public class WeakInstancesTracker<K, I> {
         return this.unwrapKeySet(tracker.keySet());
     }
 
+    public List<I> get(Lambda1<I, Boolean> filter) {
+        return this.tracker.get(filter, 0);
+    }
+
+    public List<I> get(Lambda1<I, Boolean> filter, int limit) {
+        return this.tracker.get(filter, limit);
+    }
+
+    public Set<I> getInstances() {
+        return this.tracker.getInstances();
+    }
+
     private Set<K> unwrapKeySet(Set wrKeys) {
         Set<K> keySet;
         /*if (this.keysComparable) {
@@ -162,6 +159,7 @@ public class WeakInstancesTracker<K, I> {
         } else {*/
         keySet = new LinkedHashSet<>();
         //}
+        List<WeakRef> discard = new LinkedList<>();
 
         for (Object wro : wrKeys) {
             WeakRef wr = (WeakRef) wro;
@@ -169,10 +167,69 @@ public class WeakInstancesTracker<K, I> {
             if (key != null) {
                 keySet.add(key);
             } else {
-                toDiscard.add(wr);
+                discard.add(wr);
+            }
+        }
+
+        if (discard.size() > 0) {
+            synchronized (gcMonitor) {
+                this.toDiscard.write(toDiscard -> {
+                    for (WeakRef wr : discard) {
+                        toDiscard.put(wr, null);
+                    }
+                    return null;
+                });
+                garbageCollector.interrupt();
             }
         }
 
         return keySet;
+    }
+
+    private static Thread garbageCollector = new Thread(() -> {
+        Thread garbageCollector = Thread.currentThread();
+
+        long lastGcMonitorValue = 0;
+
+        while(true) try {
+            synchronized (gcMonitor) {
+                garbageCollector.setPriority(Thread.MIN_PRIORITY);
+                try {
+                    gcMonitor.wait();
+                } catch (InterruptedException e) { }
+            }
+
+            Thread.sleep(10000);
+
+            Map<WeakInstancesTracker, Void>
+                    trackers = WeakInstancesTracker.trackers.read(WeakHashMap::new);
+
+            synchronized (gcMonitor) {
+                garbageCollector.setPriority(Thread.MAX_PRIORITY);
+
+                for (WeakInstancesTracker tracker : trackers.keySet()) {
+                    tracker.discard();
+                }
+                Thread.interrupted(); //clear interrupt status
+            }
+        } catch (Throwable e) {
+            logger.error(e);
+        }
+    });
+
+    static {
+        garbageCollector.setName("WeakInstancesTracker.garbageCollector");
+        garbageCollector.setDaemon(true);
+        garbageCollector.start();
+    }
+
+    private void discard() {
+        this.toDiscard.write(discard -> {
+            for (WeakRef wr : discard.keySet()) {
+                this.tracker.remove(wr);
+            }
+            discard.clear();
+            return null;
+        });
     }
 }

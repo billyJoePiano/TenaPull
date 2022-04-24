@@ -1,12 +1,7 @@
 package nessusTools.util;
 
 import com.sun.istack.*;
-import com.sun.istack.NotNull;
-import nessusTools.data.entity.*;
-import nessusTools.sync.*;
 
-import javax.validation.constraints.*;
-import java.lang.reflect.*;
 import java.util.*;
 
 
@@ -157,10 +152,10 @@ public final class Type<T> {
     }
 
     public String toString() {
-        return "(Type)<" + this.toStringRecursive() + ">";
+        return "(Type)<" + this.toStringBasic() + ">";
     }
 
-    private String toStringRecursive() {
+    public String toStringBasic() {
         String str = this.type.getSimpleName();
         if (this.params == null) {
             return str;
@@ -176,7 +171,7 @@ public final class Type<T> {
                 str += ", ";
             }
 
-            str += param.toStringRecursive();
+            str += param.toStringBasic();
         }
 
         return str + ">";

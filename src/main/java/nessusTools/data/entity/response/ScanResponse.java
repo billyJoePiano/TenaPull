@@ -3,7 +3,6 @@ package nessusTools.data.entity.response;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.*;
 import nessusTools.data.deserialize.*;
-import nessusTools.data.entity.host.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.*;
@@ -18,8 +17,8 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.util.*;
 
-@Entity(name = "ScanInfoResponse")
-@Table(name = "scan_info_response")
+@Entity(name = "ScanResponse")
+@Table(name = "scan_response")
 public class ScanResponse extends NessusResponseGenerateTimestamp {
     public static final Logger logger = LogManager.getLogger(ScanResponse.class);
     public static final Dao<ScanResponse> dao = new Dao(ScanResponse.class);
@@ -57,7 +56,7 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     @JoinColumn(name = "id")
     private ScanInfo info;
 
-    @OneToMany(mappedBy = "scanResponse") //, cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "response") //, cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
     @OrderColumn(name = "host_id")
     private List<ScanHost> hosts;
 

@@ -28,6 +28,7 @@ drop table if exists `folder`;
 -- Plugin lookups, and other complex lookups
 drop table if exists `vulnerability`;
 drop table if exists `remediation`;
+drop table if exists `plugin`;
 drop table if exists `plugin_ref_information`;
 drop table if exists `plugin_attributes`;
 drop table if exists `plugin_vuln_information`;
@@ -269,6 +270,19 @@ create table plugin_ref_information (
     _extra_json longtext null
 );
 
+create table plugin (
+    id int primary key auto_increment,
+    severity int null,
+    plugin_name_id int null,
+    plugin_attributes_id int null,
+    plugin_family_id int null,
+    plugin_id varchar(255) null,
+    _extra_json longtext null,
+    constraint foreign key (plugin_name_id) references plugin_name (id),
+    constraint foreign key (plugin_attributes_id) references plugin_attributes (id),
+    constraint foreign key (plugin_family_id) references plugin_family (id)
+);
+
 create table remediation (
     id int PRIMARY KEY AUTO_INCREMENT,
     remediation varchar(255) null,
@@ -317,7 +331,7 @@ create table scan (
     name            varchar(255) null,
     uuid_id         int          null,
     folder_id       int          null,
-    owner_id        int          null, -- SQL owner id in the varchar lookup table -- NOT nessus owner id
+    owner_id        int          null, -- SQL owner id (surrogate key) in the varchar lookup table -- NOT nessus owner id
     scan_type_id    int          null,
     rrules          varchar(255) null,
     `read`          boolean      null,
@@ -445,20 +459,15 @@ create table scan_prioritization (
 );
 
 create table scan_plugin (
+    -- sort-of join table, with host_count field.  Surrogate key needed as a result...
     id int primary key auto_increment,
-    scan_id int not null,
-    severity int null,
-    plugin_name_id int null,
-    plugin_attributes_id int null,
-    plugin_family_id int null,
+    prioritization_id int not null, -- effectively, also scan_id
+    plugin_id int null,
     host_count int null,
-    plugin_id varchar(255) null,
-    _extra_json longtext null,
     __order_for_scan_plugin int not null,
-    constraint foreign key (scan_id) references scan_response(id),
-    constraint foreign key scan_plugin_plugin_name_id_fk (plugin_name_id) references plugin_name (id),
-    constraint foreign key scan_plugin_plugin_attributes_id_fk (plugin_attributes_id) references plugin_attributes (id),
-    constraint foreign key scan_plugin_plugin_family_id_fk (plugin_family_id) references plugin_family (id)
+    constraint unique (prioritization_id, plugin_id),
+    constraint foreign key (prioritization_id) references scan_prioritization(id), -- effectively, also scan_response(id)
+    constraint foreign key (plugin_id) references plugin(id)
 );
 
 create table scan_remediations_summary (
@@ -577,12 +586,12 @@ create table scan_host_severity_level_count (
 );
 
 create table scan_plugin_host (
-    plugin_id int not null,
-    host_id int not null,
+    scan_plugin_id int not null,
+    plugin_host_id int not null,
     __order_for_scan_plugin_host int not null,
-    constraint primary key (plugin_id, host_id),
-    constraint foreign key (plugin_id) references scan_plugin (id),
-    constraint foreign key (host_id) references plugin_host (id)
+    constraint primary key (scan_plugin_id, plugin_host_id),
+    constraint foreign key (scan_plugin_id) references scan_plugin (id),
+    constraint foreign key (plugin_host_id) references plugin_host (id)
 );
 
 create table scan_vulnerability (

@@ -1,9 +1,12 @@
-package nessusTools.data.entity.host;
+package nessusTools.data.entity.scan;
 
 import com.fasterxml.jackson.annotation.*;
 
+import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
+import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import org.hibernate.annotations.*;
 
@@ -19,9 +22,11 @@ import javax.persistence.Table;
 
 @Entity(name = "ScanHost")
 @Table(name = "scan_host")
-public class ScanHost extends ScanResponse.MultiChild<ScanHost> {
+public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
+        implements LookupSearchMapProvider<ScanHost> {
 
-    public static final Dao<ScanHost> dao = new Dao(ScanHost.class);
+    public static final ObjectLookupDao<ScanHost>
+            dao = new ObjectLookupDao<ScanHost>(ScanHost.class);
 
     @Column(name = "host_id")
     @JsonProperty("host_id")
@@ -57,7 +62,9 @@ public class ScanHost extends ScanResponse.MultiChild<ScanHost> {
             inverseJoinColumns = { @JoinColumn(name = "severity_id") }
     )
     @OrderBy("severityLevel ASC")
-    @JsonProperty("severitycount") // TODO flatten "item"
+    @JsonProperty("severitycount")
+    @JsonDeserialize(using = SeverityCount.Deserializer.class)
+    @JsonSerialize(using = SeverityCount.Serializer.class)
     private List<SeverityLevelCount> severityCount;
 
     private String progress;
@@ -95,6 +102,66 @@ public class ScanHost extends ScanResponse.MultiChild<ScanHost> {
     private Integer severity;
 
     private String hostname;
+
+    @Override
+    @Transient
+    @JsonIgnore
+    public void _set(ScanHost o) {
+        __set(o);
+        this.hostId = o.hostId;
+        this.totalChecksConsidered = o.totalChecksConsidered;
+        this.numChecksConsidered = o.numChecksConsidered;
+        this.scanProgressTotal = o.scanProgressTotal;
+        this.scanProgressCurrent = o.scanProgressCurrent;
+        this.hostIndex = o.hostIndex;
+        this.score = o.score;
+        this.severityCount = o.severityCount;
+        this.progress = o.progress;
+        this.offlineCritical = o.offlineCritical;
+        this.offlineHigh = o.offlineHigh;
+        this.offlineMedium = o.offlineMedium;
+        this.offlineLow = o.offlineLow;
+        this.offlineInfo = o.offlineInfo;
+        this.critical = o.critical;
+        this.high = o.high;
+        this.medium = o.medium;
+        this.low = o.low;
+        this.info = o.info;
+        this.severity = o.severity;
+        this.hostname = o.hostname;
+    }
+
+    @Override
+    @Transient
+    @JsonIgnore
+    public boolean _lookupMatch(ScanHost other) {
+        if (other == null) return false;
+        if (other == this) return true;
+        ScanResponse myRes = this.getResponse();
+        ScanResponse theirRes = other.getResponse();
+        if (myRes == null || theirRes == null) {
+            return false;
+        }
+
+        if (myRes != theirRes) {
+            int myRId = myRes.getId();
+            int theirRId = theirRes.getId();
+
+            if (myRId == 0 || myRId != theirRId) {
+                return false;
+            }
+        }
+
+        return this.hostId != null && other.hostId != null
+                && this.hostId.intValue() == other.hostId.intValue();
+    }
+
+    @Override
+    @Transient
+    @JsonIgnore
+    public Map<String, Object> _getSearchMap() {
+        return Map.of("response", this.getResponse(), "hostId", this.hostId);
+    }
 
 
     public Integer getHostId() {
@@ -158,7 +225,14 @@ public class ScanHost extends ScanResponse.MultiChild<ScanHost> {
     }
 
     public void setSeverityCount(List<SeverityLevelCount> severityCount) {
-        this.severityCount = severityCount;
+        if (severityCount instanceof SeverityCount) {
+            this.severityCount = severityCount;
+            ((SeverityCount)severityCount).putExtraJsonIntoParent(this);
+
+        } else {
+            this.severityCount = new SeverityCount(severityCount);
+            ((SeverityCount)severityCount).setExtraJsonFromParent(this);
+        }
     }
 
     public String getProgress() {

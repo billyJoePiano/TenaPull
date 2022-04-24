@@ -18,6 +18,10 @@ public abstract class AbstractContextualDeserializer<T>
         return this.type;
     }
 
+    public void setType(Class<T> type) {
+        this.type = type;
+    }
+
     public JavaType getJavaType() {
         return this.javaType;
     }

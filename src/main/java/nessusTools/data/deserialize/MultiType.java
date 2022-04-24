@@ -18,7 +18,7 @@ public class MultiType {
         public MultiTypeWrapper deserialize(JsonParser jp,
                                             DeserializationContext ctxt)
                 throws IOException {
-            JsonToken token = jp.getCurrentToken();
+            JsonToken token = jp.currentToken();
 
             switch(token) {
                 case VALUE_NULL:
@@ -57,7 +57,7 @@ public class MultiType {
                 default:
                     throw new JsonException(this.getClass()
                             + " cannot deserialize JSON value of type "
-                            + jp.getCurrentToken() + "\n"
+                            + jp.currentToken() + "\n"
                             + jp.getText());
             }
 

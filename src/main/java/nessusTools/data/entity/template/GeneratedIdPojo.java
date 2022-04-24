@@ -1,6 +1,7 @@
 package nessusTools.data.entity.template;
 
 import com.fasterxml.jackson.annotation.*;
+import org.apache.logging.log4j.core.tools.*;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
@@ -8,7 +9,9 @@ import java.util.*;
 
 
 @MappedSuperclass
-public abstract class GeneratedIdPojo extends ExtensibleJsonPojo {
+public abstract class GeneratedIdPojo extends ExtensibleJsonPojo
+        implements DbPojo {
+
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO, generator="native")
     @GenericGenerator(name = "native",strategy = "native")
@@ -28,7 +31,7 @@ public abstract class GeneratedIdPojo extends ExtensibleJsonPojo {
         if (o == this) return true;
         if (!Objects.equals(o.getClass(), this.getClass())) return false;
 
-        ExtensibleJsonPojo other = (ExtensibleJsonPojo) o;
+        GeneratedIdPojo other = (GeneratedIdPojo) o;
         return  (this.getId() == 0 || other.getId() == 0 || this.getId() == other.getId())
                 && Objects.equals(this.toJsonNode(), other.toJsonNode());
 

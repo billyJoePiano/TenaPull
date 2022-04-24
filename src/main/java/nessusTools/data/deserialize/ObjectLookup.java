@@ -17,6 +17,12 @@ public class ObjectLookup {
     public static class Deserializer<POJO extends ObjectLookupPojo<POJO>>
             extends AbstractContextualPojoDeserializer<POJO, ObjectLookupDao<POJO>> {
 
+        public Deserializer() { }
+
+        public Deserializer(Class<POJO> pojoType) {
+            this.setType(pojoType);
+        }
+
         private static final Logger logger = LogManager.getLogger(ObjectLookup.Deserializer.class);
         public Logger getLogger() {
             return logger;
@@ -31,6 +37,7 @@ public class ObjectLookup {
             }
 
             POJO searchPojo = jp.readValueAs(this.pojoType);
+
 
             try {
                 return dao.getOrCreate(searchPojo); // TODO ??? what method to get the current object as JsonNode / JsonObject ???

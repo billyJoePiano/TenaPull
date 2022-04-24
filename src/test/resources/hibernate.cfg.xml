@@ -45,6 +45,7 @@
         <mapping class="nessusTools.data.entity.objectLookup.PluginRiskInformation" />
         <mapping class="nessusTools.data.entity.objectLookup.PluginVulnInformation" />
         <mapping class="nessusTools.data.entity.objectLookup.PluginHost" />
+        <mapping class="nessusTools.data.entity.objectLookup.Plugin" />
         <mapping class="nessusTools.data.entity.objectLookup.License" />
         <mapping class="nessusTools.data.entity.objectLookup.Remediation" />
         <mapping class="nessusTools.data.entity.objectLookup.SeverityBase" />
@@ -55,12 +56,13 @@
         <mapping class="nessusTools.data.entity.scan.Scan" />
         <mapping class="nessusTools.data.entity.scan.ScanGroup" />
         <mapping class="nessusTools.data.entity.scan.ScanHistory" />
-        <mapping class="nessusTools.data.entity.host.ScanHost" />
-        <mapping class="nessusTools.data.entity.scan.ScanHostInfo" />
+        <mapping class="nessusTools.data.entity.host.ScanHostInfo" />
         <mapping class="nessusTools.data.entity.scan.ScanInfo" />
         <mapping class="nessusTools.data.entity.scan.ScanPlugin" />
         <mapping class="nessusTools.data.entity.scan.ScanPrioritization" />
         <mapping class="nessusTools.data.entity.scan.ScanRemediationsSummary" />
+
+        <mapping class="nessusTools.data.entity.scan.ScanHost" />
 
         <mapping class="nessusTools.data.entity.response.ScanResponse" />
 

@@ -3,6 +3,7 @@ package nessusTools.data.entity.scan;
 import com.fasterxml.jackson.annotation.*;
 
 import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
 
@@ -17,7 +18,7 @@ import java.util.*;
 public class ScanPrioritization extends ScanResponse.SingleChild<ScanPrioritization> {
     public static final Dao<ScanPrioritization> dao = new Dao(ScanPrioritization.class);
 
-    @OneToMany(mappedBy = "scan_id")
+    @OneToMany(mappedBy = "scanPrioritization")
     @OrderColumn(name = "__order_for_scan_plugin")
     @JsonDeserialize(contentAs = ScanPlugin.class)
     private List<ScanPlugin> plugins;

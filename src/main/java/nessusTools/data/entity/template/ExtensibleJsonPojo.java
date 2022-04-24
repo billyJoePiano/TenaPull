@@ -15,7 +15,7 @@ import java.util.*;
 // implement the DbPojo interface
 
 @MappedSuperclass
-public abstract class ExtensibleJsonPojo implements DbPojo {
+public abstract class ExtensibleJsonPojo {
 
     @Column(name = "_extra_json")
     @Convert(converter = ExtraJson.Converter.class)

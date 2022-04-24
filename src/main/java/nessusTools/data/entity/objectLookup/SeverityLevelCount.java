@@ -1,6 +1,8 @@
 package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
@@ -13,7 +15,7 @@ import javax.persistence.Table;
 
 // for ScanHost
 @Entity(name = "SeverityLevelCount")
-@Table(name = "severity__level_count")
+@Table(name = "severity_level_count")
 @JsonIgnoreProperties({"id"})
 public class SeverityLevelCount extends GeneratedIdPojo
         implements ObjectLookupPojo<SeverityLevelCount> {

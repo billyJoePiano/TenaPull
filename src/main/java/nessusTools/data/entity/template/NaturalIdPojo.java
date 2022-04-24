@@ -8,7 +8,8 @@ import javax.persistence.*;
 import java.util.*;
 
 @MappedSuperclass
-public abstract class NaturalIdPojo extends ExtensibleJsonPojo {
+public abstract class NaturalIdPojo extends ExtensibleJsonPojo
+        implements DbPojo {
     @Id
     @NaturalId
     @JsonProperty
@@ -27,7 +28,7 @@ public abstract class NaturalIdPojo extends ExtensibleJsonPojo {
         if (o == this) return true;
         if (!Objects.equals(o.getClass(), this.getClass())) return false;
 
-        ExtensibleJsonPojo other = (ExtensibleJsonPojo) o;
+        NaturalIdPojo other = (NaturalIdPojo) o;
         return  this.getId() == other.getId()
                 && Objects.equals(this.toJsonNode(), other.toJsonNode());
 

@@ -86,6 +86,8 @@ public class InstancesTracker<K, I> {
 
     private InstancesTracker<K, I> replacedWith;
 
+    private boolean keyFinalizer;
+
     public InstancesTracker(Class<K> keyType,
                             Class<I> instancesType,
                             Lambda1<K, I> constructionLambda)
@@ -104,6 +106,7 @@ public class InstancesTracker<K, I> {
         this.construct = constructionLambda;
 
         this.keysComparable = Comparable.class.isAssignableFrom(this.keyType);
+        this.keyFinalizer = KeyFinalizer.class.isAssignableFrom(this.keyType);
 
         this.type = new KeyValueType(keyType, instType);
 
@@ -119,8 +122,9 @@ public class InstancesTracker<K, I> {
         return instances.read(Integer.class, instances ->
             underConstruction.read(Integer.class, underConstruction -> {
                 Set<I> counter = new LinkedHashSet<>(instances.keySet());
-                for (CreateLock lock : underConstruction.values()) {
-                    I instance = lock.run();
+                for (Map.Entry<K, CreateLock> entry : underConstruction.entrySet()) {
+                    CreateLock lock = entry.getValue();
+                    I instance = lock.run(entry.getKey());
                     if (instance != null) {
                         counter.add(instance);
                     }
@@ -153,7 +157,7 @@ public class InstancesTracker<K, I> {
 
         CreateLock lock = (CreateLock) iol;
 
-        return lock.run();
+        return lock.run(lock.key);
     }
 
     public List<I> get(Lambda1<I, Boolean> filter) {
@@ -180,8 +184,9 @@ public class InstancesTracker<K, I> {
             }
 
             this.underConstruction.read(underConstruction -> {
-                for (CreateLock lock : underConstruction.values()) {
-                    I instance = lock.run();
+                for (Map.Entry<K, CreateLock> entry : underConstruction.entrySet()) {
+                    CreateLock lock = entry.getValue();
+                    I instance = lock.run(entry.getKey());
                     if (accepted.contains(instance) || rejected.contains(instance)){
                         continue;
                     }
@@ -255,7 +260,7 @@ public class InstancesTracker<K, I> {
                 underConstruction.remove(key));
 
             if (lock != null) {
-                return lock.run();
+                return lock.run(key);
 
             } else {
                 return null;
@@ -301,8 +306,9 @@ public class InstancesTracker<K, I> {
 
         // start by finalizingConstruction of all createLocks with references to this instance
         underConstruction.write(underConstruction -> {
-            for (CreateLock lock : underConstruction.values()) {
-                if (Objects.equals(instance, lock.run())) {
+            for (Map.Entry<K, CreateLock> entry : underConstruction.entrySet()) {
+                CreateLock lock = entry.getValue();
+                if (Objects.equals(instance, lock.run(entry.getKey()))) {
                     lock.finalizeConstruction(instances, underConstruction);
                 }
             }
@@ -320,8 +326,8 @@ public class InstancesTracker<K, I> {
         return instances.read(Set.class, instances -> {
             Set<I> all = new LinkedHashSet(instances.keySet());
             this.underConstruction.read(underConstruction -> {
-                for (CreateLock lock : underConstruction.values()) {
-                    I instance = lock.run();
+                for (Map.Entry<K, CreateLock> entry : underConstruction.entrySet()) {
+                    I instance = entry.getValue().run(entry.getKey());
                     if (instance != null) {
                         all.add(instance);
                     }
@@ -333,7 +339,6 @@ public class InstancesTracker<K, I> {
         });
     }
 
-    // TODO a remove(K key) method to remove a mapping
 
     public I put(K key, I instance)
             throws UnrecognizedInstance {
@@ -357,8 +362,14 @@ public class InstancesTracker<K, I> {
 
                 if (myLock == null) {
                     // this invocation is NOT coming from within a createLock construct lambda
+                    if (otherLock.run(key) == instance) {
+                        I displaced = putWithLock(key, instance, instances);
+                        underConstruction.remove(otherLock.key);
+                        return displaced;
+                    }
+
                     for (CreateLock l : underConstruction.values()) {
-                        if (otherLock.run() == instance) {
+                        if (l.run(l.key) == instance) {
                             return putWithLock(key, instance, instances);
                         }
                     }
@@ -378,9 +389,27 @@ public class InstancesTracker<K, I> {
                      */
 
                     return putWithLock(key, instance, instances);
+
+                } else if (otherLock != null && otherLock.forceOverwrite && !myLock.forceOverwrite) {
+                    //need to splice in altLock as the new 'startOfChain', and reset its key...
+                    CreateLock altLock = new CreateLock(otherLock.key, null, false);
+                    //canonical key instance will be from overwriting lock
+
+                    // don't need to provide construct lambda, because we will just take a "shortcut"...
+                    altLock.startOfChain = true;
+                    altLock.finishedInstance = instance;
+                    altLock.stage = Stage.RETURNED;
+
+                    synchronized (otherLock) {
+                        otherLock.startOfChain = false;
+                        otherLock.overrides = altLock;
+
+                        underConstruction.put(otherLock.key, altLock);
+                    }
+
+                    return altLock.overrideWith(otherLock, false, otherLock.key);
                 }
 
-                this.keySet.keysMap.write(map -> map.put(key, UNDER_CONSTRUCTION_PLACEHOLDER));
                 // ... else put in underConstruction queue ...
                 CreateLock altLock
                         = new CreateLock(key, null, myLock.forceOverwrite);
@@ -389,33 +418,16 @@ public class InstancesTracker<K, I> {
                 altLock.finishedInstance = instance;
                 altLock.stage = Stage.RETURNED;
 
-                if (otherLock == null) {
-                    // If this block is reached, myLock.override must be false
-                    altLock.startOfChain = true;
-                    underConstruction.put(key, altLock);
-                    return null;
-
-                } else if (otherLock.forceOverwrite && !myLock.forceOverwrite) {
-                    //need to splice in altLock as the new 'startOfChain'
-
-                    synchronized (otherLock) {
-                        altLock.startOfChain = true;
-                        otherLock.startOfChain = false;
-                        otherLock.overrides = altLock;
-
-                        if (key != otherLock.key) {
-                            underConstruction.remove(otherLock.key);
-                            // remove old key to avoid any issues with the key mutating and .equals() behavior
-                        }
-
-                        underConstruction.put(key, altLock);
-                    }
-
-                    return altLock.overrideWith(otherLock, false);
-
+                if (otherLock != null) {
+                    return otherLock.overrideWith(altLock, false, otherLock.key);
                 }
 
-                return otherLock.overrideWith(altLock, false);
+                // If this point is reached, myLock.forceOverwrite must be false
+                altLock.startOfChain = true;
+                this.keySet.keysMap.write(map -> map.put(key, UNDER_CONSTRUCTION_PLACEHOLDER));
+                underConstruction.put(key, altLock);
+                return null;
+
             });
         });
     }
@@ -493,13 +505,20 @@ public class InstancesTracker<K, I> {
 
         CreateLock lock = this.getCurrentThreadLock();
 
-        if (lock != null) {
-            throw new CreateLockException(this, lock.key);
+        if (lock == null) {
+            return overwriteIfFound
+                    ? this.overwriteIfFound(key, construct)
+                    : this.noOverwrite(key, construct);
         }
 
-        return overwriteIfFound
-                ? this.overwriteIfFound(key, construct)
-                : this.noOverwrite(key, construct);
+
+        throw new CreateLockException(this, lock.key);
+        /*
+        return instances.write(instType, instances -> {
+
+        });
+         */
+
     }
 
     private I noOverwrite(K key, Lambda1<K, I> construct) {
@@ -557,10 +576,10 @@ public class InstancesTracker<K, I> {
 
             })) {
                 // returns true when this was an established lock, not a new one
-                inst = startOfChain.value.run();
+                inst = startOfChain.value.run(startOfChain.value.key);
                 if (inst == null) {
                     lock.value = new CreateLock(key, construct, false);
-                    startOfChain.value.overrideWith(lock.value, true);
+                    startOfChain.value.overrideWith(lock.value, true, startOfChain.value.key);
                 }
             }
 
@@ -572,7 +591,7 @@ public class InstancesTracker<K, I> {
         }
 
         synchronized (lock.value.constructLock) {
-            return startOfChain.value.run();
+            return startOfChain.value.run(startOfChain.value.key);
         }
     }
 
@@ -613,16 +632,16 @@ public class InstancesTracker<K, I> {
                     underConstruction.put(key, overridingLock);
 
                 } else {
-                    underConstruction.remove(key);
+                    underConstruction.remove(startOfChain.value.key);
                     underConstruction.put(key, startOfChain.value);
-                    startOfChain.value.overrideWith(overridingLock, true);
+                    startOfChain.value.overrideWith(overridingLock, true, key);
                 }
                 return null;
             });
         });
 
         synchronized (overridingLock.constructLock) {
-            return startOfChain.value.run();
+            return startOfChain.value.run(startOfChain.value.key);
         }
     }
 
@@ -649,6 +668,10 @@ public class InstancesTracker<K, I> {
         RETURNED, // includes thrown exceptions
         FINALIZING,
         FINALIZED
+    }
+
+    public interface KeyFinalizer<K extends KeyFinalizer<K, I>, I> {
+        public void finalizeKey(I instance);
     }
 
 
@@ -741,7 +764,14 @@ public class InstancesTracker<K, I> {
          *  underConstruction is not needed, and should be avoided if holding the
          *  constructLock because it could cause deadlock.
           */
+
+        /*
         private I run() throws CreateLockException {
+            return this.run(this.key);
+        }
+         */
+
+        private I run(K key) throws CreateLockException {
             boolean runConstruct = false;
             boolean waitForPostConstruct = false;
 
@@ -764,16 +794,16 @@ public class InstancesTracker<K, I> {
             }
 
             if (runConstruct) {
-                return this.runConstruct();
+                return this.runConstruct(key);
+
             } else {
-                return getResult(waitForPostConstruct);
+                return getResult(waitForPostConstruct, key);
             }
 
 
         }
 
-        @Async.Schedule // jetBrains debugging annotation... see also, static method setWaitingStatus
-        private I runConstruct() {
+        private I runConstruct(K key) {
             boolean callConstruct;
             synchronized (this) {
                 this.stage = Stage.CONSTRUCT;
@@ -781,9 +811,9 @@ public class InstancesTracker<K, I> {
             }
 
             try {
-                if (callConstruct || this.overriddenBy.run() == null) {
+                if (callConstruct || this.overriddenBy.run(key) == null) {
                     try {
-                        this.finishedInstance = construct.call(this.key);
+                        this.finishedInstance = construct.call(key);
 
                     } catch (Throwable e) {
                         logger.error("Error while constructing instance of type "
@@ -799,7 +829,7 @@ public class InstancesTracker<K, I> {
                     this.notifyAll();
                 }
 
-                return this.getResult(false);
+                return this.getResult(false, key);
 
             } finally {
                 synchronized (this) {
@@ -813,7 +843,7 @@ public class InstancesTracker<K, I> {
             }
         }
 
-        private I getResult(boolean waitForPostConstruct) {
+        private I getResult(boolean waitForPostConstruct, K key) {
             if (waitForPostConstruct) {
                 this.waitForStage(Stage.POST_CONSTRUCT);
             }
@@ -825,7 +855,7 @@ public class InstancesTracker<K, I> {
                 }
             }
 
-            I instance = this.overriddenBy.run();
+            I instance = this.overriddenBy.run(key);
             if (instance != null) {
                 return instance;
 
@@ -896,7 +926,7 @@ public class InstancesTracker<K, I> {
          *
          */
 
-        private I overrideWith(CreateLock otherLock, boolean skipRun) {
+        private I overrideWith(CreateLock otherLock, boolean skipRun, K key) {
             //typically this would be called from a different thread than the thread that created the lock
             assert !(otherLock == this
                     || otherLock.startOfChain
@@ -954,7 +984,7 @@ public class InstancesTracker<K, I> {
                 displaced = this.finishedInstance;
 
             } else {
-                displaced = this.run();
+                displaced = this.run(key);
             }
 
             synchronized (this) {
@@ -976,7 +1006,7 @@ public class InstancesTracker<K, I> {
                 }
             }
 
-            I priorityDisplaced = this.overriddenBy.overrideWith(otherLock, origSkipRun);
+            I priorityDisplaced = this.overriddenBy.overrideWith(otherLock, origSkipRun, key);
             if (priorityDisplaced != null) {
                 return priorityDisplaced;
 
@@ -1006,11 +1036,10 @@ public class InstancesTracker<K, I> {
 
             I instance;
             try {
-                instance = this.run();
+                instance = this.run(this.key);
 
             } catch (Throwable e) {
                 logger.error(e);
-                clearRunThread(current);
                 return false;
             }
 
@@ -1035,7 +1064,9 @@ public class InstancesTracker<K, I> {
                 }
                 return false;
 
-            } else if (instance == null) {
+            }
+
+            if (instance == null) {
                 // remove from keySet if necessary
                 InstancesTracker.this.keySet.keysMap.write(map -> {
                     WeakReference<I> ref = map.get(this.key);
@@ -1047,6 +1078,11 @@ public class InstancesTracker<K, I> {
                     }
                     return null;
                 });
+            }
+
+            if (InstancesTracker.this.keyFinalizer) {
+                KeyFinalizer<?, I> kf = (KeyFinalizer<?, I>) this.key;
+                kf.finalizeKey(instance);
             }
 
             synchronized (InstancesTracker.this.comparable) {
@@ -1076,8 +1112,6 @@ public class InstancesTracker<K, I> {
 
             while (true) {
                 if (overriddenBy != null && !overriddenBy.markAsFinalizing(currentThread)) {
-                    overriddenBy.clearRunThread(currentThread);
-                    this.clearRunThread(currentThread);
                     return false;
                 }
 
@@ -1087,29 +1121,7 @@ public class InstancesTracker<K, I> {
                         return true;
                     }
                 }
-                overriddenBy.clearRunThread(currentThread);
                 synchronized (this) {
-                    overriddenBy = this.overriddenBy;
-                }
-            }
-        }
-
-        private void clearRunThread(Thread currentThread) {
-            CreateLock overriddenBy;
-            synchronized (this) {
-                if (this.constructThread == currentThread) {
-                    //use instance equality to guarantee it came from this call to finalizeConstruction()
-                    this.constructThread = null;
-                }
-                overriddenBy = this.overriddenBy;
-            }
-
-            while (overriddenBy != null) {
-                overriddenBy.clearRunThread(currentThread);
-                synchronized (this) {
-                    if (overriddenBy == this.overriddenBy) {
-                        return;
-                    }
                     overriddenBy = this.overriddenBy;
                 }
             }
@@ -1316,7 +1328,7 @@ public class InstancesTracker<K, I> {
                     }
 
                     for (CreateLock lock : uc.values()) {
-                        lock.run();
+                        lock.run(lock.key);
                     }
 
                     return null;
@@ -1506,7 +1518,7 @@ public class InstancesTracker<K, I> {
                         InstancesTracker.CreateLock lock = wt.get(thread);
                         if (lock == null || lock != origLock) return false;
 
-                        logger.warn("INTERRUPTING WAITING THREAD, TO BREAK A DEADLOCK:" + thread + "\n"
+                        logger.debug("INTERRUPTING WAITING THREAD, TO BREAK A DEADLOCK:" + thread + "\n"
                                 + StackTracePrinter.makeStackTraceString(thread));
 
                         wt.remove(lock);
@@ -1519,7 +1531,6 @@ public class InstancesTracker<K, I> {
 
 
         } catch (Throwable e) {
-            System.err.println(e);
             logger.error(e);
         }
     });
@@ -1655,9 +1666,9 @@ public class InstancesTracker<K, I> {
                     long time = System.nanoTime();
                     long trackerTimeoutAt = (timeoutAt - time) / remainingTrackers + time;
 
-                    System.out.println("Finalizing create locks <K, I> : " + tracker.type);
+                    logger.debug("Finalizing create locks <K, I> : " + tracker.type);
                     FinalizeResult result = tracker.finalizeCreateLocks(trackerTimeoutAt);
-                    System.out.println("DONE Finalizing for <K, I> : " + tracker.type);
+                    logger.debug("DONE Finalizing for <K, I> : " + tracker.type);
                     remainingTrackers--;
 
                     finalizedCount += result.count;
@@ -1681,7 +1692,7 @@ public class InstancesTracker<K, I> {
                 activeTime += (endTime - loopStart);
 
                 if (index >= REPORT_ITERATIONS) {
-                    logger.info(getFinalizerReportString(
+                    logger.debug(getFinalizerReportString(
                             reports, totalCount, startTime, activeTime, endTime));
 
                     //reset

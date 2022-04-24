@@ -13,8 +13,7 @@ public class ScanOwner extends LookupPojo<ScanOwner> {
     public static final LookupDao<ScanOwner> dao
             = new LookupDao<ScanOwner>(ScanOwner.class);
 
-    @OneToOne
-    @JoinColumn(name = "lookup_id")
+    @OneToOne(mappedBy = "scanOwner")
     @JsonIgnore
     private ScanOwnerNessusId scanOwnerId;
 

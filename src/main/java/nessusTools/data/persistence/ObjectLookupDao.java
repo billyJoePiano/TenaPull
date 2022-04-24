@@ -18,9 +18,12 @@ import org.hibernate.property.access.spi.*;
 // TODO add code to update old PojoFinder keys for workingLookups when the pojo record is mutated
 
 public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<POJO> {
+
+
     //whether to lookup the object by a (non-zero) id passed in the DbPojo
     private final boolean naturalId;
     private final boolean getByIdWhenZero;
+    private final boolean searchMapProvider;
         // Typically, getByIdWhenZero will coincide with use of IdNullable deserializer
 
     public ObjectLookupDao(Class<POJO> pojoType) {
@@ -30,27 +33,37 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
     public ObjectLookupDao(Class<POJO> pojoType, boolean getByIdWhenZero) {
         super(pojoType);
         this.naturalId = NaturalIdPojo.class.isAssignableFrom(pojoType);
+        this.searchMapProvider = LookupSearchMapProvider.class.isAssignableFrom(pojoType);
 
         if (getByIdWhenZero && !this.naturalId) {
                 throw new IllegalArgumentException("DbPojo class when getByIdWhenZero = true must be a NaturalIdPojo");
         }
 
         this.getByIdWhenZero = getByIdWhenZero;
-        this.workingLookups = new InstancesTracker(PojoFinder.class, pojoType, null);
+        this.workingLookups = new InstancesTracker(new Type(PojoFinder.class, pojoType), new Type(pojoType), null);
     }
 
 
     private final InstancesTracker<PojoFinder, POJO> workingLookups;
     private final ReadWriteLock<Void, POJO> pojoFinderLock = new ReadWriteLock(null);
 
-    private class PojoFinder {
+    public static final long TEMP_STRONG_REF_LIFETIME_MS = 10000;
+    private static final ReadWriteLock<Map<ObjectLookupDao.PojoFinder, Void>,
+            Map<ObjectLookupDao.PojoFinder, Void>>
+            tempStrongRefs = ReadWriteLock.forMap(new WeakHashMap());
+
+    private static final Var.Long gcMonitor = new Var.Long();
+
+
+    private class PojoFinder implements InstancesTracker.KeyFinalizer<PojoFinder, POJO> {
         // Overrides the Object.equals method to match Pojos on different criteria, including ids,
         // custom equality lambda, or the POJOs own equals method
 
-        private WeakReference<POJO> pojoRef; // indicates this is a PojoFinder to be matched
+        private WeakReference<POJO> weakRef; // indicates this is a PojoFinder to be matched
+        private POJO tempStrongRef;
 
         // indicates this is a PojoFinder LOOKING for a match
-        private POJO strongRef;
+        private POJO searchingRef;
         private Integer id;
 
         private boolean multiSearch;
@@ -61,7 +74,8 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
         }
 
         private PojoFinder(POJO pojo) {
-            this.strongRef = pojo;
+            this.searchingRef = pojo;
+            this.tempStrongRef = pojo;
         }
 
         private PojoFinder() {
@@ -69,14 +83,30 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
         }
 
         private POJO get() {
-            if (this.strongRef != null) {
-                return this.strongRef;
+            if (this.searchingRef != null) {
+                return this.searchingRef;
 
-            } else if (this.pojoRef != null) {
-                return this.pojoRef.get();
+            } else if (this.tempStrongRef != null) {
+                return this.tempStrongRef;
+
+            } else if (this.weakRef != null) {
+                return this.weakRef.get();
 
             } else {
                 return null;
+            }
+        }
+
+        @Override
+        public void finalizeKey(POJO instance) {
+            if (this.multiSearch) {
+                if (instance != null) {
+                    throw new IllegalStateException("Multi-search POJO finder should never produce an instance");
+                }
+
+            } else {
+                this.tempStrongRef = null;
+                this.set(instance);
             }
         }
 
@@ -103,14 +133,15 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                 throw new IllegalStateException("Multi-search POJO finder should never have 'set()' called");
             }
 
-            if (pojo == null) {
-                this.pojoRef = null;
+            if (this.tempStrongRef != null && pojo != this.tempStrongRef) {
+                this.tempStrongRef = pojo;
+                this.weakRef = new WeakReference<>(pojo);
 
-            } else {
-                this.pojoRef = new WeakReference<>(pojo);
+            } else if (this.weakRef == null || this.weakRef.get() != pojo) {
+                this.weakRef = new WeakReference<>(pojo);
             }
 
-            this.strongRef = null;
+            this.searchingRef = null;
             this.id = null;
         }
 
@@ -131,6 +162,7 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                 return false;
             }
 
+
             return ObjectLookupDao.this.pojoFinderLock.read(Boolean.class,
                     na -> this.equalsWithLock(other));
         }
@@ -144,17 +176,25 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                 if (other.id != null) {
                     return this.id.intValue() == other.id.intValue();
 
-                } else if (theirs != null && (other.strongRef == null || ObjectLookupDao.this.naturalId)) {
+                } else if (theirs != null && (other.searchingRef == null || ObjectLookupDao.this.naturalId)) {
                     return theirs.getId() == this.id.intValue();
                 }
 
             } else if (other.id != null) {
-                if (mine != null && (other.strongRef == null || ObjectLookupDao.this.naturalId)) {
+                if (mine != null && (other.searchingRef == null || ObjectLookupDao.this.naturalId)) {
                     return mine.getId() == other.id.intValue();
                 }
             }
 
-            if (ObjectLookupDao.this.naturalId) {
+            if (ObjectLookupDao.this.searchMapProvider) {
+                if (mine == null || theirs == null) {
+                    return false;
+                }
+                LookupSearchMapProvider mn = (LookupSearchMapProvider) mine;
+                LookupSearchMapProvider th = (LookupSearchMapProvider) theirs;
+                return mn._lookupMatch(th);
+
+            } else if (ObjectLookupDao.this.naturalId) {
                 return mine != null && theirs != null
                         && mine.getId() == theirs.getId();
 
@@ -162,6 +202,7 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                 if (mine.getId() == 0 || theirs.getId() == 0) {
                     // when id is a surrogate key and one of the objects' ids is unset...
                     // it means the objects should be compared with their own equals method
+                    // which skips id comparison in this case, as defined by generatedIdPojo.equals
                     return Objects.equals(mine, theirs);
 
                 } else {
@@ -181,30 +222,34 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
             return null;
         }
 
-        if (pojo.getId() != 0) {
-            return this.updateOrCreateById(pojo);
+        if (!this.searchMapProvider) {
+            if (pojo.getId() != 0) {
+                return this.updateOrCreateById(pojo);
 
-        } else if (this.naturalId) {
-             if (this.getByIdWhenZero) {
-                 return this.updateOrCreateById(pojo);
-             }
+            } else if (this.naturalId) {
+                if (this.getByIdWhenZero) {
+                    return this.updateOrCreateById(pojo);
+                }
 
-            throw new LookupException("Invalid pojo submitted to objectLookupDao.getOrCreate() ... "
-                    + "NaturalIdPojos must have a non-zero id unless getByIdWhenZero is true\n"
-                    + pojo.toString(), this.getPojoType());
+                throw new LookupException("Invalid pojo submitted to objectLookupDao.getOrCreate() ... "
+                        + "NaturalIdPojos must have a non-zero id unless getByIdWhenZero is true\n"
+                        + pojo.toString(), this.getPojoType());
 
+            }
         }
 
-        Var.Bool reachedLambda = new Var.Bool();
         PojoFinder finder = new PojoFinder(pojo);
 
         POJO val = this.workingLookups.getOrConstructWith(finder, f ->
             this.pojoFinderLock.write(this.getPojoType(), na -> {
-                reachedLambda.value = true;
-
                 POJO result;
+                if (this.searchMapProvider) {
+                    result = ObjectLookupDao.this.useSearchMapProvider(pojo);
 
-                result = super.findByExactPojo(pojo);
+                } else {
+                    result = super.findByExactPojo(pojo);
+                }
+
                 if (result != null) {
                     return f.set(result, finder);
                 }
@@ -220,7 +265,7 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
         );
 
 
-        if (!reachedLambda.value) {
+        if (val != pojo) {
             finder.set(val);
         }
         return val;
@@ -247,7 +292,13 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
 
                 finder.set(result.value);
 
-                POJO dbPojo = super.getById(result.value.getId());
+                POJO dbPojo;
+                if (this.searchMapProvider) {
+                    dbPojo = this.useSearchMapProvider(result.value);
+
+                } else {
+                    dbPojo = super.getById(result.value.getId());
+                }
 
                 if (dbPojo != null) {
                     if (Objects.equals(dbPojo, result.value)) {
@@ -272,6 +323,26 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
         );
 
         return result.value;
+    }
+
+
+    private POJO useSearchMapProvider(POJO mapProvider) throws LookupException {
+        LookupSearchMapProvider smp = (LookupSearchMapProvider) mapProvider;
+        List<POJO> results = this.mapSearch(smp._getSearchMap());
+
+        switch (results.size()) {
+            case 0:
+                return null;
+
+            case 1:
+                return results.get(0);
+
+            default:
+                throw new LookupException(
+                        "LookupSearchMapProvider searchMap returned more than one instance ("
+                        + results.size() + " returned)",
+                        this.getPojoType());
+        }
     }
 
     @Override
@@ -314,8 +385,24 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
             POJO prev = this.workingLookups.get(f);
 
             if (prev == null) {
-                id.value = super.insert(pojo);
-                return f.set(pojo, finder);
+                if (this.searchMapProvider) {
+                    prev = this.useSearchMapProvider(pojo);
+
+                } else {
+                    for (POJO other : this.mapSearch(
+                                    this.makeExactPojoSearchMap(pojo))) {
+
+                        if (pojo.equals(other)) {
+                            prev = other;
+                            break;
+                        }
+                    }
+                }
+
+                if (prev == null) {
+                    id.value = super.insert(pojo);
+                    return f.set(pojo, finder);
+                }
             }
 
             logger.warn("Insert operation found another instance in ObjectLookupDao.insert(pojo).  "
@@ -347,7 +434,7 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                     POJO instance;
 
                     instance = this.workingLookups.get(fndr);
-                    if (instance != null) {
+                    if (instance != null && !instances.contains(instance)) {
                         instances.add(instance);
                     }
 
@@ -492,11 +579,11 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
             if (useSingleMethod) {
                 if (searchMap.size() != 1) throw new IllegalStateException();
                 for (Map.Entry<String, Object> entry : searchMap.entrySet()) {
-                    newList.value = super.findByPropertyEqual(entry.getKey(), entry.getValue());
+                    newList.value = this.keyValueSearch(entry.getKey(), entry.getValue());
                     break;
                 }
             } else {
-                newList.value = super.findByPropertyEqual(searchMap);
+                newList.value = this.mapSearch(searchMap);
             }
 
             for (int i = 0; i < newList.value.size(); i++) {
@@ -540,8 +627,27 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
 
     @Override
     public POJO findByExactPojo(POJO searchPojo) {
-        return this.getOrCreate(searchPojo);
+        PojoFinder finder = new PojoFinder(searchPojo);
+
+        return this.workingLookups.getOrConstructWith(finder, f -> {
+            POJO result;
+            if (this.searchMapProvider) {
+                result = this.useSearchMapProvider(searchPojo);
+
+            } else {
+                result = super.findByExactPojo(searchPojo);
+            }
+
+            if (result != null) {
+                f.set(result, finder);
+            }
+
+            return result;
+            // may return null if nothing was found
+        });
     }
+
+
 
 
     public static Map<String, Object> makeSearchMapFromJson(JsonNode searchMapNode)
@@ -604,6 +710,7 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
 
         return searchMap;
     }
+
 
     public String toString() {
         return "[ObjectLookupDao for " + this.getPojoType().getSimpleName() + "]";

@@ -6,8 +6,8 @@ import nessusTools.sync.*;
 import java.util.*;
 
 public class KeyValueType<K, V> {
-    private Type<K> keyType;
-    private Type<V> valueType;
+    private final Type<K> keyType;
+    private final Type<V> valueType;
 
     public KeyValueType(Type<K> keyType, Type<V> valueType)
             throws NullPointerException {
@@ -15,7 +15,7 @@ public class KeyValueType<K, V> {
         if (keyType == null || valueType == null) {
             throw new NullPointerException();
         }
-        
+
         this.keyType = keyType;
         this.valueType = valueType;
     }
@@ -58,7 +58,7 @@ public class KeyValueType<K, V> {
     }
 
     public String toString() {
-        return "<" + this.keyType + ", " + this.valueType + ">";
+        return "(KeyValueType)<" + this.keyType.toStringBasic() + ", " + this.valueType.toStringBasic() + ">";
     }
     
 

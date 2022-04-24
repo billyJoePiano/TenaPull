@@ -1,4 +1,4 @@
-package nessusTools.data.entity.scan;
+package nessusTools.data.entity.host;
 
 import com.fasterxml.jackson.annotation.*;
 import nessusTools.data.entity.lookup.*;

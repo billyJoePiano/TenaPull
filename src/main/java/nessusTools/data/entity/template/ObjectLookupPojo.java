@@ -1,7 +1,5 @@
 package nessusTools.data.entity.template;
 
-import com.fasterxml.jackson.annotation.*;
-
 import javax.persistence.*;
 
 @MappedSuperclass

@@ -7,11 +7,21 @@ import java.util.*;
 
 public class StackTracePrinter extends Thread {
     private static boolean started = false;
+    private static Var.Long counter = new Var.Long();
 
-    private int delay;
+    private static long makeId() {
+        synchronized (counter) {
+            return ++counter.value;
+        }
+    }
+
+    private final int delay;
 
     private StackTracePrinter(int delay) {
+        super("StackTracePrinter #" + makeId());
+        this.setDaemon(true);
         this.delay = delay;
+        System.out.println(this + " constructed at " + LocalDateTime.now() + " (delay for " + delay + " ms)");
     }
 
     public static void startThread() {
@@ -23,15 +33,17 @@ public class StackTracePrinter extends Thread {
     }
 
     StackTracePrinter() {
-        super("StackTracePrinter");
-        this.setDaemon(true);
+        this(0);
     }
 
     @Override
     public void run() {
+        System.out.println(this + " run at " + LocalDateTime.now() + " (delay for " + delay + " ms)");
+        System.out.println("\t\t...actual run thread: " + Thread.currentThread());
         if (this.delay > 0) {
             try {
                 Thread.sleep(this.delay);
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -41,7 +53,7 @@ public class StackTracePrinter extends Thread {
     }
 
     public static void print() {
-        System.err.println("STARTING STACK TRACE PRINTER ...");
+        System.err.println("STARTING STACK TRACE PRINTER ... " + Thread.currentThread());
 
         Map<String, StackTrace> stackTraces = new LinkedHashMap<>();
         LocalDateTime startLdt = LocalDateTime.now();
@@ -254,7 +266,7 @@ public class StackTracePrinter extends Thread {
                 }
 
             }
-            return str + this.stacktrace;
+            return str + "\n" + this.stacktrace;
         }
 
         public Thread.State getThreadState(Thread thread) {

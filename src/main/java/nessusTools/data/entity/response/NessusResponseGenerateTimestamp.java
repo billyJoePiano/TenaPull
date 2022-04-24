@@ -12,6 +12,9 @@ public abstract class NessusResponseGenerateTimestamp
         extends NaturalIdPojo
         implements NessusResponse { // (NessusResponse extends DbPojo)
 
+    @JsonIgnore
+    public abstract String getUrlPath();
+
     @UpdateTimestamp
     @JsonIgnore
     private Timestamp timestamp;

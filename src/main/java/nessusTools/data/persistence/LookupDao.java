@@ -17,36 +17,42 @@ public class LookupDao<POJO extends LookupPojo<POJO>> extends ObjectLookupDao<PO
         }
 
         Session session = sessionFactory.openSession();
-        POJO obj = session.byNaturalId(this.getPojoType())
-                .using(LookupPojo.FIELD_NAME, string).load();
-        // https://stackoverflow.com/questions/14977018/jpa-how-to-get-entity-based-on-field-value-other-than-id
-
-        if (obj != null) {
-            return obj;
-        }
-
-        POJO pojo = null;
 
         try {
-            pojo = this.getPojoType().getDeclaredConstructor().newInstance();
+            POJO obj = session.byNaturalId(this.getPojoType())
+                    .using(LookupPojo.FIELD_NAME, string).load();
+            // https://stackoverflow.com/questions/14977018/jpa-how-to-get-entity-based-on-field-value-other-than-id
 
-        } catch(Exception e) {
-            throw new LookupException(e, this.getPojoType());
-        }
+            if (obj != null) {
+                return obj;
+            }
 
-        if (pojo == null) {
-            throw new LookupException("Null pojo returned for '" + string + "'",
-                    this.getPojoType());
-        }
+            POJO pojo = null;
 
-        pojo.setValue(string);
+            try {
+                pojo = this.getPojoType().getDeclaredConstructor().newInstance();
 
-        if (this.insert(pojo) != -1) {
-            return pojo;
+            } catch (Exception e) {
+                throw new LookupException(e, this.getPojoType());
+            }
 
-        } else {
-            throw new LookupException("Couldn't create pojo '" + string + "'",
-                    this.getPojoType());
+            if (pojo == null) {
+                throw new LookupException("Null pojo returned for '" + string + "'",
+                        this.getPojoType());
+            }
+
+            pojo.setValue(string);
+
+            if (this.insert(pojo) != -1) {
+                return pojo;
+
+            } else {
+                throw new LookupException("Couldn't create pojo '" + string + "'",
+                        this.getPojoType());
+            }
+
+        } finally {
+            session.close();
         }
     }
 
