@@ -167,7 +167,7 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         return info;
     }
 
-    public synchronized void setInfo(ScanInfo info) {
+    public void setInfo(ScanInfo info) {
         this.info = info;
     }
 
@@ -175,15 +175,20 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         return hosts;
     }
 
-    public synchronized void setHosts(List<ScanHost> hosts) {
+    public void setHosts(List<ScanHost> hosts) {
         this.hosts = hosts;
+        if (hosts != null) {
+            for (ScanHost host : hosts) {
+                ScanHost.dao.saveOrUpdate(host);
+            }
+        }
     }
 
     public List<Vulnerability> getVulnerabilities() {
         return vulnerabilities;
     }
 
-    public synchronized void setVulnerabilities(List<Vulnerability> vulnerabilities) {
+    public void setVulnerabilities(List<Vulnerability> vulnerabilities) {
         this.vulnerabilities = vulnerabilities;
     }
 
@@ -191,7 +196,7 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         return remediations;
     }
 
-    public synchronized void setRemediations(ScanRemediationsSummary remediations) {
+    public void setRemediations(ScanRemediationsSummary remediations) {
         this.remediations = remediations;
     }
 
@@ -209,6 +214,11 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
 
     public void setPrioritization(List<ScanPlugin> prioritization) {
         this.prioritization = ScanPrioritization.wrapIfNeeded(this, prioritization);
+        if (prioritization != null) {
+            for (ScanPlugin scanPlugin : prioritization) {
+                ScanPlugin.dao.saveOrUpdate(scanPlugin);
+            }
+        }
     }
 
     public Integer getThreatLevel() {

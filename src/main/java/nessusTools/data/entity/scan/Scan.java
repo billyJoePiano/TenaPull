@@ -37,7 +37,7 @@ public class Scan extends NaturalIdPojo {
     @JoinColumn(name="folder_id")
     @JsonProperty("folder_id")
     @JsonDeserialize(using = IdReference.Deserializer.class)
-    @JsonSerialize(using = IdReference.Serializer.class)
+    @JsonSerialize(using = IdReference.EmptyToNullSerializer.class)
     private Folder folder;
      */
 

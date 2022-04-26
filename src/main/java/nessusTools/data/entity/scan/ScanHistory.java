@@ -81,7 +81,7 @@ public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
     //@JoinColumn(name="owner_id")
     //@JsonProperty("owner_id")
     //@JsonDeserialize(using = IdReference.Deserializer.class) //TODO POSSIBLY CHANGE TO ObjectLookup.Deserializer ???
-    //@JsonSerialize(using = IdReference.Serializer.class)
+    //@JsonSerialize(using = IdReference.EmptyToNullSerializer.class)
     //private ScanOwnerNessusId ownerId;
 
     @Column(name = "owner_id")

@@ -66,7 +66,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     @OrderColumn(name = "__order_for_scan_info", nullable = false)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
-    //@JsonSerialize(using = SkipEmptyList.Serializer.class)
+    //@JsonSerialize(using = Lists.EmptyToNullSerializer.class)
     private List<Acl> acls;
 
 
