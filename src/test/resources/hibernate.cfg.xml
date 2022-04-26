@@ -23,10 +23,14 @@
 
         <mapping class="nessusTools.data.entity.lookup.HostIp" />
         <mapping class="nessusTools.data.entity.lookup.OperatingSystem" />
+        <mapping class="nessusTools.data.entity.lookup.Cpe" />
         <mapping class="nessusTools.data.entity.lookup.PluginFamily" />
         <mapping class="nessusTools.data.entity.lookup.PluginName" />
         <mapping class="nessusTools.data.entity.lookup.PluginRefValue" />
         <mapping class="nessusTools.data.entity.lookup.PluginSeeAlso" />
+        <mapping class="nessusTools.data.entity.lookup.PluginSynopsis" />
+        <mapping class="nessusTools.data.entity.lookup.PluginScriptCopyright" />
+        <mapping class="nessusTools.data.entity.lookup.PluginDescription" />
         <mapping class="nessusTools.data.entity.lookup.PolicyTemplateUuid" />
         <mapping class="nessusTools.data.entity.lookup.ScanPolicy" />
         <mapping class="nessusTools.data.entity.lookup.ScanScheduleType" />
@@ -59,11 +63,12 @@
         <mapping class="nessusTools.data.entity.host.ScanHostInfo" />
         <mapping class="nessusTools.data.entity.scan.ScanInfo" />
         <mapping class="nessusTools.data.entity.scan.ScanPlugin" />
-        <mapping class="nessusTools.data.entity.scan.ScanPrioritization" />
+        <mapping class="nessusTools.data.deserialize.ScanPrioritization" />
         <mapping class="nessusTools.data.entity.scan.ScanRemediationsSummary" />
 
         <mapping class="nessusTools.data.entity.scan.ScanHost" />
 
+        <mapping class="nessusTools.data.entity.response.IndexResponse" />
         <mapping class="nessusTools.data.entity.response.ScanResponse" />
 
     </session-factory>

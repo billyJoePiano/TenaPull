@@ -1,11 +1,14 @@
 package nessusTools.data.entity.objectLookup;
 
+import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -21,7 +24,7 @@ public class PluginRefInformation extends GeneratedIdPojo
 
     String name;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
             name = "plugin_ref_information_value",
@@ -29,7 +32,10 @@ public class PluginRefInformation extends GeneratedIdPojo
             inverseJoinColumns = { @JoinColumn(name = "value_id") }
     )
     @OrderColumn(name = "__order_for_plugin_ref_value", nullable = false)
-    List<PluginRefValue> values; //TODO flatten JSON
+    @Access(AccessType.PROPERTY)
+    @JsonDeserialize(using = RefValues.Deserializer.class)
+    @JsonSerialize(using = RefValues.Serializer.class)
+    List<PluginRefValue> values;
 
     String url;
 
@@ -47,7 +53,7 @@ public class PluginRefInformation extends GeneratedIdPojo
     }
 
     public void setValues(List<PluginRefValue> values) {
-        this.values = values;
+        this.values = RefValues.wrapIfNeeded(this, values);
     }
 
     public String getUrl() {
@@ -60,10 +66,9 @@ public class PluginRefInformation extends GeneratedIdPojo
 
     @Override
     public void _set(PluginRefInformation o) {
-        this.setId(o.getId());
+        this.__set(o);
         this.name = o.name;
         this.values = o.values;
         this.url = o.url;
-        this.setExtraJson(o.getExtraJson());
     }
 }

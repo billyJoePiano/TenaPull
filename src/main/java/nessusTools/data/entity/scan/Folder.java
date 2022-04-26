@@ -6,14 +6,15 @@ import java.util.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nessusTools.data.entity.template.*;
-import nessusTools.data.persistence.Dao;
+import nessusTools.data.persistence.*;
 import org.apache.logging.log4j.*;
 
 @Entity(name = "Folder")
 @Table(name = "folder")
-public class Folder extends NaturalIdPojo {
-    public static final Dao<Folder> dao
-            = new Dao<Folder>(Folder.class);
+public class Folder extends NaturalIdPojo implements ObjectLookupPojo<Folder> {
+
+    public static final ObjectLookupDao<Folder> dao
+            = new ObjectLookupDao<Folder>(Folder.class);
 
     public static final Logger logger = LogManager.getLogger(Folder.class);
 
@@ -34,9 +35,24 @@ public class Folder extends NaturalIdPojo {
     @JsonProperty("unread_count")
     private Integer unreadCount;
 
-    @OneToMany(mappedBy="folder", cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
+    /*
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "folder_id")
     @JsonIgnore
     private List<Scan> scans;
+     */
+
+    @Override
+    public void _set(Folder o) {
+        this.__set(o);
+        this.name = o.name;
+        this.type = o.type;
+        this.defaultTag = o.defaultTag;
+        this.custom = o.custom;
+        this.unreadCount = o.unreadCount;
+        //this.scans = o.scans;
+    }
+
 
     public Folder() { }
 
@@ -45,8 +61,8 @@ public class Folder extends NaturalIdPojo {
                   String type,
                   Integer defaultTag,
                   Integer custom,
-                  Integer unreadCount,
-                  List<Scan> scans) {
+                  Integer unreadCount/*,
+                  List<Scan> scans*/) {
 
         this.setId(id);
         this.name = name;
@@ -54,7 +70,7 @@ public class Folder extends NaturalIdPojo {
         this.defaultTag = defaultTag;
         this.custom = custom;
         this.unreadCount = unreadCount;
-        this.scans = scans;
+        //this.scans = scans;
     }
 
     public String getName() {
@@ -97,6 +113,7 @@ public class Folder extends NaturalIdPojo {
         this.unreadCount = unreadCount;
     }
 
+    /*
     public List<Scan> getScans() {
         return scans;
     }
@@ -104,4 +121,5 @@ public class Folder extends NaturalIdPojo {
     public void setScans(List<Scan> scans) {
         this.scans = scans;
     }
+     */
 }

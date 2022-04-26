@@ -89,13 +89,12 @@ public class PluginInformation extends GeneratedIdPojo
 
     @Override
     public void _set(PluginInformation o) {
-        this.setId(o.getId());
+        this.__set(o);
         this.pluginVersion = o.pluginVersion;
         this.pluginId = o.pluginId;
         this.pluginType = o.pluginType;
         this.pluginPublicationDate = o.pluginPublicationDate;
         this.pluginFamily = o.pluginFamily;
         this.pluginModificationDate = o.pluginModificationDate;
-        this.setExtraJson(o.getExtraJson());
     }
 }

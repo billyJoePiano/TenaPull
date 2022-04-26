@@ -11,8 +11,6 @@ import javax.persistence.*;
 
 @Entity(name = "PluginHost")
 @Table(name = "plugin_host")
-@JsonIgnoreProperties({"id"})
-@JsonDeserialize(using = ObjectLookup.Deserializer.class)
 public class PluginHost extends GeneratedIdPojo
         implements ObjectLookupPojo<PluginHost> {
 
@@ -55,10 +53,9 @@ public class PluginHost extends GeneratedIdPojo
 
     @Override
     public void _set(PluginHost o) {
-        this.setId(o.getId());
+        this.__set(o);
         this.hostId = o.hostId;
         this.hostFqdn = o.hostFqdn;
         this.hostname = o.hostname;
-        this.setExtraJson(o.getExtraJson());
     }
 }

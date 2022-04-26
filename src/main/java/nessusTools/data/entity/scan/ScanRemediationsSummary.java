@@ -2,6 +2,8 @@ package nessusTools.data.entity.scan;
 
 import com.fasterxml.jackson.annotation.*;
 
+import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
@@ -21,11 +23,12 @@ public class ScanRemediationsSummary extends ScanResponse.SingleChild<ScanRemedi
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
-            name = "scan_info_acl",
+            name = "scan_remediation",
             joinColumns = { @JoinColumn(name = "scan_id") },
             inverseJoinColumns = { @JoinColumn(name = "remediation_id") }
     )
     @OrderColumn(name = "__order_for_scan_remediation", nullable = false)
+    @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
     private List<Remediation> remediations;
 
     @Column(name = "num_hosts")

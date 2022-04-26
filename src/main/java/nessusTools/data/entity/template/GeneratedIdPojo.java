@@ -36,4 +36,11 @@ public abstract class GeneratedIdPojo extends ExtensibleJsonPojo
                 && Objects.equals(this.toJsonNode(), other.toJsonNode());
 
     }
+
+    @Transient
+    @JsonIgnore
+    protected void __set(GeneratedIdPojo o) {
+        this.setId(o.getId());
+        this.setExtraJson(o.getExtraJson());
+    }
 }

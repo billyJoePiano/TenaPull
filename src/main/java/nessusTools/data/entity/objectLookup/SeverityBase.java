@@ -39,9 +39,8 @@ public class SeverityBase extends GeneratedIdPojo
 
     @Override
     public void _set(SeverityBase o) {
-        this.setId(o.getId());
+        this.__set(o);
         this.display = o.display;
         this.value = o.value;
-        this.setExtraJson(o.getExtraJson());
     }
 }

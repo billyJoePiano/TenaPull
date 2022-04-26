@@ -10,5 +10,5 @@ import javax.persistence.*;
 public class ScanGroup extends NaturalIdPojo {
     public static final Dao<ScanGroup> dao
             = new Dao<ScanGroup>(ScanGroup.class);
-
+    //TODO how to join this to scan response (or scan info?)
 }

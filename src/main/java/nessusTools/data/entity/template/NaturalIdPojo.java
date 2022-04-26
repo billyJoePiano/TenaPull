@@ -33,4 +33,11 @@ public abstract class NaturalIdPojo extends ExtensibleJsonPojo
                 && Objects.equals(this.toJsonNode(), other.toJsonNode());
 
     }
+
+    @Transient
+    @JsonIgnore
+    protected void __set(NaturalIdPojo o) {
+        this.setId(o.getId());
+        this.setExtraJson(o.getExtraJson());
+    }
 }

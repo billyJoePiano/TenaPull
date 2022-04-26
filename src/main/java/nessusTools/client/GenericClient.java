@@ -3,7 +3,6 @@ package nessusTools.client;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
-import nessusTools.data.entity.*;
 import org.apache.logging.log4j.*;
 
 import javax.ws.rs.client.*;

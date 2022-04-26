@@ -10,7 +10,7 @@ import javax.persistence.*;
 public class Remediation extends GeneratedIdPojo
         implements ObjectLookupPojo<Remediation> {
 
-    public static final ObjectLookupDao<Remediation> dao = new ObjectLookupDao(Remediation.class);
+    public static final ObjectLookupDao<Remediation> dao = new ObjectLookupDao<>(Remediation.class);
 
     private String remediation;
     private Integer hosts;
@@ -51,11 +51,10 @@ public class Remediation extends GeneratedIdPojo
 
     @Override
     public void _set(Remediation o) {
-        this.setId(o.getId());
+        this.__set(o);
         this.remediation = o.remediation;
         this.hosts = o.hosts;
         this.value = o.value;
         this.vulns = o.vulns;
-        this.setExtraJson(o.getExtraJson());
     }
 }

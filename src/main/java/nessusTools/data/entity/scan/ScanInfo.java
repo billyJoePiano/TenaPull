@@ -11,6 +11,7 @@ import nessusTools.data.deserialize.*;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import org.apache.logging.log4j.*;
 import org.hibernate.annotations.*;
@@ -42,7 +43,9 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
 
     private String name;
 
-    private String uuid;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="uuid_id")
+    private ScanUuid uuid;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="scan_type_id")
@@ -61,7 +64,9 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
             inverseJoinColumns = { @JoinColumn(name = "acl_id") }
     )
     @OrderColumn(name = "__order_for_scan_info", nullable = false)
-    @JsonDeserialize(contentAs = Acl.class, contentUsing = ObjectLookup.Deserializer.class)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
+    //@JsonSerialize(using = SkipEmptyList.Serializer.class)
     private List<Acl> acls;
 
 
@@ -164,6 +169,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="license_id")
     @JsonProperty("license_info")
+    @JsonInclude(Include.NON_NULL)
     @JsonDeserialize(using = ObjectLookup.Deserializer.class)
     private License licenseInfo;
 
@@ -226,19 +232,21 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     )
     @OrderColumn(name = "__order_for_scan_info", nullable = false)
     @JsonProperty("severity_base_selections")
-    @JsonDeserialize(contentAs = SeverityBase.class, contentUsing = ObjectLookup.Deserializer.class)
+    @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
     private List<SeverityBase> severityBaseSelections;
 
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="current_severity_base_id")
-    @JsonIgnore // see get/setCurrentSeverityBaseValue() and get/setCurrentSeverityBaseDisplay()
+    @JsonProperty("current_severity_base")
     private SeverityBase currentSeverityBase;
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="selected_severity_base_id")
-    @JsonIgnore
+    @JsonProperty("selected_severity_base")
     private SeverityBase selectedSeverityBase;
+
+
 
 
     public List<SeverityBase> getSeverityBaseSelections() {
@@ -254,6 +262,8 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     }
 
 
+
+    //4-24-2022 WJA, substituting new ObjectLookup methods with InstancesTracker ... should make this code unneccessary
     @Transient
     @JsonGetter("current_severity_base")
     public String getCurrentSeverityBaseValue() {
@@ -416,7 +426,6 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
 
 
 
-
     /******************************************
      * Standard getters/setters below
      *
@@ -439,11 +448,11 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
         this.name = name;
     }
 
-    public String getUuid() {
+    public ScanUuid getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
+    public void setUuid(ScanUuid uuid) {
         this.uuid = uuid;
     }
 
@@ -482,6 +491,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     }
 
     public List<Acl> getAcls() {
+        //if (this.acls != null && this.acls.size() <= 0) return null;
         return acls;
     }
 

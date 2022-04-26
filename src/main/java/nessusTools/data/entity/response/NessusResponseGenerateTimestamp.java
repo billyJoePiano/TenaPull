@@ -8,6 +8,7 @@ import javax.persistence.*;
 import java.sql.*;
 
 @MappedSuperclass
+@JsonIgnoreProperties(allowSetters = true, value = {"id"})
 public abstract class NessusResponseGenerateTimestamp
         extends NaturalIdPojo
         implements NessusResponse { // (NessusResponse extends DbPojo)

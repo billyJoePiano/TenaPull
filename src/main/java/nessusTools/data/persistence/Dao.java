@@ -105,11 +105,26 @@ public class Dao<POJO extends DbPojo> {
      */
     public void saveOrUpdate(POJO pojo) {
         Session session = sessionFactory.openSession();
+        Transaction tx = null;
 
         try {
-            Transaction transaction = session.beginTransaction();
+            tx = session.beginTransaction();
             session.saveOrUpdate(pojo);
-            transaction.commit();
+            tx.commit();
+
+        } catch (Throwable e) {
+            if (tx != null) tx.rollback();
+
+            String json;
+
+            try {
+                json = pojo.toJsonString();
+
+            } catch (JsonProcessingException ex) {
+                json = "<ERROR PROCESSING JSON : " + pojo.toString() + " >";
+            }
+
+            logger.error("Error save/updating record:\n" + json, e);
 
         } finally {
             session.close();
@@ -131,7 +146,7 @@ public class Dao<POJO extends DbPojo> {
             id = (Integer) session.save(pojo);
             tx.commit();
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             if (tx != null) tx.rollback();
 
             String json;
@@ -227,11 +242,12 @@ public class Dao<POJO extends DbPojo> {
                 query.select(root).where(builder.isNull(root.get(propertyName)));
             }
 
-            System.out.print(this.pojoType.getSimpleName() + " key-value: { " + propertyName + ": " + value + "}");
             return session.createQuery(query).getResultList();
 
-        } finally {
-            System.out.println("\t...returned");
+        } catch(EntityNotFoundException e) {
+            return Collections.emptyList();
+
+        }  finally {
             session.close();
         }
     }
@@ -262,12 +278,13 @@ public class Dao<POJO extends DbPojo> {
             }
             query.select(root).where(builder.and(predicates.toArray(new Predicate[predicates.size()])));
 
-            System.out.print(this.pojoType.getSimpleName() + " map: " + propertyMap);
             return session.createQuery(query).getResultList();
+
+        } catch(EntityNotFoundException e) {
+            return Collections.emptyList();
 
         } finally {
             session.close();
-            System.out.println("\t...returned");
         }
     }
 

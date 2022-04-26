@@ -45,9 +45,8 @@ public class License extends GeneratedIdPojo
 
     @Override
     public void _set(License o) {
-        this.setId(o.getId());
+        this.__set(o);
         this.limit = o.limit;
         this.trimmed = o.trimmed;
-        this.setExtraJson(o.getExtraJson());
     }
 }

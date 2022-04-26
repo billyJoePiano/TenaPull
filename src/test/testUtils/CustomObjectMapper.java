@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.*;
 import com.fasterxml.jackson.databind.ser.*;
 import com.fasterxml.jackson.databind.ser.impl.*;
 
-import nessusTools.data.entity.template.*;
+import nessusTools.data.entity.response.*;
 
 /*
 Adds special Jackson behavior for certain unit tests, to serialize/deserialize the id

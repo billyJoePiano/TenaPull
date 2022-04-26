@@ -7,15 +7,20 @@ import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
+import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
 import java.sql.*;
+import java.util.*;
 
 @Table(name = "scan_history")
 @Entity(name = "ScanHistory")
-public class ScanHistory extends ScanResponse.MultiChild<ScanHistory> {
-    public static final Dao<ScanHistory> dao = new Dao(ScanHistory.class);
+public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
+        implements LookupSearchMapProvider<ScanHistory> {
+
+    public static final ObjectLookupDao<ScanHistory>
+            dao = new ObjectLookupDao<>(ScanHistory.class);
 
     @Column(name = "alt_targets_used")
     @JsonProperty("alt_targets_used")
@@ -43,7 +48,7 @@ public class ScanHistory extends ScanResponse.MultiChild<ScanHistory> {
     private Integer nodeId;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="scedule_type_id")
+    @JoinColumn(name="schedule_type_id")
     @JsonProperty("schedule_type")
     private ScanScheduleType scheduleType;
 
@@ -72,16 +77,57 @@ public class ScanHistory extends ScanResponse.MultiChild<ScanHistory> {
     @JsonSerialize(using = EpochTimestamp.Serializer.class)
     private Timestamp creationDate;
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="owner_id")
+    //@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    //@JoinColumn(name="owner_id")
+    //@JsonProperty("owner_id")
+    //@JsonDeserialize(using = IdReference.Deserializer.class) //TODO POSSIBLY CHANGE TO ObjectLookup.Deserializer ???
+    //@JsonSerialize(using = IdReference.Serializer.class)
+    //private ScanOwnerNessusId ownerId;
+
+    @Column(name = "owner_id")
     @JsonProperty("owner_id")
-    @JsonDeserialize(using = IdReference.Deserializer.class)
-    @JsonSerialize(using = IdReference.Serializer.class)
-    private ScanOwnerNessusId owner;
+    private Integer ownerId;
 
     @Column(name = "history_id")
     @JsonProperty("history_id")
     private Integer historyId;
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _set(ScanHistory o) {
+        this.__set(o);
+        this.altTargetsUsed = o.altTargetsUsed;
+        this.scheduler = o.scheduler;
+        this.nodeName = o.nodeName;
+        this.nodeHost = o.nodeHost;
+        this.scanGroup = o.scanGroup;
+        this.nodeId = o.nodeId;
+        this.scheduleType = o.scheduleType;
+        this.status = o.status;
+        this.type = o.type;
+        this.uuid = o.uuid;
+        this.lastModificationDate = o.lastModificationDate;
+        this.creationDate = o.creationDate;
+        this.ownerId = o.ownerId;
+        this.historyId = o.historyId;
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _lookupMatch(ScanHistory other) {
+        return this.__lookupMatch(other)
+                && this.historyId != null && other.historyId != null
+                && this.historyId.intValue() == other.historyId.intValue();
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public Map<String, Object> _getSearchMap() {
+        return Map.of("response", this.getResponse(), "historyId", this.historyId);
+    }
 
     public Boolean getAltTargetsUsed() {
         return altTargetsUsed;
@@ -179,12 +225,22 @@ public class ScanHistory extends ScanResponse.MultiChild<ScanHistory> {
         this.creationDate = creationDate;
     }
 
+    /*
     public ScanOwnerNessusId getOwner() {
         return owner;
     }
 
     public void setOwner(ScanOwnerNessusId owner) {
         this.owner = owner;
+    }
+     */
+
+    public Integer getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Integer ownerId) {
+        this.ownerId = ownerId;
     }
 
     public Integer getHistoryId() {

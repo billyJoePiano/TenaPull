@@ -115,7 +115,7 @@ public class PluginRiskInformation extends GeneratedIdPojo
 
     @Override
     public void _set(PluginRiskInformation o) {
-        this.setId(o.getId());
+        this.__set(o);
         this.cvssTemporalVector = o.cvssTemporalVector;
         this.riskFactor = o.riskFactor;
         this.cvssVector = o.cvssVector;
@@ -124,6 +124,5 @@ public class PluginRiskInformation extends GeneratedIdPojo
         this.cvss3BaseScore = o.cvss3BaseScore;
         this.cvss3Vector = o.cvss3Vector;
         this.cvss3TemporalScore = o.cvss3TemporalScore;
-        this.setExtraJson(o.getExtraJson());
     }
 }

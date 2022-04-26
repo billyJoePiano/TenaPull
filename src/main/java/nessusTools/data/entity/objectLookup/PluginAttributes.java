@@ -1,12 +1,15 @@
 package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -24,21 +27,27 @@ public class PluginAttributes extends GeneratedIdPojo
     @JsonProperty("threat_intensity_last_28")
     String threatIntensityLast28;
 
-    String synposis;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "synopsis_id")
+    PluginSynopsis synopsis;
 
-    @Column(name = "script_copyright")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "script_copyright_id")
     @JsonProperty("script_copyright")
-    String scriptCopyright;
+    PluginScriptCopyright scriptCopyright;
 
-    String description;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "description_id")
+    PluginDescription description;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "risk_information_id")
     @JsonProperty("risk_information")
+    @JsonDeserialize(using = ObjectLookup.Deserializer.class)
     PluginRiskInformation riskInformation;
 
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
             name = "plugin_attributes_ref_information",
@@ -46,7 +55,10 @@ public class PluginAttributes extends GeneratedIdPojo
             inverseJoinColumns = { @JoinColumn(name = "ref_id") }
     )
     @OrderColumn(name = "__order_for_plugin_attributes_ref_information", nullable = false)
-    @JsonProperty("ref_information") // TODO flatten
+    @Access(AccessType.PROPERTY)
+    @JsonProperty("ref_information")
+    @JsonDeserialize(using = RefInformation.Deserializer.class)
+    @JsonSerialize(using = RefInformation.Serializer.class)
     List<PluginRefInformation> refInformation;
 
     @Column(name = "threat_sources_last_28")
@@ -67,7 +79,7 @@ public class PluginAttributes extends GeneratedIdPojo
     String cvssScoreSource;
 
     @Column(name = "see_also_id")
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
             name = "plugin_attributes_see_also",
@@ -108,6 +120,7 @@ public class PluginAttributes extends GeneratedIdPojo
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "vuln_information_id")
     @JsonProperty("vuln_information")
+    @JsonDeserialize(using = ObjectLookup.Deserializer.class)
     PluginVulnInformation pluginVulnInformation;
 
     @Column(name = "age_of_vuln")
@@ -128,27 +141,27 @@ public class PluginAttributes extends GeneratedIdPojo
         this.threatIntensityLast28 = threatIntensityLast28;
     }
 
-    public String getSynposis() {
-        return synposis;
+    public PluginSynopsis getSynopsis() {
+        return synopsis;
     }
 
-    public void setSynposis(String synposis) {
-        this.synposis = synposis;
+    public void setSynopsis(PluginSynopsis synopsis) {
+        this.synopsis = synopsis;
     }
 
-    public String getScriptCopyright() {
+    public PluginScriptCopyright getScriptCopyright() {
         return scriptCopyright;
     }
 
-    public void setScriptCopyright(String scriptCopyright) {
+    public void setScriptCopyright(PluginScriptCopyright scriptCopyright) {
         this.scriptCopyright = scriptCopyright;
     }
 
-    public String getDescription() {
+    public PluginDescription getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(PluginDescription description) {
         this.description = description;
     }
 
@@ -165,7 +178,7 @@ public class PluginAttributes extends GeneratedIdPojo
     }
 
     public void setRefInformation(List<PluginRefInformation> refInformation) {
-        this.refInformation = refInformation;
+        this.refInformation = RefInformation.wrapIfNeeded(this, refInformation);
     }
 
     public String getThreatSourcesLast28() {
@@ -298,9 +311,9 @@ public class PluginAttributes extends GeneratedIdPojo
 
     @Override
     public void _set(PluginAttributes o) {
-        this.setId(o.getId());
+        this.__set(o);
         this.threatIntensityLast28 = o.threatIntensityLast28;
-        this.synposis = o.synposis;
+        this.synopsis = o.synopsis;
         this.scriptCopyright = o.scriptCopyright;
         this.description = o.description;
         this.riskInformation = o.riskInformation;
@@ -318,6 +331,5 @@ public class PluginAttributes extends GeneratedIdPojo
         this.solution = o.solution;
         this.ageOfVuln = o.ageOfVuln;
         this.exploitCodeMaturity = o.exploitCodeMaturity;
-        this.setExtraJson(o.getExtraJson());
     }
 }

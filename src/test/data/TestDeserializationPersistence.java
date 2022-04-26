@@ -1,8 +1,8 @@
 package data;
 
 
+import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.entity.response.*;
-import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import nessusTools.util.*;
 import org.junit.*;
@@ -45,9 +45,6 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
     public static Collection responseTypes()
             throws InvocationTargetException, NoSuchMethodException,
             InstantiationException, IllegalAccessException {
-
-        System.out.println("Working Directory = " + System.getProperty("user.dir"));
-        StackTracePrinter.startThread(30000);
 
         //Database.hardReset();
 
@@ -114,22 +111,43 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
         return origJson;
     }
 
-    public NodeAndResponse deserialize(String origJson) {
+    public NodeAndResponse deserialize(String origJson)
+            throws NoSuchMethodException, InvocationTargetException,
+                    InstantiationException, IllegalAccessException {
+
         // To standardize the json string's format, first put into a JsonNode
         // then re-stringify to remove "prettifying" whitespace.
         // With the standardized/minified json, serialize it into the appropriate
         // DbPojo objects
 
-        JsonNode origNode;
+        ObjectNode origNode;
         R deserialized;
-
+        ObjectMapper mapper = new CustomObjectMapper();
 
         try {
-            ObjectMapper mapper = new CustomObjectMapper();
 
             // https://stackoverflow.com/questions/12173416/how-do-i-get-the-compact-form-of-pretty-printed-json-code
-            origNode = mapper.readValue(origJson, JsonNode.class);
+            origNode = mapper.readValue(origJson, ObjectNode.class);
 
+        } catch (JsonProcessingException e) {
+            fail(e);
+            return null;
+        }
+
+        JsonNode id = origNode.get("id");
+
+        if (id != null) {
+            origNode.remove("id");
+            Dao<R> dao = Dao.get(this.responseType);
+            R preExisting = dao.getById(id.intValue());
+            if (preExisting == null) {
+                preExisting = this.responseType.getDeclaredConstructor().newInstance();
+                preExisting.setId(id.intValue());
+                dao.insert(preExisting);
+            }
+        }
+
+        try {
             deserialized = mapper.readValue(origJson, this.responseType);
 
         } catch (JsonProcessingException e) {
@@ -159,10 +177,15 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
 
         // Put the deserialized objects into the persistence layer
         Dao<R> dao = Dao.get(responseType);
+        R persisted = null;
 
-        int id = dao.insert(deserialized.res);
+        try {
+            dao.saveOrUpdate(deserialized.res);
+            persisted = dao.getById(deserialized.res.getId());
 
-        R persisted = dao.getById(id);
+        } catch (Throwable e) {
+            fail(e);
+        }
 
         assertNotNull(persisted);
         assertEquals(deserialized.res, persisted);

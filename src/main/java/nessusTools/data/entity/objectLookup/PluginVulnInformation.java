@@ -14,14 +14,35 @@ public class PluginVulnInformation extends GeneratedIdPojo
     public static final ObjectLookupDao<PluginVulnInformation> dao
             = new ObjectLookupDao<PluginVulnInformation>(PluginVulnInformation.class);
 
+    @Column(name = "exploitability_ease")
+    @JsonProperty("exploitability_ease")
+    private String exploitabilityEase;
+
     @Column(name = "in_the_news")
     @JsonProperty("in_the_news")
     String inTheNews;
+
+    @Column(name = "exploit_available")
+    @JsonProperty("exploit_available")
+    private String exploitAvailable;
 
     @Column(name = "vuln_publication_date")
     @JsonProperty("vuln_publication_date")
     String vulnPublicationDate;
 
+    @Column(name = "patch_publication_date")
+    @JsonProperty("patch_publication_date")
+    private String patchPublicationDate;
+
+    @Override
+    public void _set(PluginVulnInformation o) {
+        this.__set(o);
+        this.exploitabilityEase = o.exploitabilityEase;
+        this.inTheNews = o.inTheNews;
+        this.exploitAvailable = o.exploitAvailable;
+        this.vulnPublicationDate = o.vulnPublicationDate;
+        this.patchPublicationDate = o.patchPublicationDate;
+    }
 
     public String getInTheNews() {
         return inTheNews;
@@ -39,10 +60,27 @@ public class PluginVulnInformation extends GeneratedIdPojo
         this.vulnPublicationDate = vulnPublicationDate;
     }
 
-    @Override
-    public void _set(PluginVulnInformation o) {
-        this.setId(o.getId());
-        //TODO
-        this.setExtraJson(o.getExtraJson());
+    public String getExploitabilityEase() {
+        return exploitabilityEase;
+    }
+
+    public void setExploitabilityEase(String exploitabilityEase) {
+        this.exploitabilityEase = exploitabilityEase;
+    }
+
+    public String getExploitAvailable() {
+        return exploitAvailable;
+    }
+
+    public void setExploitAvailable(String exploitAvailable) {
+        this.exploitAvailable = exploitAvailable;
+    }
+
+    public String getPatchPublicationDate() {
+        return patchPublicationDate;
+    }
+
+    public void setPatchPublicationDate(String patchPublicationDate) {
+        this.patchPublicationDate = patchPublicationDate;
     }
 }

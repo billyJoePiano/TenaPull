@@ -18,7 +18,6 @@ import java.util.*;
 
 @Entity(name = "Plugin")
 @Table(name = "plugin")
-@JsonDeserialize(using = ObjectLookup.ResponseChildLookupDeserializer.class)
 public class Plugin extends GeneratedIdPojo
         implements ObjectLookupPojo<Plugin> {
 
@@ -31,7 +30,8 @@ public class Plugin extends GeneratedIdPojo
     PluginName pluginName;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="plugin_attritubes_id")
+    @JoinColumn(name="plugin_attributes_id")
+    @JsonDeserialize(using = ObjectLookup.Deserializer.class)
     PluginAttributes pluginAttributes;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
@@ -84,7 +84,12 @@ public class Plugin extends GeneratedIdPojo
     }
 
     @Override
-    public void _set(Plugin other) {
-
+    public void _set(Plugin o) {
+        this.__set(o);
+        this.severity = o.severity;
+        this.pluginName = o.pluginName;
+        this.pluginAttributes = o.pluginAttributes;
+        this.pluginFamily = o.pluginFamily;
+        this.pluginId = o.pluginId;
     }
 }

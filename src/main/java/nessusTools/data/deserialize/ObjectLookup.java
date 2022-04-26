@@ -4,12 +4,12 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
 
+import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import org.apache.logging.log4j.*;
 
 import java.io.IOException;
-import java.util.*;
 
 public class ObjectLookup {
     private ObjectLookup() { }
@@ -50,63 +50,30 @@ public class ObjectLookup {
         }
     }
 
-    public static class ResponseChildLookupDeserializer
+    public static class ResponseChild
                     <POJO extends NessusResponse.ResponseChild<POJO, R> & ObjectLookupPojo<POJO>,
                         R extends NessusResponse>
-                extends Deserializer<POJO> {
+                extends ResponseChildDeserializer<POJO, ObjectLookupDao<POJO>, R> {
 
-        private static final Logger logger = LogManager.getLogger(ObjectLookup.ResponseChildLookupDeserializer.class);
+        private static final Logger logger = LogManager.getLogger(ResponseChildDeserializer.class);
         public Logger getLogger() {
             return logger;
         }
 
         @Override
         public POJO deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-            if (this.dao == null) {
-                logger.error("Could not find dao for '" + jp.getText() + "'");
-                return null;
-            }
+            POJO searchPojo = super.deserialize(jp, ctxt);
 
-            POJO searchPojo = jp.readValueAs(this.pojoType);
+            if (searchPojo != null) {
+                try {
+                    return dao.getOrCreate(searchPojo);
 
-            Class<R> type = searchPojo._getResponseType();
-            JsonStreamContext jsc = jp.getParsingContext();
-            boolean success = false;
-
-            while (jsc != null) {
-                Object value = jsc.getCurrentValue();
-                if (value != null && Objects.equals(value.getClass(), type)) {
-                    searchPojo.setResponse((R)value);
-                    success = true;
-                    break;
+                } catch (LookupException le) {
+                    logger.error("Error deserializing object lookup:");
+                    dao.getLogger().error(le);
                 }
-                jsc = jsc.getParent();
             }
-
-            if (!success) {
-                return searchPojo;
-            }
-
-            try {
-                return dao.getOrCreate(searchPojo);
-
-            } catch (LookupException le) {
-                logger.error("Error deserializing object lookup:");
-                dao.getLogger().error(le);
-                return null;
-            }
+            return null;
         }
     }
-
-
-
-    /*
-    public static class ListDeserializer<POJO extends DbPojo> {
-        extends AbstractContextualDeserializer<List<POJO>, ObjectLookupDao<POJO>>
-
-    }
-    */
-
-
-    //Serializer not needed
 }

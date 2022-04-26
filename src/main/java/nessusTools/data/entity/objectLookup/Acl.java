@@ -68,12 +68,11 @@ public class Acl extends NullableIdPojo<Acl> {
 
     @Override
     public void _set(Acl o) {
-        this.setId(o.getId());
+        this.__set(o);
         this.owner = o.owner;
         this.permissions = o.permissions;
         this.name = o.name;
         this.displayName = o.displayName;
         this.type = o.type;
-        this.setExtraJson(o.getExtraJson());
     }
 }

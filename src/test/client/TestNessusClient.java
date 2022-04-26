@@ -52,7 +52,7 @@ public class TestNessusClient {
         List<Scan> scansFromFolders = new ArrayList(scans.size());
         for (Folder folder : folders) {
             Folder.logger.info(folder);
-            scansFromFolders.addAll(folder.getScans());
+            //scansFromFolders.addAll(folder.getScans()); //TODO??
         }
 
         assertEquals(scans.size(), scansFromFolders.size());
@@ -72,7 +72,7 @@ public class TestNessusClient {
             Scan.logger.info(scan);
             ScanInfo.logger.info(info);
 
-            assertEquals(scan, info.getScan());
+            assertEquals(scan, info.getResponse().getScan());
             assertEquals(scan, fromFolders);
         }
 

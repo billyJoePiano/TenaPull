@@ -13,7 +13,7 @@ import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-@Entity(name = "ScanOwnerId")
+@Entity(name = "ScanOwnerNessusId")
 @Table(name = "scan_owner_id")
 public class ScanOwnerNessusId implements ObjectLookupPojo<ScanOwnerNessusId> {
 

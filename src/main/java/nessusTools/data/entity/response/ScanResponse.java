@@ -12,8 +12,10 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import java.util.*;
 
@@ -52,68 +54,79 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     @JsonIgnore
     private Scan scan;
 
-    @OneToOne
-    @JoinColumn(name = "id")
+    @OneToOne(mappedBy = "response", cascade = { CascadeType.ALL }, fetch = FetchType.EAGER)
+    @JsonDeserialize(using = ResponseChildDeserializer.class)
     private ScanInfo info;
 
     @OneToMany(mappedBy = "response") //, cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
-    @OrderColumn(name = "host_id")
+    @Fetch(value = FetchMode.SUBSELECT)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @OrderBy("hostId")
+    @JsonDeserialize(contentUsing = ObjectLookup.ResponseChild.class)
     private List<ScanHost> hosts;
 
-    @OneToOne
-    @JoinColumn(name = "id")
+    @OneToOne(mappedBy = "response", cascade = { CascadeType.ALL }, fetch = FetchType.EAGER)
+    @JsonDeserialize(using = ResponseChildDeserializer.class)
     private ScanRemediationsSummary remediations;
 
     @ManyToMany(cascade = CascadeType.ALL)
+    @Fetch(value = FetchMode.SUBSELECT)
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
-            name = "scan_vulerability",
+            name = "scan_vulnerability",
             joinColumns = { @JoinColumn(name = "scan_id") },
             inverseJoinColumns = { @JoinColumn(name = "vulnerability_id") }
     )
     @OrderColumn(name = "__order_for_scan_response_vulnerability", nullable = false)
-    @JsonDeserialize(contentAs = Vulnerability.class, contentUsing = ObjectLookup.Deserializer.class)
+    @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
     private List<Vulnerability> vulnerabilities;
 
     @OneToMany(mappedBy = "response")
-    @OrderColumn(name = "__order_for_scan_response")
+    @Fetch(value = FetchMode.SUBSELECT)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    //@OrderColumn(name = "__order_for_scan_response", nullable = false)
+    @OrderBy("historyId ASC")
+    @JsonDeserialize(contentUsing = ObjectLookup.ResponseChild.class)
     private List<ScanHistory> history;
 
-    @OneToOne
-    @JoinColumn(name = "id")
-    private ScanPrioritization prioritization;
+    @OneToMany(mappedBy = "response")
+    @Fetch(value = FetchMode.SUBSELECT)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @Access(AccessType.PROPERTY) //force hibernate to use the getter/setter, which wraps the list using the ScanPrioritization deserialization entity
+    @JsonDeserialize(using = ScanPrioritization.Deserializer.class)
+    @JsonSerialize(using = ScanPrioritization.Serializer.class)
+    private List<ScanPlugin> prioritization;
+
+    @Column(name = "threat_level")
+    @Access(AccessType.PROPERTY) //force hibernate to use the getter/setter, which puts this value into the ScanPrioritization wrapper
+    @JsonIgnore
+    private Integer threatLevel;
+    // threat_level is actually the one additional JSON property of the 'prioritization' container which wraps the array of
+    // of plugins.  There is no DB entity for prioritization, because the Plugins are joined directly back to the response
+    // so this property gets stored here instead, but (de)serialized in the ScanPrioritization wrapper for the array
 
     /**
      * For implementing default methods getScan() and _getResponseType()
      * on the various inheritance branches of NessusResponse.ResponseChild
      */
-    interface ScanResponseChild<POJO extends ScanResponseChild<POJO>>
-            extends NessusResponse.ResponseChild<POJO, ScanResponse> {
-
-        default public Scan getScan() {
-            ScanResponse response = this.getResponse();
-            if (response == null) return null;
-            return response.getScan();
-        }
+    public interface ScanResponseChild<POJO extends ScanResponseChild<POJO>>
+            extends ResponseChild<POJO, ScanResponse> {
 
         default public Class<ScanResponse> _getResponseType() {
             return ScanResponse.class;
         }
     }
 
+
+    @MappedSuperclass
     public abstract static class SingleChild<POJO extends SingleChild<POJO>>
             extends SingleChildTemplate<POJO, ScanResponse>
             implements ScanResponseChild<POJO> {
 
     }
 
-    public abstract static class SingleChildLookup<POJO extends SingleChildLookup<POJO>>
-            extends SingleChildLookupTemplate<POJO, ScanResponse>
-            implements ScanResponseChild<POJO> {
 
-    }
-
-
+    @MappedSuperclass
     @AssociationOverride(
             name = "response",
             joinColumns = @JoinColumn(name = "scan_id")
@@ -124,13 +137,18 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
 
     }
 
-    @AssociationOverride(
-            name = "response",
-            joinColumns = @JoinColumn(name = "scan_id")
-    )
+
+    @MappedSuperclass
+    public abstract static class SingleChildLookup<POJO extends SingleChildLookup<POJO>>
+            extends SingleChild<POJO>
+            implements ObjectLookupPojo<POJO> {
+
+    }
+
+    @MappedSuperclass
     public abstract static class MultiChildLookup<POJO extends MultiChildLookup<POJO>>
-            extends MultiChildLookupTemplate<POJO, ScanResponse>
-            implements ScanResponseChild<POJO> {
+            extends MultiChild<POJO>
+            implements LookupSearchMapProvider<POJO> {
 
     }
 
@@ -141,6 +159,8 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
 
     public void setScan(Scan scan) {
         this.scan = scan;
+        if (scan == null) super.setId(0);
+        else super.setId(scan.getId());
     }
 
     public ScanInfo getInfo() {
@@ -181,5 +201,24 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
 
     public void setHistory(List<ScanHistory> history) {
         this.history = history;
+    }
+
+    public List<ScanPlugin> getPrioritization() {
+        return prioritization;
+    }
+
+    public void setPrioritization(List<ScanPlugin> prioritization) {
+        this.prioritization = ScanPrioritization.wrapIfNeeded(this, prioritization);
+    }
+
+    public Integer getThreatLevel() {
+        return threatLevel;
+    }
+
+    public void setThreatLevel(Integer threatLevel) {
+        this.threatLevel = threatLevel;
+        if (this.prioritization != null) {
+            ((ScanPrioritization)this.prioritization).setThreatLevel(threatLevel);
+        }
     }
 }

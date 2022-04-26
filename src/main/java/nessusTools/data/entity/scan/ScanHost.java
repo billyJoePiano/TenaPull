@@ -15,6 +15,7 @@ import java.util.*;
 
 
 import javax.persistence.*;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.OrderBy;
@@ -54,14 +55,16 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
 
     private Integer score;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @Fetch(value = FetchMode.SUBSELECT)
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "scan_host_severity_level_count",
             joinColumns = { @JoinColumn(name = "scan_host_id") },
             inverseJoinColumns = { @JoinColumn(name = "severity_id") }
     )
-    @OrderBy("severityLevel ASC")
+    //@OrderBy("severityLevel ASC")
     @JsonProperty("severitycount")
     @JsonDeserialize(using = SeverityCount.Deserializer.class)
     @JsonSerialize(using = SeverityCount.Serializer.class)
@@ -107,7 +110,7 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
     @Transient
     @JsonIgnore
     public void _set(ScanHost o) {
-        __set(o);
+        this.__set(o);
         this.hostId = o.hostId;
         this.totalChecksConsidered = o.totalChecksConsidered;
         this.numChecksConsidered = o.numChecksConsidered;
@@ -135,24 +138,8 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
     @Transient
     @JsonIgnore
     public boolean _lookupMatch(ScanHost other) {
-        if (other == null) return false;
-        if (other == this) return true;
-        ScanResponse myRes = this.getResponse();
-        ScanResponse theirRes = other.getResponse();
-        if (myRes == null || theirRes == null) {
-            return false;
-        }
-
-        if (myRes != theirRes) {
-            int myRId = myRes.getId();
-            int theirRId = theirRes.getId();
-
-            if (myRId == 0 || myRId != theirRId) {
-                return false;
-            }
-        }
-
-        return this.hostId != null && other.hostId != null
+        return  this.__lookupMatch(other)
+                && this.hostId != null && other.hostId != null
                 && this.hostId.intValue() == other.hostId.intValue();
     }
 
@@ -225,14 +212,7 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
     }
 
     public void setSeverityCount(List<SeverityLevelCount> severityCount) {
-        if (severityCount instanceof SeverityCount) {
-            this.severityCount = severityCount;
-            ((SeverityCount)severityCount).putExtraJsonIntoParent(this);
-
-        } else {
-            this.severityCount = new SeverityCount(severityCount);
-            ((SeverityCount)severityCount).setExtraJsonFromParent(this);
-        }
+        this.severityCount = SeverityCount.wrapIfNeeded(this, severityCount);
     }
 
     public String getProgress() {

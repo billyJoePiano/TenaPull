@@ -267,6 +267,10 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
 
         if (val != pojo) {
             finder.set(val);
+            if ((this.searchMapProvider || !this.naturalId)
+                    && !Objects.equals(val, pojo)) {
+                val._set(pojo);
+            }
         }
         return val;
     }

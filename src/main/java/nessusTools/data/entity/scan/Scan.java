@@ -21,8 +21,7 @@ public class Scan extends NaturalIdPojo {
 
     public static final Logger logger = LogManager.getLogger(Scan.class);
 
-    @OneToOne
-    @JoinColumn(name = "id")
+    @OneToOne(mappedBy = "scan", cascade = CascadeType.ALL)
     @JsonIgnore
     private ScanResponse scanResponse;
 
@@ -33,12 +32,18 @@ public class Scan extends NaturalIdPojo {
     @JoinColumn(name="uuid_id")
     private ScanUuid uuid;
 
+    /*
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="folder_id")
     @JsonProperty("folder_id")
     @JsonDeserialize(using = IdReference.Deserializer.class)
     @JsonSerialize(using = IdReference.Serializer.class)
     private Folder folder;
+     */
+
+    @Column(name = "folder_id")
+    @JsonProperty("folder_id")
+    private Integer folderId;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="owner_id")
@@ -132,12 +137,22 @@ public class Scan extends NaturalIdPojo {
         this.uuid = uuid;
     }
 
+    /*
     public Folder getFolder() {
         return folder;
     }
 
     public void setFolder(Folder folder) {
         this.folder = folder;
+    }
+     */
+
+    public Integer getFolderId() {
+        return this.folderId;
+    }
+
+    public void setFolderId(Integer folderId) {
+        this.folderId = folderId;
     }
 
     public ScanOwner getOwner() {

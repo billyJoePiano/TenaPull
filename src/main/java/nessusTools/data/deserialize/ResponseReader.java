@@ -2,7 +2,7 @@ package nessusTools.data.deserialize;
 
 import com.fasterxml.jackson.databind.*;
 
-import nessusTools.data.entity.template.*;
+import nessusTools.data.entity.response.*;
 
 public class ResponseReader<R extends NessusResponse> extends ObjectMapper {
     private final Class<R> type;
