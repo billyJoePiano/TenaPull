@@ -2,8 +2,7 @@ package nessusTools.data.entity.scan;
 
 import com.fasterxml.jackson.annotation.*;
 
-import com.fasterxml.jackson.databind.annotation.*;
-import nessusTools.data.deserialize.*;
+import com.fasterxml.jackson.databind.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
@@ -18,7 +17,6 @@ import javax.persistence.*;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
 @Entity(name = "ScanHost")
@@ -56,8 +54,8 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
     private Integer score;
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @Fetch(value = FetchMode.SUBSELECT)
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
     @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "scan_host_severity_level_count",
@@ -65,10 +63,11 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
             inverseJoinColumns = { @JoinColumn(name = "severity_id") }
     )
     //@OrderBy("severityLevel ASC")
-    @JsonProperty("severitycount")
-    @JsonDeserialize(using = SeverityCount.Deserializer.class)
-    @JsonSerialize(using = SeverityCount.Serializer.class)
-    private List<SeverityLevelCount> severityCount;
+    @JsonIgnore
+    private List<SeverityLevelCount> severityCounts;
+
+    @Transient
+    private SeverityCount severitycount;
 
     private String progress;
 
@@ -106,6 +105,32 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
 
     private String hostname;
 
+    public SeverityCount getSeveritycount() {
+        if (this.severitycount == null) {
+            this.severitycount = new SeverityCount();
+            this.severitycount.takeFieldsFromParent(this);
+        }
+        return this.severitycount;
+    }
+
+    public void setSeveritycount(SeverityCount severitycount) {
+        if (this.severitycount != null && this.severitycount != severitycount) {
+            this.severitycount.clearParent();
+        }
+        this.severitycount = severitycount;
+        severitycount.putFieldsIntoParent(this);
+    }
+
+    public List<SeverityLevelCount> getSeverityCounts() {
+        return this.severityCounts;
+    }
+
+    public void setSeverityCounts(List<SeverityLevelCount> severityCounts) {
+        if (this.severityCounts == severityCounts) return;
+        this.severityCounts = SeverityLevelCount.dao.getOrCreate(severityCounts);
+        if (this.severitycount != null) this.severitycount.setItem(this.severityCounts);
+    }
+
     @Override
     @Transient
     @JsonIgnore
@@ -118,7 +143,7 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
         this.scanProgressCurrent = o.scanProgressCurrent;
         this.hostIndex = o.hostIndex;
         this.score = o.score;
-        this.severityCount = o.severityCount;
+        this.severityCounts = o.severityCounts;
         this.progress = o.progress;
         this.offlineCritical = o.offlineCritical;
         this.offlineHigh = o.offlineHigh;
@@ -132,6 +157,11 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
         this.info = o.info;
         this.severity = o.severity;
         this.hostname = o.hostname;
+
+        if (this.severitycount != null) {
+            this.severitycount.clearParent();
+            this.severitycount = null;
+        }
     }
 
     @Override
@@ -150,6 +180,18 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
         return Map.of("response", this.getResponse(), "hostId", this.hostId);
     }
 
+    @Override
+    @JsonAnyGetter
+    public Map<String, JsonNode> getExtraJsonMap() {
+        return this.getSeveritycount().jsonAnyGetterForParent();
+    }
+
+    @Override
+    @JsonAnySetter
+    public void putExtraJson(String key, Object value) {
+        super.putExtraJson(key, value);
+        if (this.severitycount != null) this.severitycount.checkExtraJsonPut(key, value);
+    }
 
     public Integer getHostId() {
         return hostId;
@@ -205,14 +247,6 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
 
     public void setScore(Integer score) {
         this.score = score;
-    }
-
-    public List<SeverityLevelCount> getSeverityCount() {
-        return severityCount;
-    }
-
-    public void setSeverityCount(List<SeverityLevelCount> severityCount) {
-        this.severityCount = SeverityCount.wrapIfNeeded(this, severityCount);
     }
 
     public String getProgress() {

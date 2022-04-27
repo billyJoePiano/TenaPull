@@ -63,7 +63,7 @@
         <mapping class="nessusTools.data.entity.host.ScanHostInfo" />
         <mapping class="nessusTools.data.entity.scan.ScanInfo" />
         <mapping class="nessusTools.data.entity.scan.ScanPlugin" />
-        <mapping class="nessusTools.data.deserialize.ScanPrioritization" />
+        <mapping class="nessusTools.data.entity.scan.ScanPrioritization" />
         <mapping class="nessusTools.data.entity.scan.ScanRemediationsSummary" />
 
         <mapping class="nessusTools.data.entity.scan.ScanHost" />

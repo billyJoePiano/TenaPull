@@ -1,7 +1,7 @@
 package nessusTools.data.entity.objectLookup;
 
-import com.fasterxml.jackson.databind.annotation.*;
-import nessusTools.data.deserialize.*;
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.*;
 import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
@@ -26,19 +26,23 @@ public class PluginRefInformation extends GeneratedIdPojo
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "plugin_ref_information_value",
             joinColumns = { @JoinColumn(name = "information_id") },
             inverseJoinColumns = { @JoinColumn(name = "value_id") }
     )
     @OrderColumn(name = "__order_for_plugin_ref_value", nullable = false)
-    @Access(AccessType.PROPERTY)
-    @JsonDeserialize(using = RefValues.Deserializer.class)
-    @JsonSerialize(using = RefValues.Serializer.class)
+    @JsonIgnore
     List<PluginRefValue> values;
 
-    String url;
+    @Transient
+    @JsonProperty("values")
+    RefValues valuesJson;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    String url;
 
     public String getName() {
         return name;
@@ -53,7 +57,25 @@ public class PluginRefInformation extends GeneratedIdPojo
     }
 
     public void setValues(List<PluginRefValue> values) {
-        this.values = RefValues.wrapIfNeeded(this, values);
+        if (this.values == values) return;
+        this.values = PluginRefValue.dao.getOrCreate(values);
+        if (this.valuesJson != null) this.valuesJson.setValue(this.values);
+    }
+
+    public RefValues getValuesJson() {
+        if (this.valuesJson == null) {
+            this.valuesJson = new RefValues();
+            this.valuesJson.takeFieldsFromParent(this);
+        }
+        return this.valuesJson;
+    }
+
+    public void setValuesJson(RefValues values) {
+        if (this.valuesJson != null && this.valuesJson != values) {
+            this.valuesJson.clearParent();
+        }
+        this.valuesJson = values;
+        if (values != null) values.putFieldsIntoParent(this);
     }
 
     public String getUrl() {
@@ -70,5 +92,27 @@ public class PluginRefInformation extends GeneratedIdPojo
         this.name = o.name;
         this.values = o.values;
         this.url = o.url;
+
+        if (this.valuesJson != null) {
+            this.valuesJson.clearParent();
+            this.valuesJson = null;
+        }
+    }
+
+
+    @JsonAnyGetter
+    @Transient
+    @Override
+    public Map<String, JsonNode> getExtraJsonMap() {
+        return this.getValuesJson().jsonAnyGetterForParent();
+    }
+
+
+    @JsonAnySetter
+    @Transient
+    @Override
+    public void putExtraJson(String key, Object value) {
+        super.putExtraJson(key, value);
+        if (this.valuesJson != null) this.valuesJson.checkExtraJsonPut(key, value);
     }
 }

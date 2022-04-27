@@ -8,6 +8,7 @@ import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
 import org.hibernate.annotations.*;
 
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -23,8 +24,8 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
 
     @ManyToOne
     @JoinColumn(name = "plugin_id")
+    @Access(AccessType.PROPERTY)
     @JsonUnwrapped
-    @JsonDeserialize(using = ObjectLookup.Deserializer.class)
     Plugin plugin;
 
     @Column(name = "host_count")
@@ -32,24 +33,16 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     Integer hostCount;
 
     @ManyToMany(cascade = CascadeType.ALL)
-    @Fetch(value = FetchMode.SUBSELECT)
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "scan_plugin_host",
             joinColumns = { @JoinColumn(name = "scan_plugin_id") },
             inverseJoinColumns = { @JoinColumn(name = "plugin_host_id") }
     )
     @OrderColumn(name = "__order_for_scan_plugin_host")
-    @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
     List<PluginHost> hosts;
-
-    public List<PluginHost> getHosts() {
-        return hosts;
-    }
-
-    public void setHosts(List<PluginHost> hosts) {
-        this.hosts = hosts;
-    }
 
 
     @Override
@@ -81,7 +74,7 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     }
 
     public void setPlugin(Plugin plugin) {
-        this.plugin = plugin;
+        this.plugin = Plugin.dao.getOrCreate(plugin);
     }
 
     public Integer getHostCount() {
@@ -90,5 +83,13 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
 
     public void setHostCount(Integer hostCount) {
         this.hostCount = hostCount;
+    }
+
+    public List<PluginHost> getHosts() {
+        return hosts;
+    }
+
+    public void setHosts(List<PluginHost> hosts) {
+        this.hosts = PluginHost.dao.getOrCreate(hosts);
     }
 }

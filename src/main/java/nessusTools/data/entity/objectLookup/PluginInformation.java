@@ -34,8 +34,8 @@ public class PluginInformation extends GeneratedIdPojo
     @JsonProperty("plugin_family")
     private String pluginFamily;
 
-    @Column(name = "plugin_modifications")
-    @JsonProperty("plugin_modifications")
+    @Column(name = "plugin_modification_date")
+    @JsonProperty("plugin_modification_date")
     private String pluginModificationDate;
 
 

@@ -497,7 +497,7 @@ create table scan_plugin (
     plugin_id int null,
     host_count int null,
     _extra_json longtext null,
-    __order_for_scan_plugin int not null,
+    __order_for_scan_plugin int null,
     constraint unique (scan_id, plugin_id),
     constraint foreign key (scan_id) references scan_response(id), -- effectively, also scan_response(id) and scan_prioritization(id)
     constraint foreign key (plugin_id) references plugin(id) on update cascade
@@ -538,6 +538,7 @@ create table scan_history (
     constraint scan_history_scan_response_id_fk foreign key (scan_id) references scan_response (id),
     constraint scan_history_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
     constraint scan_history_status_id_fk foreign key (status_id) references scan_status (id) on update cascade,
+    constraint foreign key (schedule_type_id) references scan_schedule_type (id) on update cascade,
     constraint scan_history_scan_type_id_fk foreign key (scan_type_id) references scan_type (id) on update cascade,
     constraint scan_history_uuid_id_fk foreign key (uuid_id) references scan_uuid (id) on update cascade,
     -- constraint foreign key (owner_id) references scan_owner_id (id) on update cascade,

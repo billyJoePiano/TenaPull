@@ -3,6 +3,7 @@ package nessusTools.data.persistence;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import nessusTools.data.entity.template.DbPojo;
+import net.bytebuddy.implementation.bytecode.*;
 import org.apache.logging.log4j.*;
 import org.hibernate.*;
 import org.hibernate.boot.*;
@@ -28,8 +29,9 @@ import java.util.*;
 public class Dao<POJO extends DbPojo> {
     private static final Logger staticLogger = LogManager.getLogger(Dao.class);
     private static final Map<Class<DbPojo>, Dao<DbPojo>> classMap = new HashMap();
-    public static final SessionFactoryBuilder sessionFactoryBuilder = makeSessionFactoryBuilder();
-    public static final SessionFactory sessionFactory = makeSessionFactory();
+    private static final SessionFactoryBuilder sessionFactoryBuilder = makeSessionFactoryBuilder();
+    private static final SessionFactory sessionFactory = makeSessionFactory();
+    private static final Map<Thread, SessionTracker> sessions = new WeakHashMap<>();
 
     public static <P extends DbPojo, D extends Dao<P>> D get(Class<P> pojoType) {
         return (D) classMap.get(pojoType);
@@ -83,19 +85,95 @@ public class Dao<POJO extends DbPojo> {
         return this.logger;
     }
 
+    protected static SessionTracker getSession() {
+        synchronized (sessions) {
+            SessionTracker tracker = sessions.get(Thread.currentThread());
+            if (tracker == null) {
+                tracker = new SessionTracker();
+            }
+            tracker.count++;
+            return tracker;
+        }
+    }
+
+    protected static class SessionTracker {
+        protected final Session session = sessionFactory.openSession();
+        protected final Thread thread = Thread.currentThread();
+        private Transaction transaction;
+        protected int count = 0;
+
+        private SessionTracker() {
+            synchronized (sessions) {
+                sessions.put(thread, this);
+            }
+        }
+
+        protected void done() {
+            this.count--;
+            if (count <= 0) {
+                synchronized (sessions) {
+                    sessions.remove(this.thread);
+                }
+
+                if (this.transaction != null) {
+                    try {
+                        Transaction transaction = this.transaction;
+                        this.transaction = null;
+                        transaction.commit();
+
+                    } catch(Throwable e) {
+                        staticLogger.error(e);
+                    }
+                }
+                session.close();
+            }
+        }
+
+        protected Transaction getTransaction() {
+            if (this.transaction == null) {
+                this.transaction = session.beginTransaction();
+            }
+            return this.transaction;
+        }
+
+        protected void failed(Throwable e, Class<? extends DbPojo> pojoType) throws LookupException {
+            if (this.count > 1) {
+                throw new LookupException(e, pojoType);
+
+            } else if (this.transaction != null) {
+                try {
+                    Transaction transaction = this.transaction;
+                    this.transaction = null;
+                    transaction.rollback();
+
+                } catch (Throwable e2) {
+                    staticLogger.error(e2);
+                }
+            }
+        }
+    }
+
+
+
     /**
      * Get POJO by id
      */
     public POJO getById(int id) {
-        Session session = sessionFactory.openSession();
+        SessionTracker sessionTracker = getSession();
+        Session session = sessionTracker.session;
+
         try {
             POJO pojo = session.get(this.getPojoType(), id);
             return pojo;
 
-        } finally {
-            session.close();
-        }
+        } catch (Throwable e) {
+            logger.error("Error getting record by id", e);
+            sessionTracker.failed(e, this.pojoType);
+            return null;
 
+        } finally {
+            sessionTracker.done();
+        }
     }
 
     /**
@@ -104,17 +182,15 @@ public class Dao<POJO extends DbPojo> {
      * @param pojo POJO to be inserted or updated
      */
     public void saveOrUpdate(POJO pojo) {
-        Session session = sessionFactory.openSession();
+        SessionTracker sessionTracker = getSession();
+        Session session = sessionTracker.session;
         Transaction tx = null;
 
         try {
-            tx = session.beginTransaction();
+            tx = sessionTracker.getTransaction();
             session.saveOrUpdate(pojo);
-            tx.commit();
 
         } catch (Throwable e) {
-            if (tx != null) tx.rollback();
-
             String json;
 
             try {
@@ -126,8 +202,10 @@ public class Dao<POJO extends DbPojo> {
 
             logger.error("Error save/updating record:\n" + json, e);
 
+            sessionTracker.failed(e, this.pojoType);
+
         } finally {
-            session.close();
+            sessionTracker.done();
         }
     }
 
@@ -137,18 +215,16 @@ public class Dao<POJO extends DbPojo> {
      * @param pojo POJO to be inserted
      */
     public int insert(POJO pojo) {
-        Session session = sessionFactory.openSession();
+        SessionTracker sessionTracker = getSession();
+        Session session = sessionTracker.session;
         Transaction tx = null;
         Integer id = null;
 
         try {
-            tx = session.beginTransaction();
+            tx = sessionTracker.getTransaction();
             id = (Integer) session.save(pojo);
-            tx.commit();
 
         } catch (Throwable e) {
-            if (tx != null) tx.rollback();
-
             String json;
 
             try {
@@ -160,8 +236,10 @@ public class Dao<POJO extends DbPojo> {
 
             logger.error("Error inserting record:\n" + json, e);
 
+            sessionTracker.failed(e, this.pojoType);
+
         } finally {
-            session.close();
+            sessionTracker.done();
         }
 
         if (id == null) return -1;
@@ -175,14 +253,29 @@ public class Dao<POJO extends DbPojo> {
      * @param pojo pojo to be deleted
      */
     public void delete(POJO pojo) {
-        Session session = sessionFactory.openSession();
+        SessionTracker sessionTracker = getSession();
+        Session session = sessionTracker.session;
+
         try {
-            Transaction transaction = session.beginTransaction();
+            Transaction transaction = sessionTracker.getTransaction();
             session.delete(pojo);
-            transaction.commit();
+
+        } catch (Throwable e) {
+            String json;
+
+            try {
+                json = pojo.toJsonString();
+
+            } catch (JsonProcessingException ex) {
+                json = "<ERROR PROCESSING JSON : " + pojo.toString() + " >";
+            }
+
+            logger.error("Error deleting record:\n" + json, e);
+
+            sessionTracker.failed(e, this.pojoType);
 
         } finally {
-            session.close();
+            sessionTracker.done();
         }
     }
 
@@ -193,7 +286,8 @@ public class Dao<POJO extends DbPojo> {
      * @return All POJOs
      */
     public List<POJO> getAll() {
-        Session session = sessionFactory.openSession();
+        SessionTracker sessionTracker = getSession();
+        Session session = sessionTracker.session;
 
         try {
             CriteriaBuilder builder = session.getCriteriaBuilder();
@@ -201,8 +295,14 @@ public class Dao<POJO extends DbPojo> {
             Root<POJO> root = query.from(this.getPojoType());
             return session.createQuery(query).getResultList();
 
+        } catch (Throwable e) {
+            logger.error("Error getting all records", e);
+            sessionTracker.failed(e, this.pojoType);
+
+            return Collections.emptyList();
+
         } finally {
-            session.close();
+            sessionTracker.done();
         }
     }
 
@@ -229,7 +329,9 @@ public class Dao<POJO extends DbPojo> {
     }
 
     protected List<POJO> keyValueSearch(String propertyName, Object value) {
-        Session session = sessionFactory.openSession();
+        SessionTracker sessionTracker = getSession();
+        Session session = sessionTracker.session;
+
         try {
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaQuery<POJO> query = builder.createQuery(pojoType);
@@ -248,7 +350,7 @@ public class Dao<POJO extends DbPojo> {
             return Collections.emptyList();
 
         }  finally {
-            session.close();
+            sessionTracker.done();
         }
     }
 
@@ -256,35 +358,42 @@ public class Dao<POJO extends DbPojo> {
     // in ObjectLookupDao without overriding this functionality
 
     protected List<POJO> mapSearch(Map<String, Object> propertyMap) {
-        Session session = sessionFactory.openSession();
+        SessionTracker sessionTracker = getSession();
+        Session session = sessionTracker.session;
+
+        List<Predicate> predicates = new ArrayList<Predicate>();
+        CriteriaBuilder builder;
+        CriteriaQuery<POJO> query;
 
         try {
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<POJO> query = builder.createQuery(pojoType);
+            builder = session.getCriteriaBuilder();
+            query = builder.createQuery(pojoType);
 
             Root<POJO> root = query.from(pojoType);
-            List<Predicate> predicates = new ArrayList<Predicate>();
+
 
             for (Map.Entry<String, Object> entry : propertyMap.entrySet()) {
                 String propertyName = entry.getKey();
                 Object value = entry.getValue();
 
-                if (value != null) {
-                    predicates.add(builder.equal(root.get(propertyName), value));
+                if (value == null) {
+                    predicates.add(builder.isNull(root.get(propertyName)));
 
                 } else {
-                    predicates.add(builder.isNull(root.get(propertyName)));
+                    predicates.add(builder.equal(root.get(propertyName), value));
+
                 }
             }
             query.select(root).where(builder.and(predicates.toArray(new Predicate[predicates.size()])));
 
             return session.createQuery(query).getResultList();
 
-        } catch(EntityNotFoundException e) {
+        } catch (Throwable e) {
+            logger.error(e);
             return Collections.emptyList();
 
         } finally {
-            session.close();
+            sessionTracker.done();
         }
     }
 
@@ -313,12 +422,20 @@ public class Dao<POJO extends DbPojo> {
 
     protected Map<String, Object> makeExactPojoSearchMap(POJO searchPojo) {
         Map<String, Object> searchMap = new HashMap();
+        Map<String, Attribute<? super POJO, ?>> attributeMap = this.getAttributeMap();
 
         for (Map.Entry<String, Getter> entry
                 : this.getGetterMap().entrySet()) {
 
+            String field = entry.getKey();
+            Attribute attribute = attributeMap.get(field);
+            if (attribute != null && attribute.isCollection()) {
+                continue;
+            }
+
             Object value = entry.getValue().get(searchPojo);
-            searchMap.put(entry.getKey(), value);
+
+            searchMap.put(field, value);
         }
         return searchMap;
     }

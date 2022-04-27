@@ -11,6 +11,7 @@ import nessusTools.data.persistence.*;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -27,11 +28,13 @@ public class Plugin extends GeneratedIdPojo
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="plugin_name_id")
+    @JsonProperty("pluginname")
     PluginName pluginName;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="plugin_attributes_id")
-    @JsonDeserialize(using = ObjectLookup.Deserializer.class)
+    @Access(AccessType.PROPERTY)
+    @JsonProperty("pluginattributes")
     PluginAttributes pluginAttributes;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
@@ -64,7 +67,7 @@ public class Plugin extends GeneratedIdPojo
     }
 
     public void setPluginAttributes(PluginAttributes pluginAttributes) {
-        this.pluginAttributes = pluginAttributes;
+        this.pluginAttributes = PluginAttributes.dao.getOrCreate(pluginAttributes);
     }
 
     public PluginFamily getPluginFamily() {

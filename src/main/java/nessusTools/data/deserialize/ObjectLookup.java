@@ -14,6 +14,8 @@ import java.io.IOException;
 public class ObjectLookup {
     private ObjectLookup() { }
 
+    /*
+
     public static class Deserializer<POJO extends ObjectLookupPojo<POJO>>
             extends AbstractContextualPojoDeserializer<POJO, ObjectLookupDao<POJO>> {
 
@@ -63,10 +65,15 @@ public class ObjectLookup {
         @Override
         public POJO deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
             POJO searchPojo = super.deserialize(jp, ctxt);
+            R response = searchPojo.getResponse();
 
             if (searchPojo != null) {
                 try {
-                    return dao.getOrCreate(searchPojo);
+                    POJO result = dao.getOrCreate(searchPojo);
+                    if (result != searchPojo) {
+                        result.setResponse(response);
+                    }
+                    return result;
 
                 } catch (LookupException le) {
                     logger.error("Error deserializing object lookup:");
@@ -76,4 +83,6 @@ public class ObjectLookup {
             return null;
         }
     }
+
+     */
 }

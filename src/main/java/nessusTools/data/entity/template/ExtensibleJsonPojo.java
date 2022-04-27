@@ -59,6 +59,13 @@ public abstract class ExtensibleJsonPojo {
         this.extraJson.put(key, node);
     }
 
+    @Transient
+    @JsonIgnore
+    public JsonNode getExtraJson(String key) {
+        if (this.extraJson == null) return null;
+        return this.extraJson.get(key);
+    }
+
 
     public ObjectNode toJsonNode() {
         return new ObjectMapper().convertValue(this, ObjectNode.class);

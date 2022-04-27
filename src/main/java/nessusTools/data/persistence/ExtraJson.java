@@ -102,13 +102,14 @@ public class ExtraJson {
         }
     }
 
+    public static final Converter converter = new Converter();
 
     @javax.persistence.Converter
-    public static class Converter implements AttributeConverter<ExtraJson, String> {
+    public static class Converter implements AttributeConverter<Object, String> {
         private static final Logger logger = LogManager.getLogger(Converter.class);
 
         @Override
-        public String convertToDatabaseColumn(ExtraJson json) {
+        public String convertToDatabaseColumn(Object json) {
             if (json != null) {
                 return json.toString();
 

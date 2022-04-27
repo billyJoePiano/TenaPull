@@ -3,7 +3,7 @@ function compare(expected, actual) {
     let aKeys = Object.keys(actual);
     let eKeys = Object.keys(expected);
 
-    console.group(expected, actual);
+    console.groupCollapsed(expected, actual);
 
     if (aKeys.length !== eKeys.length) fail("Number of keys", "length", eKeys, aKeys)
     for (let key of eKeys) {

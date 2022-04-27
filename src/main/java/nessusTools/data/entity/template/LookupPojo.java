@@ -1,5 +1,6 @@
 package nessusTools.data.entity.template;
 
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,8 +19,8 @@ import nessusTools.data.deserialize.Lookup;
 @MappedSuperclass
 @JsonDeserialize(using = Lookup.Deserializer.class)
 @JsonSerialize(using = Lookup.Serializer.class)
-public abstract class LookupPojo<POJO extends LookupPojo>
-        implements ObjectLookupPojo<POJO> {
+public abstract class LookupPojo<POJO extends LookupPojo<POJO>>
+        implements LookupSearchMapProvider<POJO> {
 
     public static final String FIELD_NAME = "value";
 
@@ -75,4 +76,18 @@ public abstract class LookupPojo<POJO extends LookupPojo>
         this.setId(other.getId());
         this.setValue(other.getValue());
     }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _lookupMatch(POJO other) {
+        return Objects.equals(this.getValue(), other.getValue());
+    }
+
+    @Transient
+    @JsonIgnore
+    public Map<String, Object> _getSearchMap() {
+        return Map.of("value", this.value);
+    }
+
 }

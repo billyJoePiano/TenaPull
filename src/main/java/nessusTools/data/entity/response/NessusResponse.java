@@ -4,8 +4,10 @@ import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.*;
 import nessusTools.data.entity.template.*;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.AccessType;
 
 @MappedSuperclass
 public interface NessusResponse extends DbPojo {
@@ -34,7 +36,7 @@ public interface NessusResponse extends DbPojo {
             extends NaturalIdPojo
             implements ResponseChild<POJO, R> {
 
-        @OneToOne
+        @OneToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id")
         @Access(AccessType.PROPERTY)
         @JsonIgnore
@@ -80,7 +82,7 @@ public interface NessusResponse extends DbPojo {
             extends GeneratedIdPojo
             implements ResponseChild<POJO, R> {
 
-        @ManyToOne
+        @ManyToOne(fetch = FetchType.LAZY)
         @Access(AccessType.PROPERTY)
         @JsonIgnore
         private R response;

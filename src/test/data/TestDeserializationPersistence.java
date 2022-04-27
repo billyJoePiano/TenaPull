@@ -46,7 +46,7 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
             throws InvocationTargetException, NoSuchMethodException,
             InstantiationException, IllegalAccessException {
 
-        //Database.hardReset();
+        Database.hardReset();
 
         return Arrays.asList(new Object[][] {
             { IndexResponse.class, "indexResponse.json" },

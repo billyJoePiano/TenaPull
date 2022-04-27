@@ -187,6 +187,7 @@ public class InstancesTracker<K, I> {
                 for (Map.Entry<K, CreateLock> entry : underConstruction.entrySet()) {
                     CreateLock lock = entry.getValue();
                     I instance = lock.run(entry.getKey());
+                    if (instance == null) continue;
                     if (accepted.contains(instance) || rejected.contains(instance)){
                         continue;
                     }

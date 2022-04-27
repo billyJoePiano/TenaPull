@@ -172,16 +172,20 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
             POJO mine = this.get();
             POJO theirs = other.get();
 
+            if (mine != null && mine == theirs) {
+                return true;
+            }
+
             if (this.id != null) {
                 if (other.id != null) {
                     return this.id.intValue() == other.id.intValue();
 
-                } else if (theirs != null && (other.searchingRef == null || ObjectLookupDao.this.naturalId)) {
+                } else if (theirs != null && (theirs.getId() != 0 || ObjectLookupDao.this.getByIdWhenZero)) { // && (other.searchingRef == null || ObjectLookupDao.this.naturalId)) {
                     return theirs.getId() == this.id.intValue();
                 }
 
             } else if (other.id != null) {
-                if (mine != null && (other.searchingRef == null || ObjectLookupDao.this.naturalId)) {
+                if (mine != null && (mine.getId() != 0 || ObjectLookupDao.this.getByIdWhenZero)) { // && (other.searchingRef == null || ObjectLookupDao.this.naturalId)) {
                     return mine.getId() == other.id.intValue();
                 }
             }
@@ -213,6 +217,15 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                 return false;
             }
         }
+    }
+
+    public List<POJO> getOrCreate(List<POJO> list) {
+        if (list == null) return null;
+        List<POJO> newList = new ArrayList<>(list.size());
+        for (POJO pojo : list) {
+            newList.add(this.getOrCreate(pojo));
+        }
+        return newList;
     }
 
     //NOTE for NaturalId pojos where the id is not zero OR getByIdWhenZero is true
@@ -254,21 +267,22 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                     return f.set(result, finder);
                 }
 
-                if (super.insert(pojo) != -1) {
-                    return f.set(pojo, finder);
+                super.saveOrUpdate(pojo);
+                //this.checkSaveOrUpdate(pojo);
 
-                } else {
-                    throw new LookupException("Couldn't create pojo '" + pojo + "'",
-                            this.getPojoType());
-                }
+                return f.set(pojo, finder);
             })
         );
 
+        if (val == null) {
+            finder.set(pojo);
+            logger.error("Error in ObjectLookupDao.getOrCreate(pojo) -- null returned "
+                        + "from workingLookups.getOrConstructWith(pojoFinder, lambda)");
+            return pojo;
 
-        if (val != pojo) {
+        } else if (val != pojo) {
             finder.set(val);
-            if ((this.searchMapProvider || !this.naturalId)
-                    && !Objects.equals(val, pojo)) {
+            if (!Objects.equals(val, pojo)) {
                 val._set(pojo);
             }
         }
@@ -285,16 +299,25 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                 result.value = this.workingLookups.get(finder);
 
                 if (result.value != null) {
-                    if (!Objects.equals(result.value, pojo)) {
-                        result.value._set(pojo);
-                    }
+                    finder.set(result.value);
 
-                } else {
-                    result.value = pojo;
-                    this.workingLookups.put(finder, pojo);
+                    if (result.value != pojo) {
+                        boolean changed = !Objects.equals(result.value, pojo);
+                        result.value._set(pojo);
+                        if (changed) {
+                            super.saveOrUpdate(result.value);
+                            //this.checkSaveOrUpdate(pojo);
+                        }
+                    }
+                    return null;
+
                 }
 
-                finder.set(result.value);
+                result.value = pojo;
+                this.workingLookups.put(finder, pojo);
+
+
+                finder.set(pojo);
 
                 POJO dbPojo;
                 if (this.searchMapProvider) {
@@ -310,19 +333,14 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                     }
 
                     super.saveOrUpdate(result.value);
+                    //this.checkSaveOrUpdate(result.value);
 
-                    dbPojo = this.getById(pojo.getId());
-
-                    if (!dbPojo.equals(result.value)) {
-                        throw new LookupException("Unable to correctly assign object lookup DbPojo to values:\n"
-                                + pojo.toString(), this.getPojoType());
-                    }
-
-                } else if (super.insert(result.value) == -1) {
-                    throw new LookupException("Couldn't create pojo '" + pojo + "'",
-                            this.getPojoType());
+                } else {
+                    super.saveOrUpdate(pojo);
+                    //this.checkSaveOrUpdate(pojo);
                 }
                 return null;
+
             })
         );
 
@@ -330,7 +348,7 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
     }
 
 
-    private POJO useSearchMapProvider(POJO mapProvider) throws LookupException {
+    protected POJO useSearchMapProvider(POJO mapProvider) throws LookupException {
         LookupSearchMapProvider smp = (LookupSearchMapProvider) mapProvider;
         List<POJO> results = this.mapSearch(smp._getSearchMap());
 
@@ -359,6 +377,7 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
 
     @Override
     public void saveOrUpdate(POJO pojo) {
+        if (pojo == null) return;
         if (this.getByIdWhenZero || pojo.getId() != 0) {
             this.updateOrCreateById(pojo);
 
@@ -369,7 +388,24 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                     this.getPojoType());
 
         } else {
-            this.insert(pojo);
+            PojoFinder finder = new PojoFinder(pojo);
+            POJO val = this.workingLookups.getOrConstructWith(finder, f ->  {
+                super.saveOrUpdate(pojo);
+                //this.checkSaveOrUpdate(pojo);
+                return f.set(pojo, finder);
+            });
+
+            finder.set(val);
+            if (val != pojo) {
+                boolean changed = !Objects.equals(val, pojo);
+                val._set(pojo);
+                if (changed) {
+                    this.workingLookups.constructWith(finder, f -> {
+                        super.saveOrUpdate(val);
+                        return val;
+                    });
+                }
+            }
         }
     }
 
@@ -652,6 +688,20 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
     }
 
 
+    protected void checkSaveOrUpdate(POJO pojo) {
+        POJO persisted = super.getById(pojo.getId());
+
+        if (persisted == null) {
+            throw new LookupException("Couldn't create pojo '" + pojo + "'",
+                    this.getPojoType());
+
+        } else if (!Objects.equals(persisted, pojo)) {
+            throw new LookupException("Persisted pojo didn't match"
+                    + "\nExpected: " + pojo
+                    + "\nActual" + persisted,
+                    this.getPojoType());
+        }
+    }
 
 
     public static Map<String, Object> makeSearchMapFromJson(JsonNode searchMapNode)

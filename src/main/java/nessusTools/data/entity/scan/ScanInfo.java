@@ -17,6 +17,7 @@ import org.apache.logging.log4j.*;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -34,7 +35,9 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
 
     public static final Logger logger = LogManager.getLogger(ScanInfo.class);
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE,
+                            CascadeType.REFRESH, CascadeType.DETACH},
+                fetch = FetchType.LAZY)
     @JoinColumn(name="folder_id")
     @JsonProperty("folder_id")
     @JsonDeserialize(using = IdReference.Deserializer.class)
@@ -58,6 +61,8 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
 
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "scan_info_acl",
             joinColumns = { @JoinColumn(name = "scan_id") },
@@ -65,8 +70,6 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     )
     @OrderColumn(name = "__order_for_scan_info", nullable = false)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
-    //@JsonSerialize(using = Lists.EmptyToNullSerializer.class)
     private List<Acl> acls;
 
 
@@ -168,9 +171,9 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="license_id")
+    @Access(AccessType.PROPERTY)
     @JsonProperty("license_info")
     @JsonInclude(Include.NON_NULL)
-    @JsonDeserialize(using = ObjectLookup.Deserializer.class)
     private License licenseInfo;
 
     @Column(name = "no_target")
@@ -225,28 +228,32 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
 
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "scan_info_severity_base_selection",
             joinColumns = { @JoinColumn(name = "scan_id") },
             inverseJoinColumns = { @JoinColumn(name = "severity_base_id") }
     )
     @OrderColumn(name = "__order_for_scan_info", nullable = false)
-    @JsonProperty("severity_base_selections")
-    @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
+    //@JsonProperty("severity_base_selections")
+    @JsonIgnore
     private List<SeverityBase> severityBaseSelections;
 
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="current_severity_base_id")
-    @JsonProperty("current_severity_base")
+    @Access(AccessType.PROPERTY)
+    //@JsonProperty("current_severity_base")
+    @JsonIgnore
     private SeverityBase currentSeverityBase;
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="selected_severity_base_id")
-    @JsonProperty("selected_severity_base")
+    @Access(AccessType.PROPERTY)
+    //@JsonProperty("selected_severity_base")
+    @JsonIgnore
     private SeverityBase selectedSeverityBase;
-
-
 
 
     public List<SeverityBase> getSeverityBaseSelections() {
@@ -292,137 +299,96 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
      ***********/
 
     public void setSelectedSeverityBase(SeverityBase selectedSeverityBase) {
-        this.selectedSeverityBase = checkForSeverityBase(selectedSeverityBase);
+        this.selectedSeverityBase = SeverityBase.dao.getOrCreate(selectedSeverityBase);
+        checkForSelectedSeverityBaseMatch();
     }
 
     public void setSeverityBaseSelections(List<SeverityBase> selections) {
-        List<SeverityBase> checked = new ArrayList(selections.size());
-        for (SeverityBase selection : selections) {
-            checked.add(checkForSeverityBase(selection));
-        }
-        this.severityBaseSelections = checked;
+        this.severityBaseSelections = SeverityBase.dao.getOrCreate(selections);
+        checkForSelectedSeverityBaseMatch();
     }
 
     public void setCurrentSeverityBase(SeverityBase currentSeverityBase) {
-        this.currentSeverityBase = this.checkForSeverityBase(currentSeverityBase);
+        this.currentSeverityBase = SeverityBase.dao.getOrCreate(currentSeverityBase);
+        checkForSelectedSeverityBaseMatch();
     }
 
     @Transient
     @JsonSetter("current_severity_base")
     public void setCurrentSeverityBaseValue(String value) {
-        SeverityBase current = this.getCurrentSeverityBase();
-        boolean isNew;
-        if (isNew = current == null) {
-            current = new SeverityBase();
-        }
+        if (this.currentSeverityBase == null) {
+            List<SeverityBase> list = SeverityBase.dao.findByPropertyEqual("value", value);
+            if (list != null && list.size() > 0) {
+                this.currentSeverityBase = list.get(0);
 
-        current.setValue(value);
-        this.currentSeverityBase = checkForSeverityBase(current, isNew);
+            } else {
+                this.currentSeverityBase = new SeverityBase();
+                this.currentSeverityBase.setValue(value);
+            }
+
+        } else if (!Objects.equals(value, this.currentSeverityBase.getValue())) {
+            SeverityBase copy = new SeverityBase();
+            copy.setDisplay(this.currentSeverityBase.getDisplay());
+            copy.setValue(value);
+            this.currentSeverityBase = SeverityBase.dao.getOrCreate(copy);
+        }
+        checkForSelectedSeverityBaseMatch();
     }
 
     @Transient
     @JsonSetter("current_severity_base_display")
     public void setCurrentSeverityBaseDisplay(String display) {
-        SeverityBase current = this.getCurrentSeverityBase();
-        boolean isNew;
-        if (isNew = current == null) {
-            current = new SeverityBase();
-        }
+        if (this.currentSeverityBase == null) {
+            List<SeverityBase> list = SeverityBase.dao.findByPropertyEqual("display", display);
+            if (list != null && list.size() > 0) {
+                this.currentSeverityBase = list.get(0);
 
-        current.setDisplay(display);
-        this.currentSeverityBase = checkForSeverityBase(current, isNew);
+            } else {
+                this.currentSeverityBase = new SeverityBase();
+                this.currentSeverityBase.setDisplay(display);
+            }
+
+        } else if (!Objects.equals(display, this.currentSeverityBase.getValue())) {
+            SeverityBase copy = new SeverityBase();
+            copy.setValue(this.currentSeverityBase.getValue());
+            copy.setDisplay(display);
+            this.currentSeverityBase = SeverityBase.dao.getOrCreate(copy);
+        }
+        checkForSelectedSeverityBaseMatch();
     }
+
 
     @Transient
     @JsonSetter("selected_severity_base")
     public void setSelectedSeverityBaseValue(String value) {
-        SeverityBase selected = new SeverityBase();
-        selected.setValue(value);
-        this.selectedSeverityBase = checkForSeverityBase(selected, true, true);
-    }
+        if (value == null) {
+            this.selectedSeverityBase = null;
+            noSelectedSeverityBaseMatched = false;
+            return;
+        }
+        List<SeverityBase> list = SeverityBase.dao.findByPropertyEqual("value", value);
+        if (list != null && list.size() > 0) {
+            this.currentSeverityBase = list.get(0);
+            noSelectedSeverityBaseMatched = false;
 
-
-    /*
-     * Hibernate was throwing exceptions about "non-unique object" at insert, if it wasn't using the same object
-     * to represent the same record, when it appeared multiple time.  Therefore, we need to check against every
-     * instance of SeverityBase already in this ScanInfo instance before inserting the ScanInfo instance.
-     *
-     * See Also:
-     * https://stackoverflow.com/questions/1074081/hibernate-error-org-hibernate-nonuniqueobjectexception-a-different-object-with
-     * https://stackoverflow.com/questions/16246675/hibernate-error-a-different-object-with-the-same-identifier-value-was-already-a
-     *
-     */
-    private SeverityBase checkForSeverityBase(SeverityBase checkAgainst) {
-        return checkForSeverityBase(checkAgainst, false, false);
-    }
-
-    private SeverityBase checkForSeverityBase(SeverityBase checkAgainst, boolean skipInsert) {
-        return checkForSeverityBase(checkAgainst, skipInsert, false);
-    }
-
-    private SeverityBase checkForSeverityBase(SeverityBase checkAgainst,
-                                              boolean skipInsert,
-                                              boolean matchOnValueOnly) {
-
-        if (checkAgainst == null) return null;
-
-        List<SeverityBase> all = this.getSeverityBaseSelections();
-        if (all != null) {
-            all = new ArrayList(all);
         } else {
-            all = new ArrayList();
+            this.currentSeverityBase = new SeverityBase();
+            this.currentSeverityBase.setValue(value);
+            noSelectedSeverityBaseMatched = true;
         }
-
-        SeverityBase current = this.getCurrentSeverityBase();
-        if (current != null) {
-            all.add(current);
-        }
-
-        // Only value is set for selected_current_severity,
-        // so we need to check if it is a new instance and set the display if neccessary
-        SeverityBase selected = this.getSelectedSeverityBase();
-        if (selected != null) {
-            if (        checkAgainst != selected
-                    &&  selected.getId() == 0
-                    &&  selected.getDisplay() == null
-                    &&  checkAgainst.getValue() != null
-                    &&  checkAgainst.getDisplay() != null
-                    &&  Objects.equals(
-                                selected.getValue(),
-                                checkAgainst.getValue())
-                ) {
-
-                selected.setDisplay(checkAgainst.getDisplay());
-                return selected;
-
-            } else {
-                all.add(selected);
-            }
-        }
-
-        for (SeverityBase other : all) {
-            if (other == checkAgainst) continue;
-            if (Objects.equals(other.getValue(), checkAgainst.getValue())
-                    && (matchOnValueOnly
-                        || Objects.equals(other.getDisplay(), checkAgainst.getDisplay()))
-                ) {
-
-                return other;
-            }
-        }
-
-        SeverityBase persisted = SeverityBase.dao.findByExactPojo(checkAgainst);
-
-        if (persisted != null) {
-            return persisted;
-
-        } else if (!skipInsert) {
-            SeverityBase.dao.insert(checkAgainst);
-        }
-
-        return checkAgainst;
     }
 
+    @Transient
+    @JsonIgnore
+    private boolean noSelectedSeverityBaseMatched = false;
+
+    @Transient
+    @JsonIgnore
+    private void checkForSelectedSeverityBaseMatch() {
+        if (!noSelectedSeverityBaseMatched) return;
+        if (this.currentSeverityBase == null) return;
+        this.setSelectedSeverityBaseValue(this.currentSeverityBase.getValue());
+    }
 
 
 
@@ -496,7 +462,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     }
 
     public void setAcls(List<Acl> acls) {
-        this.acls = acls;
+        this.acls = Acl.dao.getOrCreate(acls);
     }
 
 
@@ -689,7 +655,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     }
 
     public void setLicenseInfo(License licenseInfo) {
-        this.licenseInfo = licenseInfo;
+        this.licenseInfo = License.dao.getOrCreate(licenseInfo);
     }
 
     public Boolean getNoTarget() {

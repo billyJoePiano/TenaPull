@@ -1,6 +1,7 @@
 package nessusTools.data.entity.response;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.*;
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
@@ -59,10 +60,11 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     private ScanInfo info;
 
     @OneToMany(mappedBy = "response") //, cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
-    @Fetch(value = FetchMode.SUBSELECT)
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
     @OrderBy("hostId")
-    @JsonDeserialize(contentUsing = ObjectLookup.ResponseChild.class)
+    @JsonDeserialize(contentUsing = ResponseChildDeserializer.class)
     private List<ScanHost> hosts;
 
     @OneToOne(mappedBy = "response", cascade = { CascadeType.ALL }, fetch = FetchType.EAGER)
@@ -70,32 +72,35 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     private ScanRemediationsSummary remediations;
 
     @ManyToMany(cascade = CascadeType.ALL)
-    @Fetch(value = FetchMode.SUBSELECT)
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "scan_vulnerability",
             joinColumns = { @JoinColumn(name = "scan_id") },
             inverseJoinColumns = { @JoinColumn(name = "vulnerability_id") }
     )
     @OrderColumn(name = "__order_for_scan_response_vulnerability", nullable = false)
-    @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
     private List<Vulnerability> vulnerabilities;
 
     @OneToMany(mappedBy = "response")
-    @Fetch(value = FetchMode.SUBSELECT)
     @LazyCollection(LazyCollectionOption.FALSE)
-    //@OrderColumn(name = "__order_for_scan_response", nullable = false)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
     @OrderBy("historyId ASC")
-    @JsonDeserialize(contentUsing = ObjectLookup.ResponseChild.class)
+    @JsonDeserialize(contentUsing = ResponseChildDeserializer.class)
     private List<ScanHistory> history;
 
     @OneToMany(mappedBy = "response")
-    @Fetch(value = FetchMode.SUBSELECT)
     @LazyCollection(LazyCollectionOption.FALSE)
-    @Access(AccessType.PROPERTY) //force hibernate to use the getter/setter, which wraps the list using the ScanPrioritization deserialization entity
-    @JsonDeserialize(using = ScanPrioritization.Deserializer.class)
-    @JsonSerialize(using = ScanPrioritization.Serializer.class)
-    private List<ScanPlugin> prioritization;
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
+    @OrderColumn(name = "__order_for_scan_plugin")
+    @JsonIgnore
+    private List<ScanPlugin> plugins;
+
+    @Transient
+    ScanPrioritization prioritization;
 
     @Column(name = "threat_level")
     @Access(AccessType.PROPERTY) //force hibernate to use the getter/setter, which puts this value into the ScanPrioritization wrapper
@@ -176,12 +181,7 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     }
 
     public void setHosts(List<ScanHost> hosts) {
-        this.hosts = hosts;
-        if (hosts != null) {
-            for (ScanHost host : hosts) {
-                ScanHost.dao.saveOrUpdate(host);
-            }
-        }
+        this.hosts = ScanHost.dao.getOrCreate(hosts);
     }
 
     public List<Vulnerability> getVulnerabilities() {
@@ -189,7 +189,7 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     }
 
     public void setVulnerabilities(List<Vulnerability> vulnerabilities) {
-        this.vulnerabilities = vulnerabilities;
+        this.vulnerabilities = Vulnerability.dao.getOrCreate(vulnerabilities);
     }
 
     public ScanRemediationsSummary getRemediations() {
@@ -205,20 +205,32 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     }
 
     public void setHistory(List<ScanHistory> history) {
-        this.history = history;
+        this.history = ScanHistory.dao.getOrCreate(history);
     }
 
-    public List<ScanPlugin> getPrioritization() {
-        return prioritization;
+    public List<ScanPlugin> getPlugins() {
+        return this.plugins;
     }
 
-    public void setPrioritization(List<ScanPlugin> prioritization) {
-        this.prioritization = ScanPrioritization.wrapIfNeeded(this, prioritization);
+    public void setPlugins(List<ScanPlugin> plugins) {
+        if (this.plugins == plugins) return;
+        this.plugins = ScanPlugin.dao.getOrCreate(plugins);
+        if (this.prioritization != null) this.prioritization.setPlugins(this.plugins);
+    }
+
+    public void setPrioritization(ScanPrioritization prioritization) {
+        this.prioritization = prioritization;
         if (prioritization != null) {
-            for (ScanPlugin scanPlugin : prioritization) {
-                ScanPlugin.dao.saveOrUpdate(scanPlugin);
-            }
+            prioritization.putFieldsIntoParent(this);
         }
+    }
+
+    public ScanPrioritization getPrioritization() {
+        if (prioritization == null) {
+            this.prioritization = new ScanPrioritization();
+            this.prioritization.takeFieldsFromParent(this);
+        }
+        return this.prioritization;
     }
 
     public Integer getThreatLevel() {
@@ -228,7 +240,22 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     public void setThreatLevel(Integer threatLevel) {
         this.threatLevel = threatLevel;
         if (this.prioritization != null) {
-            ((ScanPrioritization)this.prioritization).setThreatLevel(threatLevel);
+            this.prioritization.setThreatLevel(threatLevel);
         }
+    }
+
+    @Transient
+    @JsonAnySetter
+    @Override
+    public void putExtraJson(String key, Object value) {
+        super.putExtraJson(key, value);
+        if (this.prioritization != null) this.prioritization.checkExtraJsonPut(key, value);
+    }
+
+    @Transient
+    @JsonAnyGetter
+    @Override
+    public Map<String, JsonNode> getExtraJsonMap() {
+        return this.getPrioritization().jsonAnyGetterForParent();
     }
 }

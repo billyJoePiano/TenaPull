@@ -10,6 +10,7 @@ import nessusTools.data.persistence.*;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -22,13 +23,14 @@ public class ScanRemediationsSummary extends ScanResponse.SingleChild<ScanRemedi
 
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "scan_remediation",
             joinColumns = { @JoinColumn(name = "scan_id") },
             inverseJoinColumns = { @JoinColumn(name = "remediation_id") }
     )
     @OrderColumn(name = "__order_for_scan_remediation", nullable = false)
-    @JsonDeserialize(contentUsing = ObjectLookup.Deserializer.class)
     private List<Remediation> remediations;
 
     @Column(name = "num_hosts")
@@ -52,7 +54,7 @@ public class ScanRemediationsSummary extends ScanResponse.SingleChild<ScanRemedi
     }
 
     public void setRemediations(List<Remediation> remediations) {
-        this.remediations = remediations;
+        this.remediations = Remediation.dao.getOrCreate(remediations);
     }
 
     public Integer getNumHosts() {

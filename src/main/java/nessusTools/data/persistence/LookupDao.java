@@ -11,48 +11,30 @@ public class LookupDao<POJO extends LookupPojo<POJO>> extends ObjectLookupDao<PO
         super(pojoType);
     }
 
-    public POJO getOrCreate(String string) throws LookupException {
-        if (string == null) {
-            return null;
-        }
+    public POJO getOrCreate(String string) {
+        POJO pojo;
+        try {
+            pojo = this.getPojoType().getDeclaredConstructor().newInstance();
 
-        Session session = sessionFactory.openSession();
+        } catch (Exception e) {
+            throw new LookupException(e, this.getPojoType());
+        }
+        pojo.setValue(string);
+        return this.getOrCreate(pojo);
+    }
+
+    @Override
+    protected POJO useSearchMapProvider(POJO mapProvider) throws LookupException {
+        SessionTracker sessionTracker = getSession();
+        Session session = sessionTracker.session;
 
         try {
-            POJO obj = session.byNaturalId(this.getPojoType())
-                    .using(LookupPojo.FIELD_NAME, string).load();
+            return session.byNaturalId(this.getPojoType())
+                    .using(LookupPojo.FIELD_NAME, mapProvider.getValue()).load();
             // https://stackoverflow.com/questions/14977018/jpa-how-to-get-entity-based-on-field-value-other-than-id
 
-            if (obj != null) {
-                return obj;
-            }
-
-            POJO pojo = null;
-
-            try {
-                pojo = this.getPojoType().getDeclaredConstructor().newInstance();
-
-            } catch (Exception e) {
-                throw new LookupException(e, this.getPojoType());
-            }
-
-            if (pojo == null) {
-                throw new LookupException("Null pojo returned for '" + string + "'",
-                        this.getPojoType());
-            }
-
-            pojo.setValue(string);
-
-            if (this.insert(pojo) != -1) {
-                return pojo;
-
-            } else {
-                throw new LookupException("Couldn't create pojo '" + string + "'",
-                        this.getPojoType());
-            }
-
         } finally {
-            session.close();
+            sessionTracker.done();
         }
     }
 

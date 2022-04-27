@@ -1,6 +1,7 @@
 package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.*;
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
@@ -42,24 +43,26 @@ public class PluginAttributes extends GeneratedIdPojo
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "risk_information_id")
+    @Access(AccessType.PROPERTY)
     @JsonProperty("risk_information")
-    @JsonDeserialize(using = ObjectLookup.Deserializer.class)
     PluginRiskInformation riskInformation;
 
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "plugin_attributes_ref_information",
             joinColumns = { @JoinColumn(name = "attributes_id") },
             inverseJoinColumns = { @JoinColumn(name = "ref_id") }
     )
     @OrderColumn(name = "__order_for_plugin_attributes_ref_information", nullable = false)
-    @Access(AccessType.PROPERTY)
-    @JsonProperty("ref_information")
-    @JsonDeserialize(using = RefInformation.Deserializer.class)
-    @JsonSerialize(using = RefInformation.Serializer.class)
+    @JsonIgnore
     List<PluginRefInformation> refInformation;
+
+    @Transient
+    RefInformation ref_information;
 
     @Column(name = "threat_sources_last_28")
     @JsonProperty("threat_sources_last_28")
@@ -83,8 +86,8 @@ public class PluginAttributes extends GeneratedIdPojo
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
             name = "plugin_attributes_see_also",
-            joinColumns = { @JoinColumn(name = "see_also_id") },
-            inverseJoinColumns = { @JoinColumn(name = "attributes_id") }
+            joinColumns = { @JoinColumn(name = "attributes_id") },
+            inverseJoinColumns = { @JoinColumn(name = "see_also_id") }
     )
     @OrderColumn(name = "__order_for_plugin_attributes_see_also", nullable = false)
     @JsonProperty("see_also")
@@ -105,8 +108,9 @@ public class PluginAttributes extends GeneratedIdPojo
     String cvssV3ImpactScore;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JsonProperty("plugin_information")
     @JoinColumn(name = "plugin_information_id")
+    @Access(AccessType.PROPERTY)
+    @JsonProperty("plugin_information")
     PluginInformation pluginInformation;
 
     @Column(name = "required_port")
@@ -119,8 +123,8 @@ public class PluginAttributes extends GeneratedIdPojo
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "vuln_information_id")
+    @Access(AccessType.PROPERTY)
     @JsonProperty("vuln_information")
-    @JsonDeserialize(using = ObjectLookup.Deserializer.class)
     PluginVulnInformation pluginVulnInformation;
 
     @Column(name = "age_of_vuln")
@@ -130,6 +134,77 @@ public class PluginAttributes extends GeneratedIdPojo
     @Column(name = "exploit_code_maturity")
     @JsonProperty("exploit_code_maturity")
     String exploitCodeMaturity;
+
+
+    public List<PluginRefInformation> getRefInformation() {
+        return refInformation;
+    }
+
+    public void setRefInformation(List<PluginRefInformation> refInformation) {
+        if (refInformation == this.refInformation) return; //break infinite recursion with child
+        this.refInformation = PluginRefInformation.dao.getOrCreate(refInformation);
+        if (this.ref_information != null) this.ref_information.setRef(this.refInformation);
+    }
+
+    public RefInformation getRef_information() {
+        if (this.ref_information == null) {
+            this.ref_information = new RefInformation();
+            this.ref_information.takeFieldsFromParent(this);
+        }
+        return this.ref_information;
+    }
+
+    public void setRef_information(RefInformation ref_information) {
+        if (this.ref_information != null && this.ref_information != ref_information) {
+            this.ref_information.clearParent();
+        }
+        this.ref_information = ref_information;
+        if (ref_information != null) ref_information.putFieldsIntoParent(this);
+    }
+
+    @JsonAnyGetter
+    @Transient
+    @Override
+    public Map<String, JsonNode> getExtraJsonMap() {
+        return this.getRef_information().jsonAnyGetterForParent();
+    }
+
+    @JsonAnySetter
+    @Transient
+    @Override
+    public void putExtraJson(String key, Object value) {
+        super.putExtraJson(key, value);
+        if (this.ref_information != null) this.ref_information.checkExtraJsonPut(key, value);
+    }
+
+    @Override
+    public void _set(PluginAttributes o) {
+        this.__set(o);
+        this.threatIntensityLast28 = o.threatIntensityLast28;
+        this.synopsis = o.synopsis;
+        this.scriptCopyright = o.scriptCopyright;
+        this.description = o.description;
+        this.riskInformation = o.riskInformation;
+        this.refInformation = o.refInformation;
+        this.threatSourcesLast28 = o.threatSourcesLast28;
+        this.pluginName = o.pluginName;
+        this.vprScore = o.vprScore;
+        this.cvssScoreSource = o.cvssScoreSource;
+        this.productCoverage = o.productCoverage;
+        this.threatRecency = o.threatRecency;
+        this.fname = o.fname;
+        this.cvssV3ImpactScore = o.cvssV3ImpactScore;
+        this.requiredPort = o.requiredPort;
+        this.dependency = o.dependency;
+        this.solution = o.solution;
+        this.ageOfVuln = o.ageOfVuln;
+        this.exploitCodeMaturity = o.exploitCodeMaturity;
+
+        if (this.ref_information != null) {
+            this.ref_information.clearParent();
+            this.ref_information = null;
+        }
+    }
 
 
 
@@ -170,15 +245,7 @@ public class PluginAttributes extends GeneratedIdPojo
     }
 
     public void setRiskInformation(PluginRiskInformation riskInformation) {
-        this.riskInformation = riskInformation;
-    }
-
-    public List<PluginRefInformation> getRefInformation() {
-        return refInformation;
-    }
-
-    public void setRefInformation(List<PluginRefInformation> refInformation) {
-        this.refInformation = RefInformation.wrapIfNeeded(this, refInformation);
+        this.riskInformation = PluginRiskInformation.dao.getOrCreate(riskInformation);
     }
 
     public String getThreatSourcesLast28() {
@@ -258,7 +325,7 @@ public class PluginAttributes extends GeneratedIdPojo
     }
 
     public void setPluginInformation(PluginInformation pluginInformation) {
-        this.pluginInformation = pluginInformation;
+        this.pluginInformation = PluginInformation.dao.getOrCreate(pluginInformation);
     }
 
     public String getRequiredPort() {
@@ -290,7 +357,7 @@ public class PluginAttributes extends GeneratedIdPojo
     }
 
     public void setPluginVulnInformation(PluginVulnInformation pluginVulnInformation) {
-        this.pluginVulnInformation = pluginVulnInformation;
+        this.pluginVulnInformation = PluginVulnInformation.dao.getOrCreate(pluginVulnInformation);
     }
 
     public String getAgeOfVuln() {
@@ -307,29 +374,5 @@ public class PluginAttributes extends GeneratedIdPojo
 
     public void setExploitCodeMaturity(String exploitCodeMaturity) {
         this.exploitCodeMaturity = exploitCodeMaturity;
-    }
-
-    @Override
-    public void _set(PluginAttributes o) {
-        this.__set(o);
-        this.threatIntensityLast28 = o.threatIntensityLast28;
-        this.synopsis = o.synopsis;
-        this.scriptCopyright = o.scriptCopyright;
-        this.description = o.description;
-        this.riskInformation = o.riskInformation;
-        this.refInformation = o.refInformation;
-        this.threatSourcesLast28 = o.threatSourcesLast28;
-        this.pluginName = o.pluginName;
-        this.vprScore = o.vprScore;
-        this.cvssScoreSource = o.cvssScoreSource;
-        this.productCoverage = o.productCoverage;
-        this.threatRecency = o.threatRecency;
-        this.fname = o.fname;
-        this.cvssV3ImpactScore = o.cvssV3ImpactScore;
-        this.requiredPort = o.requiredPort;
-        this.dependency = o.dependency;
-        this.solution = o.solution;
-        this.ageOfVuln = o.ageOfVuln;
-        this.exploitCodeMaturity = o.exploitCodeMaturity;
     }
 }
