@@ -8,8 +8,6 @@ import java.util.*;
 public interface LookupSearchMapProvider<POJO extends LookupSearchMapProvider<POJO>>
         extends ObjectLookupPojo<POJO> {
 
-    public boolean _lookupMatch(POJO other);
-
     @Transient
     @JsonIgnore
     public Map<String, Object> _getSearchMap();

@@ -376,7 +376,7 @@ public class SyncMultiTypeWrapper {
                     try {
                         tests.remove(t).run();
 
-                    } catch (Throwable e) {
+                    } catch (Exception e) {
                         logger.error(e);
                         if (thread.value != null) {
                             // don't count exceptions unless they are part of the multi-threaded test

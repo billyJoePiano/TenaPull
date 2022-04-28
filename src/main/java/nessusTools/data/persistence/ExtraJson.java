@@ -128,7 +128,7 @@ public class ExtraJson {
             try {
                 return new ExtraJson(json);
 
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.error(e);
                 return null;
             }

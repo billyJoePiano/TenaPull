@@ -4,7 +4,6 @@ import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.*;
 import nessusTools.data.entity.template.*;
-import org.hibernate.annotations.*;
 
 import javax.persistence.*;
 import javax.persistence.AccessType;
@@ -115,7 +114,7 @@ public interface NessusResponse extends DbPojo {
             this.setResponse((R)o.getResponse());
         }
 
-        protected boolean __lookupMatch(POJO other) {
+        protected boolean __match(POJO other) {
             if (other == null) return false;
             if (other == this) return true;
             R myRes = this.getResponse();

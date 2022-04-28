@@ -9,10 +9,16 @@ import javax.persistence.*;
 
 @Entity(name = "Acl")
 @Table(name = "acl")
-public class Acl extends NullableIdPojo<Acl> {
+public class Acl extends GeneratedIdPojo
+        implements ObjectLookupPojo<Acl> {
 
 	public static final ObjectLookupDao<Acl> dao
-			= new ObjectLookupDao<Acl>(Acl.class, true);
+			= new ObjectLookupDao<Acl>(Acl.class);
+
+
+    @Column(name = "nessus_id")
+    @JsonProperty("id")
+    private Integer nessusId;
 
 	private Integer owner;
 
@@ -26,7 +32,15 @@ public class Acl extends NullableIdPojo<Acl> {
 
 	private String type;
 
-	public Integer getOwner() {
+    public Integer getNessusId() {
+        return nessusId;
+    }
+
+    public void setNessusId(Integer nessusId) {
+        this.nessusId = nessusId;
+    }
+
+    public Integer getOwner() {
 		return owner;
 	}
 
@@ -66,6 +80,11 @@ public class Acl extends NullableIdPojo<Acl> {
 		this.type = type;
 	}
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
     @Override
     public void _set(Acl o) {
         this.__set(o);
@@ -74,5 +93,12 @@ public class Acl extends NullableIdPojo<Acl> {
         this.name = o.name;
         this.displayName = o.displayName;
         this.type = o.type;
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(Acl o) {
+        return this.equals(o);
     }
 }

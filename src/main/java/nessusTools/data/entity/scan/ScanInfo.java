@@ -73,12 +73,18 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     private List<Acl> acls;
 
 
+    /*
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="scan_group_id")
     @JsonProperty("scan_group")
     @JsonDeserialize(using = IdReference.Deserializer.class)
     @JsonSerialize(using = IdReference.Serializer.class)
     private ScanGroup scanGroup;
+     */
+
+    @Column(name = "scan_group")
+    @JsonProperty("scan_group")
+    private Integer scanGroup;
 
     private String targets;
 
@@ -236,8 +242,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
             inverseJoinColumns = { @JoinColumn(name = "severity_base_id") }
     )
     @OrderColumn(name = "__order_for_scan_info", nullable = false)
-    //@JsonProperty("severity_base_selections")
-    @JsonIgnore
+    @JsonProperty("severity_base_selections")
     private List<SeverityBase> severityBaseSelections;
 
 
@@ -245,14 +250,12 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     @JoinColumn(name="current_severity_base_id")
     @Access(AccessType.PROPERTY)
     //@JsonProperty("current_severity_base")
-    @JsonIgnore
     private SeverityBase currentSeverityBase;
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="selected_severity_base_id")
     @Access(AccessType.PROPERTY)
     //@JsonProperty("selected_severity_base")
-    @JsonIgnore
     private SeverityBase selectedSeverityBase;
 
 
@@ -298,96 +301,88 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
      * Severity base setters
      ***********/
 
+    @JsonIgnore
     public void setSelectedSeverityBase(SeverityBase selectedSeverityBase) {
-        this.selectedSeverityBase = SeverityBase.dao.getOrCreate(selectedSeverityBase);
-        checkForSelectedSeverityBaseMatch();
+        this.selectedSeverityBase = selectedSeverityBase;
     }
 
     public void setSeverityBaseSelections(List<SeverityBase> selections) {
-        this.severityBaseSelections = SeverityBase.dao.getOrCreate(selections);
-        checkForSelectedSeverityBaseMatch();
+        this.severityBaseSelections = selections;
     }
 
+    @JsonIgnore
     public void setCurrentSeverityBase(SeverityBase currentSeverityBase) {
-        this.currentSeverityBase = SeverityBase.dao.getOrCreate(currentSeverityBase);
-        checkForSelectedSeverityBaseMatch();
+        this.currentSeverityBase = currentSeverityBase;
     }
 
     @Transient
     @JsonSetter("current_severity_base")
     public void setCurrentSeverityBaseValue(String value) {
         if (this.currentSeverityBase == null) {
-            List<SeverityBase> list = SeverityBase.dao.findByPropertyEqual("value", value);
-            if (list != null && list.size() > 0) {
-                this.currentSeverityBase = list.get(0);
+            this.currentSeverityBase = new SeverityBase();
+            this.currentSeverityBase.setValue(value);
 
-            } else {
-                this.currentSeverityBase = new SeverityBase();
-                this.currentSeverityBase.setValue(value);
-            }
+        } else if (this.currentSeverityBase.getId() == 0) {
+            this.currentSeverityBase.setValue(value);
 
         } else if (!Objects.equals(value, this.currentSeverityBase.getValue())) {
             SeverityBase copy = new SeverityBase();
             copy.setDisplay(this.currentSeverityBase.getDisplay());
             copy.setValue(value);
-            this.currentSeverityBase = SeverityBase.dao.getOrCreate(copy);
+            this.currentSeverityBase = copy;
         }
-        checkForSelectedSeverityBaseMatch();
     }
 
     @Transient
     @JsonSetter("current_severity_base_display")
     public void setCurrentSeverityBaseDisplay(String display) {
         if (this.currentSeverityBase == null) {
-            List<SeverityBase> list = SeverityBase.dao.findByPropertyEqual("display", display);
-            if (list != null && list.size() > 0) {
-                this.currentSeverityBase = list.get(0);
+            this.currentSeverityBase = new SeverityBase();
+            this.currentSeverityBase.setDisplay(display);
 
-            } else {
-                this.currentSeverityBase = new SeverityBase();
-                this.currentSeverityBase.setDisplay(display);
-            }
+        } else if (this.currentSeverityBase.getId() == 0) {
+            this.currentSeverityBase.setDisplay(display);
 
-        } else if (!Objects.equals(display, this.currentSeverityBase.getValue())) {
+        } else if (!Objects.equals(display, this.currentSeverityBase.getDisplay())) {
             SeverityBase copy = new SeverityBase();
             copy.setValue(this.currentSeverityBase.getValue());
             copy.setDisplay(display);
-            this.currentSeverityBase = SeverityBase.dao.getOrCreate(copy);
+            this.currentSeverityBase = copy;
         }
-        checkForSelectedSeverityBaseMatch();
     }
 
 
     @Transient
     @JsonSetter("selected_severity_base")
     public void setSelectedSeverityBaseValue(String value) {
-        if (value == null) {
-            this.selectedSeverityBase = null;
-            noSelectedSeverityBaseMatched = false;
-            return;
-        }
-        List<SeverityBase> list = SeverityBase.dao.findByPropertyEqual("value", value);
-        if (list != null && list.size() > 0) {
-            this.currentSeverityBase = list.get(0);
-            noSelectedSeverityBaseMatched = false;
+        if (this.selectedSeverityBase == null
+                || !Objects.equals(value, this.selectedSeverityBase.getValue())) {
 
-        } else {
-            this.currentSeverityBase = new SeverityBase();
-            this.currentSeverityBase.setValue(value);
-            noSelectedSeverityBaseMatched = true;
+            this.selectedSeverityBase = new SeverityBase();
+            this.selectedSeverityBase.setValue(value);
         }
     }
 
     @Transient
     @JsonIgnore
-    private boolean noSelectedSeverityBaseMatched = false;
+    @Override
+    public void _prepare() {
+        this.severityBaseSelections = SeverityBase.dao.getOrCreate(this.severityBaseSelections);
+        this.currentSeverityBase = SeverityBase.dao.getOrCreate(this.currentSeverityBase);
 
-    @Transient
-    @JsonIgnore
-    private void checkForSelectedSeverityBaseMatch() {
-        if (!noSelectedSeverityBaseMatched) return;
-        if (this.currentSeverityBase == null) return;
-        this.setSelectedSeverityBaseValue(this.currentSeverityBase.getValue());
+        if (this.selectedSeverityBase == null || this.selectedSeverityBase.getId() != 0) return;
+
+        String value = this.selectedSeverityBase.getValue();
+        List<SeverityBase> selected
+                = SeverityBase.dao.findByPropertyEqual("value", value);
+
+        for (SeverityBase sb : selected) {
+            if (sb != null && Objects.equals(sb.getValue(), value)) {
+                this.selectedSeverityBase = sb;
+                break;
+            }
+        }
+        this.selectedSeverityBase = SeverityBase.dao.getOrCreate(this.selectedSeverityBase);
     }
 
 
@@ -438,8 +433,6 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
         this.offline = offline;
     }
 
-
-
     public ScanStatus getStatus() {
         return status;
     }
@@ -457,7 +450,6 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     }
 
     public List<Acl> getAcls() {
-        //if (this.acls != null && this.acls.size() <= 0) return null;
         return acls;
     }
 
@@ -465,12 +457,21 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
         this.acls = Acl.dao.getOrCreate(acls);
     }
 
-
+    /*
     public ScanGroup getScanGroup() {
         return scanGroup;
     }
 
     public void setScanGroup(ScanGroup scanGroup) {
+        this.scanGroup = scanGroup;
+    }
+     */
+
+    public Integer getScanGroup() {
+        return scanGroup;
+    }
+
+    public void setScanGroup(Integer scanGroup) {
         this.scanGroup = scanGroup;
     }
 

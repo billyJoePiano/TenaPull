@@ -127,8 +127,15 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
 
     public void setSeverityCounts(List<SeverityLevelCount> severityCounts) {
         if (this.severityCounts == severityCounts) return;
-        this.severityCounts = SeverityLevelCount.dao.getOrCreate(severityCounts);
+        this.severityCounts = severityCounts;
         if (this.severitycount != null) this.severitycount.setItem(this.severityCounts);
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() {
+        this.severityCounts = SeverityLevelCount.dao.getOrCreate(this.severityCounts);
     }
 
     @Override
@@ -167,8 +174,8 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
     @Override
     @Transient
     @JsonIgnore
-    public boolean _lookupMatch(ScanHost other) {
-        return  this.__lookupMatch(other)
+    public boolean _match(ScanHost other) {
+        return  this.__match(other)
                 && this.hostId != null && other.hostId != null
                 && this.hostId.intValue() == other.hostId.intValue();
     }

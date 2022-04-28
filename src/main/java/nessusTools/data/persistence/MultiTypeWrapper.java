@@ -254,7 +254,7 @@ public final class MultiTypeWrapper {
         try {
             instance = primaryType.getDeclaredConstructor(String.class).newInstance(constructorString);
 
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.error(e);
 
             this.toString = constructorString;

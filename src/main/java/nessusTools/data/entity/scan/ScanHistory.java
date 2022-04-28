@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.annotation.*;
 
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
-import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
@@ -36,12 +35,18 @@ public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
     @JsonProperty("node_host")
     private String nodeHost;
 
+    /*
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="scan_group_id")
     @JsonProperty("scan_group")
     @JsonDeserialize(using = IdReference.Deserializer.class)
     @JsonSerialize(using = IdReference.Serializer.class)
     private ScanGroup scanGroup;
+     */
+
+    @Column(name = "scan_group")
+    @JsonProperty("scan_group")
+    Integer scanGroup;
 
     @Column(name = "node_id")
     @JsonProperty("node_id")
@@ -95,6 +100,11 @@ public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
     @Transient
     @JsonIgnore
     @Override
+    public void _prepare() { }
+
+    @Transient
+    @JsonIgnore
+    @Override
     public void _set(ScanHistory o) {
         this.__set(o);
         this.altTargetsUsed = o.altTargetsUsed;
@@ -116,8 +126,8 @@ public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
     @Transient
     @JsonIgnore
     @Override
-    public boolean _lookupMatch(ScanHistory other) {
-        return this.__lookupMatch(other)
+    public boolean _match(ScanHistory other) {
+        return this.__match(other)
                 && this.historyId != null && other.historyId != null
                 && this.historyId.intValue() == other.historyId.intValue();
     }
@@ -161,11 +171,21 @@ public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
         this.nodeHost = nodeHost;
     }
 
+    /*
     public ScanGroup getScanGroup() {
         return scanGroup;
     }
 
     public void setScanGroup(ScanGroup scanGroup) {
+        this.scanGroup = scanGroup;
+    }
+    */
+
+    public Integer getScanGroup() {
+        return scanGroup;
+    }
+
+    public void setScanGroup(Integer scanGroup) {
         this.scanGroup = scanGroup;
     }
 

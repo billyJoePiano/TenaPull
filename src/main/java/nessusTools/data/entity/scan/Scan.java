@@ -266,4 +266,9 @@ public class Scan extends NaturalIdPojo {
     public void setLiveResults(Integer liveResults) {
         this.liveResults = liveResults;
     }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
 }

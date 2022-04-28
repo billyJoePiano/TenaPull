@@ -29,6 +29,11 @@ public class ScanHostInfo extends NaturalIdPojo { //TODO ... extends HostRespons
     @JsonProperty("host_end")
     String hostEnd;
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
     public OperatingSystem getOperatingSystem() {
         return operatingSystem;
     }

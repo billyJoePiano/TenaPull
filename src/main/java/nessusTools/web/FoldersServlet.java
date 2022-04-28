@@ -60,7 +60,7 @@ public class FoldersServlet extends HttpServlet implements FieldChecker {
             // https://stackoverflow.com/a/19786283/18476572
             req.getRequestDispatcher("/WEB-INF/folders.jsp").forward(req, res);
 
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.error(e);
             res.setStatus(500);
         }

@@ -63,10 +63,13 @@ public class ReadWriteLock<O, R> {
         return new ReadWriteLock<>(collection, view);
     }
 
+    private static final Var.Long counter = new Var.Long(1);
+
     private static final ReadWriteLock<Map<ReadWriteLock, Void>, Void>
              instances = new ReadWriteLock<>();
 
-    private static final Var.Long counter = new Var.Long(1);
+    private static final ReadWriteLock<Map<Thread, Void>, Boolean>
+            disruptableThreads = forMap(new WeakHashMap<>());
 
     private final O object;
     private final O view;
@@ -153,8 +156,13 @@ public class ReadWriteLock<O, R> {
         }
 
         readLock = new Lock();
+        boolean checkDisruptable;
         synchronized (this.waitingForRead) {
-            this.waitingForRead.add(readLock.thread);
+            checkDisruptable = this.waitingForRead.add(readLock.thread);
+        }
+
+        if (checkDisruptable) {
+            this.checkDisruptable(false);
         }
 
         synchronized (readLock) {
@@ -200,9 +208,15 @@ public class ReadWriteLock<O, R> {
 
         } else {
             Thread currentThread = Thread.currentThread();
+            boolean checkDisruptable;
             synchronized (this.waitingForWrite) {
-                this.waitingForWrite.add(currentThread);
+                checkDisruptable = this.waitingForWrite.add(currentThread);
             }
+
+            if (checkDisruptable) {
+                checkDisruptable(true);
+            }
+
             synchronized (addLock) {
                 this.currentWriteThread = currentThread;
                 waitForWriteLock();
@@ -474,6 +488,38 @@ public class ReadWriteLock<O, R> {
                 }
             }
         }
+    }
+
+    public static void registerAsDisruptable(Thread disruptableThread) {
+        disruptableThreads.write(dtMap -> {
+            dtMap.put(disruptableThread, null);
+            return true;
+        });
+    }
+    
+    private void checkDisruptable(boolean write) throws ThreadDisruption {
+        if (this == disruptableThreads || this == instances) return;
+        
+        Thread current = Thread.currentThread();
+        if (disruptableThreads.read(dtMap -> !dtMap.containsKey(current))) {
+            return;
+        }
+        if (!InstancesTracker.getThreadBlockingMap().getCircularKeys().contains(current)) {
+            return;
+        }
+
+        if (write) synchronized (this.waitingForWrite) {
+            this.waitingForWrite.remove(current);
+
+        } else synchronized (this.waitingForRead) {
+            this.waitingForRead.remove(current);
+        }
+
+        throw new ThreadDisruption();
+    }
+
+    public static class ThreadDisruption extends Error {
+        private ThreadDisruption() { }
     }
 
     public static RecursiveMap<Thread> getThreadBlockingMap() {

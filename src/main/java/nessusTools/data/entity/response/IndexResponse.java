@@ -71,4 +71,9 @@ public class IndexResponse extends NessusResponseWithTimestamp {
     public String getUrlPath() {
         return "/scans";
     }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
 }

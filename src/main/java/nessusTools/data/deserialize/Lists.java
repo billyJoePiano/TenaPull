@@ -13,9 +13,13 @@ public class Lists {
                               JsonGenerator jg,
                               SerializerProvider sp) throws IOException {
             
-            if (list == null || list.size() <= 0) return;
-            jg.writeStartArray(list);
-            jg.writeEndArray();
+            if (list == null || list.size() <= 0) {
+                jg.writeNull();
+
+            } else {
+                jg.writeObject(list);
+            }
+
         }
     }
 
@@ -31,8 +35,7 @@ public class Lists {
 
             } else {
                 Collections.sort(list);
-                jg.writeStartArray(list);
-                jg.writeEndArray();
+                jg.writeObject(list);
             }
         }
     }

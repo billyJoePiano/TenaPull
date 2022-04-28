@@ -1,8 +1,6 @@
 package nessusTools.data.entity.scan;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.annotation.*;
-import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
@@ -22,9 +20,8 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     public static final ObjectLookupDao<ScanPlugin>
             dao = new ObjectLookupDao<ScanPlugin>(ScanPlugin.class);
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "plugin_id")
-    @Access(AccessType.PROPERTY)
     @JsonUnwrapped
     Plugin plugin;
 
@@ -35,7 +32,6 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
     @Fetch(value = FetchMode.SUBSELECT)
-    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "scan_plugin_host",
             joinColumns = { @JoinColumn(name = "scan_plugin_id") },
@@ -44,6 +40,13 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     @OrderColumn(name = "__order_for_scan_plugin_host")
     List<PluginHost> hosts;
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() {
+        this.plugin = Plugin.dao.getOrCreate(plugin);
+        this.hosts = PluginHost.dao.getOrCreate(hosts);
+    }
 
     @Override
     public void _set(ScanPlugin o) {
@@ -53,8 +56,8 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     }
 
     @Override
-    public boolean _lookupMatch(ScanPlugin other) {
-        return this.__lookupMatch(other)
+    public boolean _match(ScanPlugin other) {
+        return this.__match(other)
                 && this.plugin != null && other.plugin != null
                 && (this.plugin.getId() != 0 && other.plugin.getId() != 0
                     ? this.plugin.getId() == other.plugin.getId()
@@ -74,7 +77,7 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     }
 
     public void setPlugin(Plugin plugin) {
-        this.plugin = Plugin.dao.getOrCreate(plugin);
+        this.plugin = plugin;
     }
 
     public Integer getHostCount() {
@@ -90,6 +93,6 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     }
 
     public void setHosts(List<PluginHost> hosts) {
-        this.hosts = PluginHost.dao.getOrCreate(hosts);
+        this.hosts = hosts;
     }
 }

@@ -46,7 +46,6 @@ public class ScanPrioritization extends NestedJsonArray<ScanResponse, ScanPlugin
     }
 
     @JsonSetter("plugins")
-    @JsonDeserialize(contentUsing = ResponseChildDeserializer.class)
     public void setPlugins(List<ScanPlugin> item) {
         this.setList(item);
     }

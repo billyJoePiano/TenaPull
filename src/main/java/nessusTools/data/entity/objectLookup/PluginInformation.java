@@ -38,6 +38,18 @@ public class PluginInformation extends GeneratedIdPojo
     @JsonProperty("plugin_modification_date")
     private String pluginModificationDate;
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(PluginInformation o) {
+        return this.equals(o);
+    }
+
 
     public String getPluginVersion() {
         return pluginVersion;

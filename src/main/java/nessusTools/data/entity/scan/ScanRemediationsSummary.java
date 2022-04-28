@@ -31,6 +31,7 @@ public class ScanRemediationsSummary extends ScanResponse.SingleChild<ScanRemedi
             inverseJoinColumns = { @JoinColumn(name = "remediation_id") }
     )
     @OrderColumn(name = "__order_for_scan_remediation", nullable = false)
+    @JsonSerialize(using = Lists.EmptyToNullSerializer.class)
     private List<Remediation> remediations;
 
     @Column(name = "num_hosts")
@@ -49,12 +50,19 @@ public class ScanRemediationsSummary extends ScanResponse.SingleChild<ScanRemedi
     @JsonProperty("num_remediated_cves")
     private Integer numRemediatedCves;
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() {
+        this.remediations = Remediation.dao.getOrCreate(remediations);
+    }
+
     public List<Remediation> getRemediations() {
         return remediations;
     }
 
     public void setRemediations(List<Remediation> remediations) {
-        this.remediations = Remediation.dao.getOrCreate(remediations);
+        this.remediations = remediations;
     }
 
     public Integer getNumHosts() {

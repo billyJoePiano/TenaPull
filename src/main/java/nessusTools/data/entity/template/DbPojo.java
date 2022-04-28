@@ -9,4 +9,5 @@ public interface DbPojo {
 
     public JsonNode toJsonNode();
     public String toJsonString() throws JsonProcessingException;
+    public void _prepare();
 }

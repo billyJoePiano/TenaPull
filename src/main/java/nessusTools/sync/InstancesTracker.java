@@ -816,7 +816,7 @@ public class InstancesTracker<K, I> {
                     try {
                         this.finishedInstance = construct.call(key);
 
-                    } catch (Throwable e) {
+                    } catch (Exception e) {
                         logger.error("Error while constructing instance of type "
                                 + InstancesTracker.this.instType);
                         logger.error(e);
@@ -1039,7 +1039,7 @@ public class InstancesTracker<K, I> {
             try {
                 instance = this.run(this.key);
 
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.error(e);
                 return false;
             }
@@ -1531,7 +1531,7 @@ public class InstancesTracker<K, I> {
                 }
 
 
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.error(e);
         }
     });
@@ -1704,9 +1704,12 @@ public class InstancesTracker<K, I> {
                 }
 
 
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 logger.error("Error in finalizer thread");
                 logger.error(e);
+
+            } catch (Throwable e) { // most likely ThreadDisruption error from ReadWriteLock
+                logger.warn("Non-exception Throwable Error", e);
             }
         }
     });
@@ -1746,6 +1749,7 @@ public class InstancesTracker<K, I> {
     static {
         finalizer.setName("InstancesTracker.finalizer");
         finalizer.setDaemon(true);
+        ReadWriteLock.registerAsDisruptable(finalizer);
         finalizer.start();
     }
 
@@ -1810,7 +1814,7 @@ public class InstancesTracker<K, I> {
                     return new FinalizeResult(true, count.value);
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.error("Error in finalizeCreateLocks for InstancesTracker<"
                     + this.keyType + ", " + this.instType + ">");
             logger.error(e);

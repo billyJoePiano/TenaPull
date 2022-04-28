@@ -91,6 +91,7 @@ public class PluginAttributes extends GeneratedIdPojo
     )
     @OrderColumn(name = "__order_for_plugin_attributes_see_also", nullable = false)
     @JsonProperty("see_also")
+    @JsonSerialize(using = Lists.EmptyToNullSerializer.class)
     List<PluginSeeAlso> seeAlso;
 
     @Column(name = "product_coverage")
@@ -135,14 +136,23 @@ public class PluginAttributes extends GeneratedIdPojo
     @JsonProperty("exploit_code_maturity")
     String exploitCodeMaturity;
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() {
+        this.riskInformation = PluginRiskInformation.dao.getOrCreate(this.riskInformation);
+        this.setRefInformation(PluginRefInformation.dao.getOrCreate(refInformation));
+        this.pluginInformation = PluginInformation.dao.getOrCreate(this.pluginInformation);
+    }
+
 
     public List<PluginRefInformation> getRefInformation() {
-        return refInformation;
+        return this.refInformation;
     }
 
     public void setRefInformation(List<PluginRefInformation> refInformation) {
         if (refInformation == this.refInformation) return; //break infinite recursion with child
-        this.refInformation = PluginRefInformation.dao.getOrCreate(refInformation);
+        this.refInformation = refInformation;
         if (this.ref_information != null) this.ref_information.setRef(this.refInformation);
     }
 
@@ -204,6 +214,13 @@ public class PluginAttributes extends GeneratedIdPojo
             this.ref_information.clearParent();
             this.ref_information = null;
         }
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(PluginAttributes o) {
+        return this.equals(o);
     }
 
 

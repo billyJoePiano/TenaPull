@@ -58,7 +58,7 @@
 
 
         <mapping class="nessusTools.data.entity.scan.Scan" />
-        <mapping class="nessusTools.data.entity.scan.ScanGroup" />
+        <!--mapping class="nessusTools.data.entity.scan.ScanGroup" /-->
         <mapping class="nessusTools.data.entity.scan.ScanHistory" />
         <mapping class="nessusTools.data.entity.host.ScanHostInfo" />
         <mapping class="nessusTools.data.entity.scan.ScanInfo" />

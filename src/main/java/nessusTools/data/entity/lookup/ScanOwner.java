@@ -13,6 +13,7 @@ public class ScanOwner extends LookupPojo<ScanOwner> {
     public static final LookupDao<ScanOwner> dao
             = new LookupDao<ScanOwner>(ScanOwner.class);
 
+    /*
     @OneToOne(mappedBy = "scanOwner")
     @JsonIgnore
     private ScanOwnerNessusId scanOwnerId;
@@ -24,4 +25,5 @@ public class ScanOwner extends LookupPojo<ScanOwner> {
     public void setScanOwnerId(ScanOwnerNessusId scanOwnerId) {
         this.scanOwnerId = scanOwnerId;
     }
+     */
 }

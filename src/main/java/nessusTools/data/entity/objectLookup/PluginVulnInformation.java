@@ -34,6 +34,18 @@ public class PluginVulnInformation extends GeneratedIdPojo
     @JsonProperty("patch_publication_date")
     private String patchPublicationDate;
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(PluginVulnInformation o) {
+        return this.equals(o);
+    }
+
     @Override
     public void _set(PluginVulnInformation o) {
         this.__set(o);

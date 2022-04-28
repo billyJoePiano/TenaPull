@@ -37,10 +37,22 @@ public class SeverityBase extends GeneratedIdPojo
 		this.value = value;
 	}
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
     @Override
     public void _set(SeverityBase o) {
         this.__set(o);
         this.display = o.display;
         this.value = o.value;
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(SeverityBase o) {
+        return this.equals(o);
     }
 }

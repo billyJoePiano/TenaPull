@@ -1,5 +1,6 @@
 package nessusTools.data.entity.objectLookup;
 
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.*;
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.template.*;
@@ -43,10 +44,22 @@ public class License extends GeneratedIdPojo
         this.trimmed = trimmed;
     }
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
     @Override
     public void _set(License o) {
         this.__set(o);
         this.limit = o.limit;
         this.trimmed = o.trimmed;
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(License o) {
+        return this.equals(o);
     }
 }

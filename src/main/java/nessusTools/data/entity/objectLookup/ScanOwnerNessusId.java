@@ -38,10 +38,22 @@ public class ScanOwnerNessusId implements ObjectLookupPojo<ScanOwnerNessusId> {
         this.scanOwner = scanOwner;
     }
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
     @Override
     public void _set(ScanOwnerNessusId other) {
         this.id = other.id;
         this.scanOwner = other.scanOwner;
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(ScanOwnerNessusId o) {
+        return this.equals(o);
     }
 
     @Override

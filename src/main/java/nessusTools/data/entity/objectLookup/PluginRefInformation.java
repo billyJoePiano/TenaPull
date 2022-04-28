@@ -44,6 +44,18 @@ public class PluginRefInformation extends GeneratedIdPojo
     @JsonInclude(JsonInclude.Include.NON_NULL)
     String url;
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(PluginRefInformation o) {
+        return this.equals(o);
+    }
+
     public String getName() {
         return name;
     }
@@ -53,12 +65,12 @@ public class PluginRefInformation extends GeneratedIdPojo
     }
 
     public List<PluginRefValue> getValues() {
-        return values;
+        return this.values;
     }
 
     public void setValues(List<PluginRefValue> values) {
         if (this.values == values) return;
-        this.values = PluginRefValue.dao.getOrCreate(values);
+        this.values = values;
         if (this.valuesJson != null) this.valuesJson.setValue(this.values);
     }
 

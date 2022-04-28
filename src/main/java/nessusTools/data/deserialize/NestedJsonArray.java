@@ -17,7 +17,7 @@ import java.util.*;
 // P parent , C child
 @MappedSuperclass
 public abstract class NestedJsonArray
-                <P extends ExtensibleJsonPojo, C extends ObjectLookupPojo<C>> {
+                <P extends ExtensibleJsonPojo, C extends DbPojo> {
 
     public static final String EXTRA_JSON_KEY_IN_PARENT = "__nestedArrayContainer_extraJsonFor_";
 

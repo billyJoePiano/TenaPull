@@ -24,12 +24,14 @@ public class StackTracePrinter extends Thread {
         System.out.println(this + " constructed at " + LocalDateTime.now() + " (delay for " + delay + " ms)");
     }
 
-    public static void startThread() {
-        new StackTracePrinter(0).start();
+    public static String startThread() {
+        return startThread(0);
     }
 
-    public static void startThread(int delay) {
-        new StackTracePrinter(delay).start();
+    public static String startThread(int delay) {
+        Thread thread = new StackTracePrinter(delay);
+        thread.start();
+        return thread.toString();
     }
 
     StackTracePrinter() {

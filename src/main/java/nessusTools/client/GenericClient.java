@@ -28,7 +28,7 @@ public abstract class GenericClient {
         try {
             properties.load(new FileReader(propertiesFilePath));
 
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.error("Cannot load the properties file " + propertiesFilePath, e);
         }
 

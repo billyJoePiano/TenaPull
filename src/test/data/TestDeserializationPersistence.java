@@ -47,6 +47,8 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
             InstantiationException, IllegalAccessException {
 
         Database.hardReset();
+        StackTracePrinter.startThread(360000);
+        StackTracePrinter.startThread(600000);
 
         return Arrays.asList(new Object[][] {
             { IndexResponse.class, "indexResponse.json" },
@@ -183,7 +185,7 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
             dao.saveOrUpdate(deserialized.res);
             persisted = dao.getById(deserialized.res.getId());
 
-        } catch (Throwable e) {
+        } catch (Exception e) {
             fail(e);
         }
 

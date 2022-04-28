@@ -27,9 +27,9 @@ public class SeverityLevelCount extends GeneratedIdPojo
 
     @Column(name = "severity_level")
     @JsonProperty("severitylevel")
-    private int severityLevel;
+    private Integer severityLevel;
 
-    private int count;
+    private Integer count;
 
     public int getSeverityLevel() {
         return severityLevel;
@@ -49,12 +49,29 @@ public class SeverityLevelCount extends GeneratedIdPojo
 
     @Transient
     @JsonIgnore
+    @Override
+    public void _prepare() { }
+
+    @Transient
+    @JsonIgnore
+    @Override
     public void _set(SeverityLevelCount o) {
         this.__set(o);
         this.severityLevel = o.severityLevel;
         this.count = o.count;
     }
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(SeverityLevelCount o) {
+        return Objects.equals(this.severityLevel, o.severityLevel)
+                && Objects.equals(this.count, o.count)
+                && Objects.equals(this.getExtraJsonMap(), o.getExtraJsonMap());
+    }
+
+    @Transient
+    @JsonIgnore
     @Override
     public int compareTo(SeverityLevelCount o) {
         if (o == null) return -1;

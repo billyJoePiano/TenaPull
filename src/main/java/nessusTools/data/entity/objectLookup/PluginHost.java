@@ -8,6 +8,7 @@ import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
+import java.util.*;
 
 @Entity(name = "PluginHost")
 @Table(name = "plugin_host")
@@ -15,6 +16,10 @@ public class PluginHost extends GeneratedIdPojo
         implements ObjectLookupPojo<PluginHost> {
 
     public static final ObjectLookupDao<PluginHost> dao = new ObjectLookupDao<PluginHost>(PluginHost.class);
+
+    @Column(name = "host_ip")
+    @JsonProperty("host_ip")
+    private String hostIp;
 
     @Column(name = "host_id")
     @JsonProperty("id")
@@ -25,6 +30,14 @@ public class PluginHost extends GeneratedIdPojo
     String hostFqdn;
 
     String hostname;
+
+    public String getHostIp() {
+        return hostIp;
+    }
+
+    public void setHostIp(String hostIp) {
+        this.hostIp = hostIp;
+    }
 
     public Integer getHostId() {
         return hostId;
@@ -50,6 +63,10 @@ public class PluginHost extends GeneratedIdPojo
         this.hostname = hostname;
     }
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
 
     @Override
     public void _set(PluginHost o) {
@@ -57,5 +74,16 @@ public class PluginHost extends GeneratedIdPojo
         this.hostId = o.hostId;
         this.hostFqdn = o.hostFqdn;
         this.hostname = o.hostname;
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(PluginHost o) {
+        return o != null
+                && Objects.equals(this.hostIp, o.hostIp)
+                && Objects.equals(this.hostId, o.hostId)
+                && Objects.equals(this.hostFqdn, o.hostFqdn)
+                && Objects.equals(this.hostname, o.hostname);
     }
 }

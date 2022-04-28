@@ -212,7 +212,7 @@ public class WeakInstancesTracker<K, I> {
                 }
                 Thread.interrupted(); //clear interrupt status
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.error(e);
         }
     });

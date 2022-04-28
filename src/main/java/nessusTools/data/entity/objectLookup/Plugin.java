@@ -46,6 +46,13 @@ public class Plugin extends GeneratedIdPojo
     @JsonProperty("pluginid")
     String pluginId;
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() {
+        this.pluginAttributes = PluginAttributes.dao.getOrCreate(pluginAttributes);
+    }
+
     public Integer getSeverity() {
         return severity;
     }
@@ -63,11 +70,11 @@ public class Plugin extends GeneratedIdPojo
     }
 
     public PluginAttributes getPluginAttributes() {
-        return pluginAttributes;
+        return this.pluginAttributes;
     }
 
     public void setPluginAttributes(PluginAttributes pluginAttributes) {
-        this.pluginAttributes = PluginAttributes.dao.getOrCreate(pluginAttributes);
+        this.pluginAttributes = pluginAttributes;
     }
 
     public PluginFamily getPluginFamily() {
@@ -94,5 +101,12 @@ public class Plugin extends GeneratedIdPojo
         this.pluginAttributes = o.pluginAttributes;
         this.pluginFamily = o.pluginFamily;
         this.pluginId = o.pluginId;
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(Plugin o) {
+        return this.equals(o);
     }
 }

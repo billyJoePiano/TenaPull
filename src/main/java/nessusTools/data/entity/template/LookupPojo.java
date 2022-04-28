@@ -20,7 +20,7 @@ import nessusTools.data.deserialize.Lookup;
 @JsonDeserialize(using = Lookup.Deserializer.class)
 @JsonSerialize(using = Lookup.Serializer.class)
 public abstract class LookupPojo<POJO extends LookupPojo<POJO>>
-        implements LookupSearchMapProvider<POJO> {
+        implements DbPojo, Comparable<POJO> {
 
     public static final String FIELD_NAME = "value";
 
@@ -68,26 +68,20 @@ public abstract class LookupPojo<POJO extends LookupPojo<POJO>>
 
         POJO other = (POJO) o;
 
-        return Objects.equals(other.toString(), this.toString());
-    }
-
-    @Override
-    public void _set(POJO other) {
-        this.setId(other.getId());
-        this.setValue(other.getValue());
+        return Objects.equals(other.getValue(), this.getValue());
     }
 
     @Transient
-    @JsonIgnore
     @Override
-    public boolean _lookupMatch(POJO other) {
-        return Objects.equals(this.getValue(), other.getValue());
+    public void _prepare() { }
+
+    @Override
+    public int hashCode() {
+        return this.value != null ? this.value.hashCode() : 0;
     }
 
-    @Transient
-    @JsonIgnore
-    public Map<String, Object> _getSearchMap() {
-        return Map.of("value", this.value);
+    public int compareTo(POJO other) {
+        if (other == null) return -1;
+        return this.getValue().compareTo(other.getValue());
     }
-
 }

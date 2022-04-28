@@ -46,7 +46,17 @@ public class PluginRiskInformation extends GeneratedIdPojo
     @JsonProperty("cvss3_vector")
     String cvss3Vector;
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(PluginRiskInformation o) {
+        return this.equals(o);
+    }
 
 
     public String getCvssTemporalVector() {

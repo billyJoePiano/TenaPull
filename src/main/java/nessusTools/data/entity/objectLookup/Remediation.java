@@ -1,5 +1,6 @@
 package nessusTools.data.entity.objectLookup;
 
+import com.fasterxml.jackson.annotation.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
@@ -49,6 +50,11 @@ public class Remediation extends GeneratedIdPojo
         this.vulns = vulns;
     }
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
     @Override
     public void _set(Remediation o) {
         this.__set(o);
@@ -56,5 +62,12 @@ public class Remediation extends GeneratedIdPojo
         this.hosts = o.hosts;
         this.value = o.value;
         this.vulns = o.vulns;
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(Remediation o) {
+        return this.equals(o);
     }
 }

@@ -38,7 +38,7 @@ drop table if exists `plugin_information`;
 drop table if exists `plugin_risk_information`;
 drop table if exists `plugin_host`;
 drop table if exists `severity_level_count`;
-drop table if exists `scan_group`;
+-- drop table if exists `scan_group`;
 drop table if exists `license`;
 drop table if exists `severity_base`;
 drop table if exists `acl`;
@@ -180,6 +180,7 @@ create table host_ip (
 create table acl
 (
     id           int          not null  primary key,
+    nessus_id    int          null,
     owner        int          null,
     name         varchar(255) null,
     type         varchar(255) null,
@@ -207,10 +208,10 @@ create table license
 );
 
 
-create table scan_group (
-    id int primary key auto_increment,
-    _extra_json  longtext null
-);
+-- create table scan_group (
+--    id int primary key auto_increment,
+--    _extra_json  longtext null
+-- );
 
 create table severity_level_count (
     id int PRIMARY KEY AUTO_INCREMENT,
@@ -222,6 +223,7 @@ create table severity_level_count (
 create table plugin_host (
     id int primary key auto_increment,
     host_id int null,
+    host_ip varchar(255) null,
     host_fqdn varchar(255) null,
     hostname varchar(255) null,
     _extra_json varchar(255) null
@@ -409,7 +411,7 @@ create table scan_info (
     folder_id int null,
     scan_type_id int null,
     edit_allowed bool null,
-    scan_group_id int null,
+    scan_group int null,
     targets varchar(255) null,
     scanner_start timestamp null,
     scanner_end timestamp null,
@@ -447,11 +449,11 @@ create table scan_info (
     selected_severity_base_id int null,
     _extra_json  longtext null,
 
-    constraint scan_info_scan_response_id_fk foreign key (id) references scan_response (id),
+    constraint scan_info_scan_response_id_fk foreign key (id) references scan_response (id) on update cascade,
     constraint scan_info_folder_id_fk foreign key (folder_id) references folder (id),
     constraint scan_info_uuid_id_fk foreign key (uuid_id) references scan_uuid (id) on update cascade,
     constraint scan_info_scan_type_id_fk foreign key (scan_type_id) references scan_type(id) on update cascade,
-    constraint scan_info_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
+    -- constraint scan_info_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
     constraint scan_info_policy_id_fk foreign key (policy_id) references scan_policy (id) on update cascade,
     constraint scan_info_scanner_id_fk foreign key (scanner_id) references scanner (id) on update cascade,
     constraint scan_info_license_id_fk foreign key (license_id) references license (id) on update cascade,
@@ -521,7 +523,7 @@ create table scan_history (
     scheduler int null,
     node_name varchar(255) null,
     node_host varchar(255) null,
-    scan_group_id int null,
+    scan_group int null,
     node_id int null,
     schedule_type_id int null,
     status_id int null,
@@ -536,7 +538,7 @@ create table scan_history (
     _extra_json longtext null,
 
     constraint scan_history_scan_response_id_fk foreign key (scan_id) references scan_response (id),
-    constraint scan_history_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
+    -- constraint scan_history_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
     constraint scan_history_status_id_fk foreign key (status_id) references scan_status (id) on update cascade,
     constraint foreign key (schedule_type_id) references scan_schedule_type (id) on update cascade,
     constraint scan_history_scan_type_id_fk foreign key (scan_type_id) references scan_type (id) on update cascade,

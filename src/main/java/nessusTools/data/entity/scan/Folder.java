@@ -11,10 +11,9 @@ import org.apache.logging.log4j.*;
 
 @Entity(name = "Folder")
 @Table(name = "folder")
-public class Folder extends NaturalIdPojo implements ObjectLookupPojo<Folder> {
+public class Folder extends NaturalIdPojo {
 
-    public static final ObjectLookupDao<Folder> dao
-            = new ObjectLookupDao<Folder>(Folder.class);
+    public static final Dao<Folder> dao = new Dao<Folder>(Folder.class);
 
     public static final Logger logger = LogManager.getLogger(Folder.class);
 
@@ -42,6 +41,12 @@ public class Folder extends NaturalIdPojo implements ObjectLookupPojo<Folder> {
     private List<Scan> scans;
      */
 
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _prepare() { }
+
+    /*
     @Override
     public void _set(Folder o) {
         this.__set(o);
@@ -52,6 +57,7 @@ public class Folder extends NaturalIdPojo implements ObjectLookupPojo<Folder> {
         this.unreadCount = o.unreadCount;
         //this.scans = o.scans;
     }
+     */
 
 
     public Folder() { }
