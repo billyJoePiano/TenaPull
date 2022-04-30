@@ -7,8 +7,8 @@ import javax.persistence.*;
 
 @Entity(name = "OperatingSystem")
 @Table(name = "operating_system")
-public class OperatingSystem extends LookupPojo<OperatingSystem> {
-    public static final LookupDao<OperatingSystem> dao
-            = new LookupDao<OperatingSystem>(OperatingSystem.class);
+public class OperatingSystem extends SimpleStringLookupPojo<OperatingSystem> {
+    public static final SimpleStringLookupDao<OperatingSystem> dao
+            = new SimpleStringLookupDao<OperatingSystem>(OperatingSystem.class);
 
 }

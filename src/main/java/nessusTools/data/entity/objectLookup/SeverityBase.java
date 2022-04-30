@@ -2,16 +2,18 @@ package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
 import nessusTools.data.entity.template.*;
-import nessusTools.data.persistence.ObjectLookupDao;
+import nessusTools.data.persistence.MapLookupDao;
+import nessusTools.util.*;
 
 import javax.persistence.*;
+import java.util.*;
 
 @Entity(name = "SeverityBase")
 @Table(name = "severity_base")
 public class SeverityBase extends GeneratedIdPojo
-        implements ObjectLookupPojo<SeverityBase> {
+        implements MapLookupPojo<SeverityBase> {
 
-	public static final ObjectLookupDao<SeverityBase> dao = new ObjectLookupDao<SeverityBase>(SeverityBase.class);
+	public static final MapLookupDao<SeverityBase> dao = new MapLookupDao<SeverityBase>(SeverityBase.class);
 
 	@Column
 	@JsonProperty
@@ -40,7 +42,9 @@ public class SeverityBase extends GeneratedIdPojo
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
 
     @Override
     public void _set(SeverityBase o) {
@@ -53,6 +57,23 @@ public class SeverityBase extends GeneratedIdPojo
     @JsonIgnore
     @Override
     public boolean _match(SeverityBase o) {
-        return this.equals(o);
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.display, o.display)
+                && Objects.equals(this.value, o.value)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public Map<String, Object> _getSearchMap() {
+        return MakeMap.of(new Object[] {
+                "display", this.display,
+                "value", this.value,
+                "extraJson", this.getExtraJson()
+        });
+    }
+
+
 }

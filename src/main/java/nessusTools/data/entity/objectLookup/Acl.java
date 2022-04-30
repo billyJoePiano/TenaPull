@@ -3,17 +3,17 @@ package nessusTools.data.entity.objectLookup;
 import com.fasterxml.jackson.annotation.*;
 
 import nessusTools.data.entity.template.*;
-import nessusTools.data.persistence.ObjectLookupDao;
+import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
+import java.util.*;
 
 @Entity(name = "Acl")
 @Table(name = "acl")
-public class Acl extends GeneratedIdPojo
-        implements ObjectLookupPojo<Acl> {
+public class Acl extends HashLookupTemplate<Acl> {
 
-	public static final ObjectLookupDao<Acl> dao
-			= new ObjectLookupDao<Acl>(Acl.class);
+	public static final HashLookupDao<Acl> dao
+			= new HashLookupDao<Acl>(Acl.class);
 
 
     @Column(name = "nessus_id")
@@ -83,7 +83,9 @@ public class Acl extends GeneratedIdPojo
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
 
     @Override
     public void _set(Acl o) {
@@ -99,6 +101,13 @@ public class Acl extends GeneratedIdPojo
     @JsonIgnore
     @Override
     public boolean _match(Acl o) {
-        return this.equals(o);
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.owner, o.owner)
+                && Objects.equals(this.permissions, o.permissions)
+                && Objects.equals(this.name, o.name)
+                && Objects.equals(this.displayName, o.displayName)
+                && Objects.equals(this.type, o.type)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 }

@@ -7,7 +7,7 @@ import javax.persistence.*;
 
 @Entity(name = "Cpe")
 @Table(name = "cpe")
-public class Cpe extends LookupPojo<Cpe> {
-    public static final LookupDao<Cpe> dao
-            = new LookupDao<>(Cpe.class);
+public class Cpe extends SimpleStringLookupPojo<Cpe> {
+    public static final SimpleStringLookupDao<Cpe> dao
+            = new SimpleStringLookupDao<>(Cpe.class);
 }

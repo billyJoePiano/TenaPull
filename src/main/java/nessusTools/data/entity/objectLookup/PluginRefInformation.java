@@ -16,11 +16,10 @@ import java.util.*;
 
 @Entity(name = "PluginRefInformation")
 @Table(name = "plugin_ref_information")
-public class PluginRefInformation extends GeneratedIdPojo
-        implements ObjectLookupPojo<PluginRefInformation> {
+public class PluginRefInformation extends HashLookupTemplate<PluginRefInformation> {
 
-    public static final ObjectLookupDao<PluginRefInformation> dao
-            = new ObjectLookupDao<PluginRefInformation>(PluginRefInformation.class);
+    public static final HashLookupDao<PluginRefInformation> dao
+            = new HashLookupDao<PluginRefInformation>(PluginRefInformation.class);
 
     String name;
 
@@ -47,13 +46,35 @@ public class PluginRefInformation extends GeneratedIdPojo
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public void _set(PluginRefInformation o) {
+        this.__set(o);
+        this.name = o.name;
+        this.values = o.values;
+        this.url = o.url;
+
+        if (this.valuesJson != null) {
+            this.valuesJson.clearParent();
+            this.valuesJson = null;
+        }
+    }
 
     @Transient
     @JsonIgnore
     @Override
     public boolean _match(PluginRefInformation o) {
-        return this.equals(o);
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.name, o.name)
+                && Objects.equals(this.values, o.values)
+                && Objects.equals(this.url, o.url)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
     public String getName() {
@@ -96,19 +117,6 @@ public class PluginRefInformation extends GeneratedIdPojo
 
     public void setUrl(String url) {
         this.url = url;
-    }
-
-    @Override
-    public void _set(PluginRefInformation o) {
-        this.__set(o);
-        this.name = o.name;
-        this.values = o.values;
-        this.url = o.url;
-
-        if (this.valuesJson != null) {
-            this.valuesJson.clearParent();
-            this.valuesJson = null;
-        }
     }
 
 

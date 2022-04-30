@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
-import nessusTools.data.persistence.*;
+import nessusTools.data.entity.objectLookup.*;
 
 import javax.persistence.*;
 import java.util.*;
@@ -17,9 +17,10 @@ import java.util.*;
 @MappedSuperclass
 public abstract class ExtensibleJsonPojo {
 
-    @Column(name = "_extra_json")
-    @Convert(converter = ExtraJson.Converter.class)
-    @JsonIgnore // Jackson will use the wrapped map from _getExtraJsonMap() and the put() method for setting
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH},
+            fetch = FetchType.EAGER)
+    @JoinColumn(name = "_extra_json")
+    @JsonIgnore // Jackson will use the wrapped map from getExtraJsonMap() and the put() method for setting
     private ExtraJson extraJson;
 
     @JsonIgnore
@@ -37,7 +38,7 @@ public abstract class ExtensibleJsonPojo {
     @JsonAnyGetter
     public Map<String, JsonNode> getExtraJsonMap() {
         if (this.extraJson != null) {
-            return this.extraJson.getMap();
+            return this.extraJson.getValue().getView();
 
         } else {
             return null;
@@ -49,10 +50,15 @@ public abstract class ExtensibleJsonPojo {
     public void putExtraJson(String key, Object value) {
         if (this.extraJson == null) {
             this.extraJson = new ExtraJson();
+
+        } else if (this.extraJson.getId() != 0) {
+            this.extraJson = new ExtraJson(this.extraJson);
         }
+
         JsonNode node;
         if (value instanceof JsonNode) {
             node = (JsonNode) value;
+
         } else {
             node = new ObjectMapper().convertValue(value, JsonNode.class);
         }
@@ -66,6 +72,9 @@ public abstract class ExtensibleJsonPojo {
         return this.extraJson.get(key);
     }
 
+    protected void __prepare() {
+        this.extraJson = ExtraJson.dao.getOrCreate(this.extraJson);
+    }
 
     public ObjectNode toJsonNode() {
         return new ObjectMapper().convertValue(this, ObjectNode.class);

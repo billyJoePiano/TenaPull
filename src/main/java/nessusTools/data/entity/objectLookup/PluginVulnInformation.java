@@ -5,14 +5,14 @@ import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
+import java.util.*;
 
 @Entity(name = "PluginVulnInformation")
 @Table(name = "plugin_vuln_information")
-public class PluginVulnInformation extends GeneratedIdPojo
-        implements ObjectLookupPojo<PluginVulnInformation> {
+public class PluginVulnInformation extends HashLookupTemplate<PluginVulnInformation> {
 
-    public static final ObjectLookupDao<PluginVulnInformation> dao
-            = new ObjectLookupDao<PluginVulnInformation>(PluginVulnInformation.class);
+    public static final HashLookupDao<PluginVulnInformation> dao
+            = new HashLookupDao<PluginVulnInformation>(PluginVulnInformation.class);
 
     @Column(name = "exploitability_ease")
     @JsonProperty("exploitability_ease")
@@ -37,13 +37,8 @@ public class PluginVulnInformation extends GeneratedIdPojo
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
-
-    @Transient
-    @JsonIgnore
-    @Override
-    public boolean _match(PluginVulnInformation o) {
-        return this.equals(o);
+    public void _prepare() {
+        this.__prepare();
     }
 
     @Override
@@ -54,6 +49,20 @@ public class PluginVulnInformation extends GeneratedIdPojo
         this.exploitAvailable = o.exploitAvailable;
         this.vulnPublicationDate = o.vulnPublicationDate;
         this.patchPublicationDate = o.patchPublicationDate;
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public boolean _match(PluginVulnInformation o) {
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.exploitabilityEase, o.exploitabilityEase)
+                && Objects.equals(this.inTheNews, o.inTheNews)
+                && Objects.equals(this.exploitAvailable, o.exploitAvailable)
+                && Objects.equals(this.vulnPublicationDate, o.vulnPublicationDate)
+                && Objects.equals(this.patchPublicationDate, o.patchPublicationDate)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
     public String getInTheNews() {

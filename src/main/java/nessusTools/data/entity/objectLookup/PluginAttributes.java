@@ -18,11 +18,10 @@ import java.util.*;
 
 @Entity(name = "PluginAttributes")
 @Table(name = "plugin_attributes")
-public class PluginAttributes extends GeneratedIdPojo
-        implements ObjectLookupPojo<PluginAttributes> {
+public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
 
-    public static final ObjectLookupDao<PluginAttributes> dao
-            = new ObjectLookupDao<PluginAttributes>(PluginAttributes.class);
+    public static final HashLookupDao<PluginAttributes> dao
+            = new HashLookupDao<PluginAttributes>(PluginAttributes.class);
 
     @Column(name = "threat_intensity_last_28")
     @JsonProperty("threat_intensity_last_28")
@@ -140,6 +139,7 @@ public class PluginAttributes extends GeneratedIdPojo
     @JsonIgnore
     @Override
     public void _prepare() {
+        this.__prepare();
         this.riskInformation = PluginRiskInformation.dao.getOrCreate(this.riskInformation);
         this.setRefInformation(PluginRefInformation.dao.getOrCreate(refInformation));
         this.pluginInformation = PluginInformation.dao.getOrCreate(this.pluginInformation);
@@ -200,13 +200,16 @@ public class PluginAttributes extends GeneratedIdPojo
         this.pluginName = o.pluginName;
         this.vprScore = o.vprScore;
         this.cvssScoreSource = o.cvssScoreSource;
+        this.seeAlso = o.seeAlso;
         this.productCoverage = o.productCoverage;
         this.threatRecency = o.threatRecency;
         this.fname = o.fname;
         this.cvssV3ImpactScore = o.cvssV3ImpactScore;
+        this.pluginInformation = o.pluginInformation;
         this.requiredPort = o.requiredPort;
         this.dependency = o.dependency;
         this.solution = o.solution;
+        this.pluginVulnInformation = o.pluginVulnInformation;
         this.ageOfVuln = o.ageOfVuln;
         this.exploitCodeMaturity = o.exploitCodeMaturity;
 
@@ -220,7 +223,65 @@ public class PluginAttributes extends GeneratedIdPojo
     @JsonIgnore
     @Override
     public boolean _match(PluginAttributes o) {
-        return this.equals(o);
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.threatIntensityLast28, o.threatIntensityLast28)
+                && Objects.equals(this.synopsis, o.synopsis)
+                && Objects.equals(this.scriptCopyright, o.scriptCopyright)
+                && Objects.equals(this.description, o.description)
+                && (this.riskInformation != null
+                        ? this.riskInformation._match(o.riskInformation)
+                        : o.riskInformation == null)
+                && this._matchRefInformation(o.refInformation)
+                && Objects.equals(this.threatSourcesLast28, o.threatSourcesLast28)
+                && Objects.equals(this.pluginName, o.pluginName)
+                && Objects.equals(this.vprScore, o.vprScore)
+                && Objects.equals(this.cvssScoreSource, o.cvssScoreSource)
+                && Objects.equals(this.seeAlso, o.seeAlso)
+                && Objects.equals(this.productCoverage, o.productCoverage)
+                && Objects.equals(this.threatRecency, o.threatRecency)
+                && Objects.equals(this.fname, o.fname)
+                && Objects.equals(this.cvssV3ImpactScore, o.cvssV3ImpactScore)
+                && Objects.equals(this.pluginInformation, o.pluginInformation)
+                && Objects.equals(this.requiredPort, o.requiredPort)
+                && Objects.equals(this.dependency, o.dependency)
+                && Objects.equals(this.solution, o.solution)
+                && (this.pluginVulnInformation != null
+                        ? this.pluginVulnInformation._match(o.pluginVulnInformation)
+                        : o.pluginVulnInformation == null)
+                && Objects.equals(this.ageOfVuln, o.ageOfVuln)
+                && Objects.equals(this.exploitCodeMaturity, o.exploitCodeMaturity)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
+    }
+
+    @Transient
+    @JsonIgnore
+    private boolean _matchRefInformation(List<PluginRefInformation> o) {
+        if (this.refInformation == null || this.refInformation.size() <= 0) {
+            return o == null || o.size() <= 0;
+
+        } else if (o == null || o.size() != this.refInformation.size()) {
+            return false;
+        }
+
+        Iterator<PluginRefInformation> mine = this.refInformation.iterator();
+        Iterator<PluginRefInformation> theirs = o.iterator();
+        while(mine.hasNext()) {
+            if (!theirs.hasNext()) return false;
+            PluginRefInformation mn = mine.next();
+            PluginRefInformation th = theirs.next();
+            if (mn == null) {
+                if (th != null) return false;
+                continue;
+
+            } else if (th == null) {
+                return false;
+            }
+
+            if (!mn._match(th)) return false;
+        }
+
+        return !theirs.hasNext();
     }
 
 

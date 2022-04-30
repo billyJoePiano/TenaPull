@@ -19,9 +19,9 @@
         <property name="hibernate.c3p0.idle_test_period">3000</property>
 
 
-        <mapping class="nessusTools.data.entity.scan.Folder" />
-
         <mapping class="nessusTools.data.entity.lookup.HostIp" />
+        <mapping class="nessusTools.data.entity.lookup.Hostname" />
+        <mapping class="nessusTools.data.entity.lookup.HostFqdn" />
         <mapping class="nessusTools.data.entity.lookup.OperatingSystem" />
         <mapping class="nessusTools.data.entity.lookup.Cpe" />
         <mapping class="nessusTools.data.entity.lookup.PluginFamily" />
@@ -40,8 +40,8 @@
         <mapping class="nessusTools.data.entity.lookup.Timezone" />
         <mapping class="nessusTools.data.entity.lookup.Scanner" />
         <mapping class="nessusTools.data.entity.lookup.ScanOwner" />
+        <mapping class="nessusTools.data.entity.lookup.VulnerabilityScore" />
 
-        <mapping class="nessusTools.data.entity.objectLookup.ScanOwnerNessusId" />
         <mapping class="nessusTools.data.entity.objectLookup.Acl" />
         <mapping class="nessusTools.data.entity.objectLookup.PluginAttributes" />
         <mapping class="nessusTools.data.entity.objectLookup.PluginInformation" />
@@ -55,21 +55,26 @@
         <mapping class="nessusTools.data.entity.objectLookup.SeverityBase" />
         <mapping class="nessusTools.data.entity.objectLookup.SeverityLevelCount" />
         <mapping class="nessusTools.data.entity.objectLookup.Vulnerability" />
+        <mapping class="nessusTools.data.entity.objectLookup.ExtraJson" />
 
 
+        <mapping class="nessusTools.data.entity.scan.Folder" />
         <mapping class="nessusTools.data.entity.scan.Scan" />
-        <!--mapping class="nessusTools.data.entity.scan.ScanGroup" /-->
         <mapping class="nessusTools.data.entity.scan.ScanHistory" />
         <mapping class="nessusTools.data.entity.host.ScanHostInfo" />
         <mapping class="nessusTools.data.entity.scan.ScanInfo" />
         <mapping class="nessusTools.data.entity.scan.ScanPlugin" />
         <mapping class="nessusTools.data.entity.scan.ScanPrioritization" />
         <mapping class="nessusTools.data.entity.scan.ScanRemediationsSummary" />
-
         <mapping class="nessusTools.data.entity.scan.ScanHost" />
+
+
+        <mapping class="nessusTools.data.entity.host.ScanHostInfo" />
 
         <mapping class="nessusTools.data.entity.response.IndexResponse" />
         <mapping class="nessusTools.data.entity.response.ScanResponse" />
+        <mapping class="nessusTools.data.entity.response.ScanHostResponse" />
+        <mapping class="nessusTools.data.entity.splunk.SplunkOutput" />
 
     </session-factory>
 

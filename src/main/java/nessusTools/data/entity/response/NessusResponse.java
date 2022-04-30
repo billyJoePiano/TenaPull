@@ -23,7 +23,6 @@ public interface NessusResponse extends DbPojo {
 
         public R getResponse();
         public void setResponse(R response);
-        public Class<R> _getResponseType();
     }
 
 

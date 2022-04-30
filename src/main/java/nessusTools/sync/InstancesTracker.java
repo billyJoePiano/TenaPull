@@ -45,7 +45,7 @@ import java.util.*;
  *
  * Note that all construct lambda MUST return a non-null value of instance type I or a
  *      NullInstance runtime exception will be thrown (no need to be declared or caught)
- *      EDIT: 4/13 removed this requirement to allow searching while holding a CreateLock in ObjectLookupDao
+ *      EDIT: 4/13 removed this requirement to allow searching while holding a CreateLock in MapLookupDao
  *
  * Type parameters:
  *

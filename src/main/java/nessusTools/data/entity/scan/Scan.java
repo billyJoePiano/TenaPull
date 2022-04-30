@@ -21,7 +21,7 @@ public class Scan extends NaturalIdPojo {
 
     public static final Logger logger = LogManager.getLogger(Scan.class);
 
-    @OneToOne(mappedBy = "scan", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "scan", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private ScanResponse scanResponse;
 
@@ -270,5 +270,7 @@ public class Scan extends NaturalIdPojo {
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
 }

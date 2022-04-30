@@ -3,15 +3,17 @@ package nessusTools.data.entity.objectLookup;
 import com.fasterxml.jackson.annotation.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
+import nessusTools.util.*;
 
 import javax.persistence.*;
+import java.util.*;
 
 @Entity(name = "Remediation")
 @Table(name = "remediation")
 public class Remediation extends GeneratedIdPojo
-        implements ObjectLookupPojo<Remediation> {
+        implements MapLookupPojo<Remediation> {
 
-    public static final ObjectLookupDao<Remediation> dao = new ObjectLookupDao<>(Remediation.class);
+    public static final MapLookupDao<Remediation> dao = new MapLookupDao<>(Remediation.class);
 
     private String remediation;
     private Integer hosts;
@@ -53,7 +55,9 @@ public class Remediation extends GeneratedIdPojo
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
 
     @Override
     public void _set(Remediation o) {
@@ -68,6 +72,28 @@ public class Remediation extends GeneratedIdPojo
     @JsonIgnore
     @Override
     public boolean _match(Remediation o) {
-        return this.equals(o);
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.remediation, o.remediation)
+                && Objects.equals(this.hosts, o.hosts)
+                && Objects.equals(this.value, o.value)
+                && Objects.equals(this.vulns, o.vulns)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
+                
     }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public Map<String, Object> _getSearchMap() {
+        return MakeMap.of(new Object[] {
+                "remediation", this.remediation,
+                "hosts", this.hosts,
+                "value", this.value,
+                "vulns", this.vulns,
+                "extraJson", this.getExtraJson()
+        });
+    }
+
+
 }

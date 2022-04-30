@@ -7,7 +7,7 @@ import javax.persistence.*;
 
 @Entity(name = "PolicyTemplateUuid")
 @Table(name = "policy_template_uuid")
-public class PolicyTemplateUuid extends LookupPojo<PolicyTemplateUuid> {
-    public static final LookupDao<PolicyTemplateUuid> dao
-            = new LookupDao<>(PolicyTemplateUuid.class);
+public class PolicyTemplateUuid extends SimpleStringLookupPojo<PolicyTemplateUuid> {
+    public static final SimpleStringLookupDao<PolicyTemplateUuid> dao
+            = new SimpleStringLookupDao<>(PolicyTemplateUuid.class);
 }

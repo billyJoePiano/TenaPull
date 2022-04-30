@@ -44,7 +44,9 @@ public class Folder extends NaturalIdPojo {
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
 
     /*
     @Override

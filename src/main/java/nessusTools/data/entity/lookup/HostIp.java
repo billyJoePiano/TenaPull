@@ -7,8 +7,8 @@ import javax.persistence.*;
 
 @Entity(name = "HostIp")
 @Table(name = "host_ip")
-public class HostIp extends LookupPojo<HostIp> {
-    public static final LookupDao<HostIp> dao
-            = new LookupDao<HostIp>(HostIp.class);
+public class HostIp extends SimpleStringLookupPojo<HostIp> {
+    public static final SimpleStringLookupDao<HostIp> dao
+            = new SimpleStringLookupDao<HostIp>(HostIp.class);
 
 }

@@ -1,14 +1,10 @@
 package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.annotation.*;
-import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
-import nessusTools.data.entity.response.*;
-import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
-import org.hibernate.annotations.*;
+import nessusTools.util.*;
 
 import javax.persistence.*;
 import javax.persistence.AccessType;
@@ -20,9 +16,9 @@ import java.util.*;
 @Entity(name = "Plugin")
 @Table(name = "plugin")
 public class Plugin extends GeneratedIdPojo
-        implements ObjectLookupPojo<Plugin> {
+        implements MapLookupPojo<Plugin> {
 
-    public static final ObjectLookupDao<Plugin> dao = new ObjectLookupDao<Plugin>(Plugin.class);
+    public static final MapLookupDao<Plugin> dao = new MapLookupDao<Plugin>(Plugin.class);
 
     Integer severity;
 
@@ -50,6 +46,7 @@ public class Plugin extends GeneratedIdPojo
     @JsonIgnore
     @Override
     public void _prepare() {
+        this.__prepare();
         this.pluginAttributes = PluginAttributes.dao.getOrCreate(pluginAttributes);
     }
 
@@ -107,6 +104,27 @@ public class Plugin extends GeneratedIdPojo
     @JsonIgnore
     @Override
     public boolean _match(Plugin o) {
-        return this.equals(o);
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.severity, o.severity)
+                && Objects.equals(this.pluginName, o.pluginName)
+                && (this.pluginAttributes != null
+                        ? this.pluginAttributes._match(o.pluginAttributes)
+                        : o.pluginAttributes == null)
+                && Objects.equals(this.pluginFamily, o.pluginFamily)
+                && Objects.equals(this.pluginId, o.pluginId)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
+    }
+
+    @Override
+    public Map<String, Object> _getSearchMap() {
+        return MakeMap.of(new Object[] {
+                "severity", this.severity,
+                "pluginName", this.pluginName,
+                "pluginAttributes", this.pluginAttributes,
+                "pluginFamily", this.pluginFamily,
+                "pluginId", this.pluginId,
+                "extraJson", this.getExtraJson()
+        });
     }
 }

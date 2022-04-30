@@ -2,6 +2,7 @@ package nessusTools.data.persistence;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import com.sun.istack.*;
 import nessusTools.data.entity.template.DbPojo;
 import org.apache.logging.log4j.*;
 import org.hibernate.*;
@@ -16,6 +17,7 @@ import org.hibernate.persister.entity.SingleTableEntityPersister;
 import org.hibernate.property.access.internal.PropertyAccessStrategyFieldImpl;
 import org.hibernate.property.access.spi.Getter;
 import org.hibernate.property.access.spi.PropertyAccess;
+import org.hibernate.proxy.*;
 
 import javax.persistence.*;
 import javax.persistence.criteria.*;
@@ -68,6 +70,7 @@ public class Dao<POJO extends DbPojo> {
 
     private final Map<Thread, List<SessionTracker>> sessions = new WeakHashMap();
     private Set<Class<? extends DbPojo>> borrowSessionsFrom;
+    private Map<Thread, SessionTracker> holdOpen = new WeakHashMap<>();
 
     private static Set<Class<? extends DbPojo>> notInitializedSessionLenders;
 
@@ -103,15 +106,50 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
+    public void holdSession() {
+        Thread current = Thread.currentThread();
+        synchronized (this.holdOpen) {
+            this.holdOpen.put(current, getSession());
+        }
+    }
+
+    public void releaseSession() {
+        Thread current = Thread.currentThread();
+        SessionTracker session;
+        synchronized (this.holdOpen) {
+            session = this.holdOpen.get(current);
+            if (session == null) {
+                throw new IllegalStateException("Cannot release session when none is being held open!");
+            }
+        }
+
+        try {
+            session.done(this);
+
+        } finally {
+            if (session.sharers == null || session.sharers.size() <= 0) {
+                synchronized (this.holdOpen) {
+                    this.holdOpen.remove(current);
+                }
+            }
+        }
+    }
+
     protected SessionTracker getSession() {
 
         SessionTracker session = null;
         Thread current = Thread.currentThread();
+        synchronized (this.holdOpen) {
+            session = this.holdOpen.get(current);
+        }
+
         synchronized (Dao.class) {
             if (this.borrowSessionsFrom == null) {
-                session = new SessionTracker();
+                if (session == null) {
+                    session = new SessionTracker();
+                }
 
-            } else {
+            } else if (session == null) {
                 for (Class<? extends DbPojo> pojoType : this.borrowSessionsFrom) {
                     Dao dao = Dao.get(pojoType);
                     if (dao == null) continue;
@@ -187,8 +225,9 @@ public class Dao<POJO extends DbPojo> {
 
             int index = this.sharers.lastIndexOf(dao);
 
-            if (index == -1) return;
-            this.sharers.remove(index);
+            if (index != -1) {
+                this.sharers.remove(index);
+            }
             if (this.sharers.size() <= 0) {
                 this.close();
                 this.sharers = null;
@@ -491,7 +530,7 @@ public class Dao<POJO extends DbPojo> {
     }
 
     // this method is kept seperate so that the methods which need to call it can be overridden
-    // in ObjectLookupDao without overriding this functionality
+    // in MapLookupDao without overriding this functionality
 
     protected List<POJO> mapSearch(Map<String, Object> propertyMap) {
         SessionTracker sessionTracker = getSession();
@@ -677,6 +716,61 @@ public class Dao<POJO extends DbPojo> {
 
     public String toString() {
         return "[Dao for " + this.getPojoType().getSimpleName() + "]";
+    }
+
+    public POJO unproxy(POJO pojo) {
+        if (pojo == null) return null;
+        if (!(pojo instanceof HibernateProxy)) return pojo;
+        HibernateProxy proxy = (HibernateProxy)pojo;
+
+        if (!proxy.getHibernateLazyInitializer().isUninitialized()) {
+            return (POJO)Hibernate.unproxy(pojo);
+        }
+        return checkedUnproxy(proxy);
+    }
+
+    protected POJO checkedUnproxy(@NotNull HibernateProxy pojo) {
+        int id = ((POJO)pojo).getId();
+        if (id > 0) {
+            POJO result = null;
+            this.holdSession();
+            try {
+                result = this.getById(id);
+                if (result != null) {
+                    Hibernate.initialize(result);
+                }
+
+            } catch (HibernateException e) {
+                logger.warn("Hibernate proxy failed to initialize, in Dao.unproxy(pojo)");
+                if (result != null) {
+                    return result;
+
+                } else {
+                    return (POJO)pojo;
+                }
+
+            } finally {
+                this.releaseSession();
+            }
+
+            if (result != null) return (POJO)Hibernate.unproxy(result);
+        }
+
+        try {
+            this.holdSession();
+            Hibernate.initialize(pojo);
+
+        } catch (HibernateException e) {
+            logger.warn("Hibernate Proxy wouldn't provide a valid id or "
+                    + "allow initialization during MapLookupDao.getOrCreate(pojo)", e);
+
+            return (POJO)pojo;
+
+        } finally {
+            this.releaseSession();
+        }
+
+        return (POJO)Hibernate.unproxy(pojo);
     }
 
 }

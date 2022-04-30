@@ -8,6 +8,7 @@ import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
+import nessusTools.util.*;
 
 import javax.persistence.*;
 import java.sql.*;
@@ -16,10 +17,10 @@ import java.util.*;
 @Table(name = "scan_history")
 @Entity(name = "ScanHistory")
 public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
-        implements LookupSearchMapProvider<ScanHistory> {
+        implements MapLookupPojo<ScanHistory> {
 
-    public static final ObjectLookupDao<ScanHistory>
-            dao = new ObjectLookupDao<>(ScanHistory.class);
+    public static final MapLookupDao<ScanHistory>
+            dao = new MapLookupDao<>(ScanHistory.class);
 
     @Column(name = "alt_targets_used")
     @JsonProperty("alt_targets_used")
@@ -100,7 +101,9 @@ public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
 
     @Transient
     @JsonIgnore
@@ -126,17 +129,19 @@ public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
     @Transient
     @JsonIgnore
     @Override
-    public boolean _match(ScanHistory other) {
-        return this.__match(other)
-                && this.historyId != null && other.historyId != null
-                && this.historyId.intValue() == other.historyId.intValue();
+    public boolean _match(ScanHistory o) {
+        if (o == this) return true;
+        return this.__match(o)
+                && this.historyId != null && o.historyId != null
+                && this.historyId.intValue() == o.historyId.intValue();
     }
 
     @Transient
     @JsonIgnore
     @Override
     public Map<String, Object> _getSearchMap() {
-        return Map.of("response", this.getResponse(), "historyId", this.historyId);
+        return MakeMap.of(new Object[]
+                { "response", this.getResponse(), "historyId", this.historyId });
     }
 
     public Boolean getAltTargetsUsed() {

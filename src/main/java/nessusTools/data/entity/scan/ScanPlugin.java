@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
+import nessusTools.util.*;
 import org.hibernate.annotations.*;
 
-import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -17,8 +17,8 @@ import java.util.*;
 @Table(name = "scan_plugin")
 public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
 
-    public static final ObjectLookupDao<ScanPlugin>
-            dao = new ObjectLookupDao<ScanPlugin>(ScanPlugin.class);
+    public static final MapLookupDao<ScanPlugin>
+            dao = new MapLookupDao<ScanPlugin>(ScanPlugin.class);
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "plugin_id")
@@ -44,6 +44,7 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     @JsonIgnore
     @Override
     public void _prepare() {
+        this.__prepare();
         this.plugin = Plugin.dao.getOrCreate(plugin);
         this.hosts = PluginHost.dao.getOrCreate(hosts);
     }
@@ -56,19 +57,20 @@ public class ScanPlugin extends ScanResponse.MultiChildLookup<ScanPlugin> {
     }
 
     @Override
-    public boolean _match(ScanPlugin other) {
-        return this.__match(other)
-                && this.plugin != null && other.plugin != null
-                && (this.plugin.getId() != 0 && other.plugin.getId() != 0
-                    ? this.plugin.getId() == other.plugin.getId()
-                    : Objects.equals(this, other));
+    public boolean _match(ScanPlugin o) {
+        if (o == this) return true;
+        return this.__match(o)
+                && (this.plugin != null
+                        ? this.plugin._match(o.plugin)
+                        : o.plugin == null);
     }
 
     @Override
     @Transient
     @JsonIgnore
     public Map<String, Object> _getSearchMap() {
-        return Map.of("response", this.getResponse(), "plugin", this.plugin);
+        return MakeMap.of(new Object[]
+                { "response", this.getResponse(), "plugin", this.plugin });
     }
 
 

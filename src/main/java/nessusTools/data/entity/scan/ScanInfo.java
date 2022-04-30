@@ -367,6 +367,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     @JsonIgnore
     @Override
     public void _prepare() {
+        this.__prepare();
         this.severityBaseSelections = SeverityBase.dao.getOrCreate(this.severityBaseSelections);
         this.currentSeverityBase = SeverityBase.dao.getOrCreate(this.currentSeverityBase);
 

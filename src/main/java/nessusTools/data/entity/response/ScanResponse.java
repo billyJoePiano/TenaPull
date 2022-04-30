@@ -2,8 +2,6 @@ package nessusTools.data.entity.response;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.annotation.*;
-import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.*;
@@ -22,6 +20,7 @@ import java.util.*;
 
 @Entity(name = "ScanResponse")
 @Table(name = "scan_response")
+@JsonIgnoreProperties({"id", "filters"})
 public class ScanResponse extends NessusResponseGenerateTimestamp {
     public static final Logger logger = LogManager.getLogger(ScanResponse.class);
     public static final Dao<ScanResponse> dao = new Dao(ScanResponse.class);
@@ -41,16 +40,13 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         } else if (this.scan != null) {
             return getUrlPath(this.scan.getId());
 
-        } else if (this.info != null) {
-            return getUrlPath(this.info.getId());
-
         } else {
             throw new IllegalStateException(
-                    "ScanResponse must have a non-zero id or a scan or info (ScanInfo) with a non-zero id to construct the URL");
+                    "ScanResponse must have a non-zero id or a scan with a non-zero id to construct the URL");
         }
     }
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id")
     @JsonIgnore
     private Scan scan;
@@ -60,8 +56,6 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
 
     @OneToMany(mappedBy = "response") //, cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
     @LazyCollection(LazyCollectionOption.FALSE)
-    @Fetch(value = FetchMode.SUBSELECT)
-    @Access(AccessType.PROPERTY)
     @OrderBy("hostId")
     private List<ScanHost> hosts;
 
@@ -70,8 +64,6 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
 
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
-    @Fetch(value = FetchMode.SUBSELECT)
-    @Access(AccessType.PROPERTY)
     @JoinTable(
             name = "scan_vulnerability",
             joinColumns = { @JoinColumn(name = "scan_id") },
@@ -82,16 +74,13 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
 
     @OneToMany(mappedBy = "response")
     @LazyCollection(LazyCollectionOption.FALSE)
-    @Fetch(value = FetchMode.SUBSELECT)
-    @Access(AccessType.PROPERTY)
     @OrderBy("historyId ASC")
     private List<ScanHistory> history;
 
     @OneToMany(mappedBy = "response")
     @LazyCollection(LazyCollectionOption.FALSE)
-    @Fetch(value = FetchMode.SUBSELECT)
     @Access(AccessType.PROPERTY)
-    @OrderColumn(name = "__order_for_scan_plugin")
+    @OrderColumn(name = "__order_for_scan_plugin", nullable = false)
     @JsonIgnore
     private List<ScanPlugin> plugins;
 
@@ -111,6 +100,7 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     @JsonIgnore
     @Override
     public void _prepare() {
+        this.__prepare();
         if (this.scan != null) {
             this.scan._prepare();
             this.scan.setScanResponse(this);
@@ -148,16 +138,9 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         }
     }
 
-    /**
-     * For implementing default methods getScan() and _getResponseType()
-     * on the various inheritance branches of NessusResponse.ResponseChild
-     */
     public interface ScanResponseChild<POJO extends ScanResponseChild<POJO>>
             extends ResponseChild<POJO, ScanResponse> {
 
-        default public Class<ScanResponse> _getResponseType() {
-            return ScanResponse.class;
-        }
     }
 
 
@@ -184,14 +167,14 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     @MappedSuperclass
     public abstract static class SingleChildLookup<POJO extends SingleChildLookup<POJO>>
             extends SingleChild<POJO>
-            implements ObjectLookupPojo<POJO> {
+            implements MapLookupPojo<POJO> {
 
     }
 
     @MappedSuperclass
     public abstract static class MultiChildLookup<POJO extends MultiChildLookup<POJO>>
             extends MultiChild<POJO>
-            implements LookupSearchMapProvider<POJO> {
+            implements MapLookupPojo<POJO> {
 
     }
 

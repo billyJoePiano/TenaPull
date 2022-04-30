@@ -5,16 +5,18 @@ import com.fasterxml.jackson.databind.annotation.*;
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
+import nessusTools.util.*;
 
 import javax.persistence.*;
+import java.util.*;
 
 @Entity(name = "License")
 @Table(name = "license")
 public class License extends GeneratedIdPojo
-        implements ObjectLookupPojo<License> {
+        implements MapLookupPojo<License> {
 
-	public static final ObjectLookupDao<License> dao
-			= new ObjectLookupDao<License>(License.class);
+	public static final MapLookupDao<License> dao
+			= new MapLookupDao<License>(License.class);
 
 	@Column(name = "`limit`") // tick marks to escape the field name, because 'limit' is a SQL keyword
     @Convert(converter = MultiTypeWrapper.Converter.class)
@@ -47,7 +49,9 @@ public class License extends GeneratedIdPojo
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
 
     @Override
     public void _set(License o) {
@@ -60,6 +64,23 @@ public class License extends GeneratedIdPojo
     @JsonIgnore
     @Override
     public boolean _match(License o) {
-        return this.equals(o);
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.limit, o.limit)
+                && Objects.equals(this.trimmed, o.trimmed)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
+
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public Map<String, Object> _getSearchMap() {
+        return MakeMap.of(new Object[] {
+                "limit", this.limit,
+                "trimmed", this.trimmed,
+                "extraJson", this.getExtraJson()
+        });
+    }
+
 }

@@ -1,6 +1,5 @@
 package nessusTools.data.entity.template;
 
-import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,8 +18,8 @@ import nessusTools.data.deserialize.Lookup;
 @MappedSuperclass
 @JsonDeserialize(using = Lookup.Deserializer.class)
 @JsonSerialize(using = Lookup.Serializer.class)
-public abstract class LookupPojo<POJO extends LookupPojo<POJO>>
-        implements DbPojo, Comparable<POJO> {
+public abstract class SimpleStringLookupPojo<POJO extends SimpleStringLookupPojo<POJO>>
+        implements DbPojo, StringLookupPojo<POJO> {
 
     public static final String FIELD_NAME = "value";
 
@@ -46,6 +45,10 @@ public abstract class LookupPojo<POJO extends LookupPojo<POJO>>
     }
 
     public void setValue(String value) {
+        if (this.value != null && !Objects.equals(this.value, value)) {
+            throw new IllegalStateException("Cannot alter the value of a StringLookup (" +
+                    this.getClass() +") after it has been set!");
+        }
         this.value = value;
     }
 

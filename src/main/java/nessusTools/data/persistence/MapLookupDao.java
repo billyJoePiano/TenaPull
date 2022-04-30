@@ -3,67 +3,26 @@ package nessusTools.data.persistence;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.entity.template.DbPojo;
 
-import java.lang.ref.*;
 import java.util.*;
 
 import javax.json.JsonException;
 
 import com.fasterxml.jackson.databind.*;
-import nessusTools.sync.*;
-import nessusTools.util.*;
-import org.hibernate.*;
-import org.hibernate.collection.internal.*;
-import org.hibernate.property.access.spi.*;
 import org.hibernate.proxy.*;
 
 
 // TODO add code to update old PojoFinder keys for workingLookups when the pojo record is mutated
 
-public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<POJO> {
-
-
-    //whether to lookup the object by a (non-zero) id passed in the DbPojo
-    private final boolean naturalId;
-    private final boolean searchMapProvider;
-        // Typically, getByIdWhenZero will coincide with use of IdNullable deserializer
-
-    public ObjectLookupDao(Class<POJO> pojoType) {
+public class MapLookupDao<POJO extends MapLookupPojo<POJO>> extends AbstractPojoLookupDao<POJO> {
+    public MapLookupDao(Class<POJO> pojoType) {
         super(pojoType);
-        this.naturalId = NaturalIdPojo.class.isAssignableFrom(pojoType);
-        this.searchMapProvider = LookupSearchMapProvider.class.isAssignableFrom(pojoType);
-        this.workingLookups = new InstancesTracker(Integer.class, pojoType, null);
     }
 
-
-    private final InstancesTracker<Integer, POJO> workingLookups;
-
-    public List<POJO> getOrCreate(List<POJO> list) {
-        if (list == null) return null;
-
-        List<POJO> newList = new ArrayList<>(list.size());
-        for (POJO pojo : list) {
-            newList.add(this.getOrCreate(pojo));
-        }
-        return newList;
-    }
-
-    public POJO getOrCreate(POJO pojo) {
-        if (pojo == null) return null;
-        pojo._prepare();
-        if (pojo.getId() != 0) {
-            POJO result = this.workingLookups.get(pojo.getId());
-            if (result != null) {
-                if (result != pojo) {
-                    result._set(pojo);
-                }
-                result._prepare();
-                return result;
-            }
-        }
-
+    protected POJO checkedGetOrCreate(POJO pojo) {
         POJO result = null;
+
         synchronized (this) {
-            List<POJO> list = this.workingLookups.get(other ->
+            List<POJO> list = this.instances.get(other ->
                     other == pojo || (other != null && pojo._match(other)), 1);
 
             for (POJO p : list) {
@@ -73,36 +32,42 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
                 }
             }
 
+
             if (result == null) {
-                if (this.searchMapProvider) {
-                    result = useSearchMapProvider(pojo);
-
-                } else {
-                    result = this.findByExactPojo(pojo);
-                }
-
-                if (result == null) {
-                    int id = this.insert(pojo);
-                    if (id != -1) {
-                        result = this.workingLookups.constructWith(id, i -> pojo);
-                    }
-                    if (result == null) {
-                        return pojo;
-                    }
+                int id = this.insert(pojo);
+                if (id != -1) {
+                    result = this.instances.constructWith(id, i -> pojo);
                 }
             }
         }
 
-        if (result != pojo) {
+        return finalizeResult(pojo, result);
+    }
+
+    @Override
+    protected POJO finalizeResult(POJO pojo, POJO result) {
+        if (result == null) {
+            result = pojo;
+
+        } else if (result != pojo) {
             result._set(pojo);
         }
         result._prepare();
         return result;
     }
 
-    private synchronized POJO useSearchMapProvider(POJO mapProvider) throws LookupException {
-        LookupSearchMapProvider smp = (LookupSearchMapProvider) mapProvider;
-        List<POJO> results = this.mapSearch(smp._getSearchMap());
+    protected POJO checkedUnproxy(HibernateProxy pojo) {
+        int id = ((POJO)pojo).getId();
+        POJO result;
+        if (id > 0) {
+            result = this.instances.get(id);
+            if (result != null && result != pojo) return result;
+        }
+        return super.checkedUnproxy(pojo);
+    }
+
+    private synchronized POJO useSearchMapProvider(POJO pojo) throws LookupException {
+        List<POJO> results = this.mapSearch(pojo._getSearchMap());
 
         switch (results.size()) {
             case 0:
@@ -183,12 +148,12 @@ public class ObjectLookupDao<POJO extends ObjectLookupPojo<POJO>> extends Dao<PO
 
 
     public String toString() {
-        return "[ObjectLookupDao for " + this.getPojoType().getSimpleName() + "]";
+        return "[MapLookupDao for " + this.getPojoType().getSimpleName() + "]";
     }
 
     public static <P extends DbPojo, D extends Dao<P>> D get(Class<P> objectLookupPojoClass) {
         D dao = Dao.get(objectLookupPojoClass);
-        if (dao != null && dao instanceof ObjectLookupDao) {
+        if (dao != null && dao instanceof MapLookupDao) {
             return dao;
 
         } else {

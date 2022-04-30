@@ -7,8 +7,8 @@ import javax.persistence.*;
 
 @Entity(name = "PluginScriptCopyright")
 @Table(name = "plugin_script_copyright")
-public class PluginScriptCopyright extends LookupPojo<PluginScriptCopyright> {
-    public static final LookupDao<PluginScriptCopyright> dao
-            = new LookupDao<PluginScriptCopyright>(PluginScriptCopyright.class);
+public class PluginScriptCopyright extends StringHashLookupPojo<PluginScriptCopyright> {
+    public static final StringHashLookupDao<PluginScriptCopyright> dao
+            = new StringHashLookupDao<PluginScriptCopyright>(PluginScriptCopyright.class);
 
 }

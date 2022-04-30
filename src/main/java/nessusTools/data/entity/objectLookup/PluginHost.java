@@ -1,11 +1,11 @@
 package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.annotation.*;
 
-import nessusTools.data.deserialize.*;
+import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
+import nessusTools.util.*;
 
 import javax.persistence.*;
 import java.util.*;
@@ -13,29 +13,33 @@ import java.util.*;
 @Entity(name = "PluginHost")
 @Table(name = "plugin_host")
 public class PluginHost extends GeneratedIdPojo
-        implements ObjectLookupPojo<PluginHost> {
+        implements MapLookupPojo<PluginHost> {
 
-    public static final ObjectLookupDao<PluginHost> dao = new ObjectLookupDao<PluginHost>(PluginHost.class);
+    public static final MapLookupDao<PluginHost> dao = new MapLookupDao<PluginHost>(PluginHost.class);
 
-    @Column(name = "host_ip")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "host_ip_id")
     @JsonProperty("host_ip")
-    private String hostIp;
+    private HostIp hostIp;
 
     @Column(name = "host_id")
     @JsonProperty("id")
     Integer hostId;
 
-    @Column(name = "host_fqdn")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "host_fqdn_id")
     @JsonProperty("host_fqdn")
-    String hostFqdn;
+    HostFqdn hostFqdn;
 
-    String hostname;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "hostname_id")
+    Hostname hostname;
 
-    public String getHostIp() {
+    public HostIp getHostIp() {
         return hostIp;
     }
 
-    public void setHostIp(String hostIp) {
+    public void setHostIp(HostIp hostIp) {
         this.hostIp = hostIp;
     }
 
@@ -47,30 +51,33 @@ public class PluginHost extends GeneratedIdPojo
         this.hostId = hostId;
     }
 
-    public String getHostFqdn() {
+    public HostFqdn getHostFqdn() {
         return hostFqdn;
     }
 
-    public void setHostFqdn(String hostFqdn) {
+    public void setHostFqdn(HostFqdn hostFqdn) {
         this.hostFqdn = hostFqdn;
     }
 
-    public String getHostname() {
+    public Hostname getHostname() {
         return hostname;
     }
 
-    public void setHostname(String hostname) {
+    public void setHostname(Hostname hostname) {
         this.hostname = hostname;
     }
 
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
 
     @Override
     public void _set(PluginHost o) {
         this.__set(o);
+        this.hostIp = o.hostIp;
         this.hostId = o.hostId;
         this.hostFqdn = o.hostFqdn;
         this.hostname = o.hostname;
@@ -80,10 +87,27 @@ public class PluginHost extends GeneratedIdPojo
     @JsonIgnore
     @Override
     public boolean _match(PluginHost o) {
+        if (o == this) return true;
         return o != null
                 && Objects.equals(this.hostIp, o.hostIp)
                 && Objects.equals(this.hostId, o.hostId)
                 && Objects.equals(this.hostFqdn, o.hostFqdn)
-                && Objects.equals(this.hostname, o.hostname);
+                && Objects.equals(this.hostname, o.hostname)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public Map<String, Object> _getSearchMap() {
+        return MakeMap.of(new Object[] {
+                "hostIp", this.hostIp,
+                "hostId", this.hostId,
+                "hostFqdn", this.hostFqdn,
+                "hostname", this.hostname,
+                "extraJson", this.getExtraJson()
+        });
+    }
+
+
 }

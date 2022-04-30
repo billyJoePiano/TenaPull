@@ -3,9 +3,9 @@ package nessusTools.data.deserialize;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
-import nessusTools.data.entity.template.LookupPojo;
-import nessusTools.data.persistence.LookupDao;
-import nessusTools.data.persistence.LookupException;
+import nessusTools.data.entity.template.*;
+import nessusTools.data.persistence.*;
+import nessusTools.data.persistence.SimpleStringLookupDao;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,8 +14,9 @@ import java.io.IOException;
 public class Lookup {
     private Lookup() { }
 
-    public static class Deserializer<POJO extends LookupPojo<POJO>>
-            extends AbstractContextualPojoDeserializer<POJO, LookupDao<POJO>> {
+    public static class Deserializer<POJO extends StringLookupPojo<POJO>,
+                                      DAO extends Dao<POJO> & StringLookupDao<POJO>>
+            extends AbstractContextualPojoDeserializer<POJO, DAO> {
 
         private static final Logger logger = LogManager.getLogger(Deserializer.class);
         protected Logger getLogger() {
@@ -39,10 +40,10 @@ public class Lookup {
         }
     }
 
-    public static class Serializer extends JsonSerializer<LookupPojo> {
+    public static class Serializer<POJO extends StringLookupPojo<POJO>> extends JsonSerializer<POJO> {
         // https://stackoverflow.com/questions/33519354/how-to-get-property-or-field-name-in-a-custom-json-serializer
         @Override
-        public void serialize(LookupPojo pojo, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        public void serialize(POJO pojo, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
             if (pojo != null) {
                 jsonGenerator.writeString(pojo.getValue());
 

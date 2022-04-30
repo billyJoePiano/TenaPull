@@ -54,6 +54,7 @@ public class ScanRemediationsSummary extends ScanResponse.SingleChild<ScanRemedi
     @JsonIgnore
     @Override
     public void _prepare() {
+        this.__prepare();
         this.remediations = Remediation.dao.getOrCreate(remediations);
     }
 

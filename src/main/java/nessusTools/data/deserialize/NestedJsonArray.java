@@ -1,17 +1,14 @@
 package nessusTools.data.deserialize;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.sun.istack.*;
+import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.template.*;
-import nessusTools.data.persistence.*;
 
-import javax.json.*;
 import javax.persistence.*;
-import java.io.*;
 import java.util.*;
 
 // P parent , C child
@@ -132,7 +129,7 @@ public abstract class NestedJsonArray
     public Map<String, JsonNode> jsonAnyGetterForParent() {
         ExtraJson extraJson = this.parent.getExtraJson();
         if (extraJson == null) return null;
-        Map<String, JsonNode> map = new LinkedHashMap<>(extraJson.getMap());
+        Map<String, JsonNode> map = extraJson.getValue().makeCopy();
         map.remove(EXTRA_JSON_KEY_IN_PARENT + this.getClass().getSimpleName());
         return map;
     }

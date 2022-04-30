@@ -16,8 +16,8 @@ public class ObjectLookup {
 
     /*
 
-    public static class Deserializer<POJO extends ObjectLookupPojo<POJO>>
-            extends AbstractContextualPojoDeserializer<POJO, ObjectLookupDao<POJO>> {
+    public static class Deserializer<POJO extends MapLookupPojo<POJO>>
+            extends AbstractContextualPojoDeserializer<POJO, MapLookupDao<POJO>> {
 
         public Deserializer() { }
 
@@ -53,9 +53,9 @@ public class ObjectLookup {
     }
 
     public static class ResponseChild
-                    <POJO extends NessusResponse.ResponseChild<POJO, R> & ObjectLookupPojo<POJO>,
+                    <POJO extends NessusResponse.ResponseChild<POJO, R> & MapLookupPojo<POJO>,
                         R extends NessusResponse>
-                extends ResponseChildDeserializer<POJO, ObjectLookupDao<POJO>, R> {
+                extends ResponseChildDeserializer<POJO, MapLookupDao<POJO>, R> {
 
         private static final Logger logger = LogManager.getLogger(ResponseChildDeserializer.class);
         public Logger getLogger() {

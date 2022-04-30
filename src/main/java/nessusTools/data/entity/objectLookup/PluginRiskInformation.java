@@ -5,14 +5,14 @@ import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
+import java.util.*;
 
 @Entity(name = "PluginRiskInformation")
 @Table(name = "plugin_risk_information")
-public class PluginRiskInformation extends GeneratedIdPojo
-        implements ObjectLookupPojo<PluginRiskInformation> {
+public class PluginRiskInformation extends HashLookupTemplate<PluginRiskInformation> {
 
-    public static final ObjectLookupDao<PluginRiskInformation> dao
-            = new ObjectLookupDao<PluginRiskInformation>(PluginRiskInformation.class);
+    public static final HashLookupDao<PluginRiskInformation> dao
+            = new HashLookupDao<PluginRiskInformation>(PluginRiskInformation.class);
 
     @Column(name = "cvss_temporal_vector")
     @JsonProperty("cvss_temporal_vector")
@@ -49,13 +49,38 @@ public class PluginRiskInformation extends GeneratedIdPojo
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
+
+    @Override
+    public void _set(PluginRiskInformation o) {
+        this.__set(o);
+        this.cvssTemporalVector = o.cvssTemporalVector;
+        this.riskFactor = o.riskFactor;
+        this.cvssVector = o.cvssVector;
+        this.cvssTemporalScore = o.cvssTemporalScore;
+        this.cvss3TemporalVector = o.cvss3TemporalVector;
+        this.cvss3BaseScore = o.cvss3BaseScore;
+        this.cvss3Vector = o.cvss3Vector;
+        this.cvss3TemporalScore = o.cvss3TemporalScore;
+    }
 
     @Transient
     @JsonIgnore
     @Override
     public boolean _match(PluginRiskInformation o) {
-        return this.equals(o);
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.cvssTemporalVector, o.cvssTemporalVector)
+                && Objects.equals(this.riskFactor, o.riskFactor)
+                && Objects.equals(this.cvssVector, o.cvssVector)
+                && Objects.equals(this.cvssTemporalScore, o.cvssTemporalScore)
+                && Objects.equals(this.cvss3TemporalVector, o.cvss3TemporalVector)
+                && Objects.equals(this.cvss3BaseScore, o.cvss3BaseScore)
+                && Objects.equals(this.cvss3Vector, o.cvss3Vector)
+                && Objects.equals(this.cvss3TemporalScore, o.cvss3TemporalScore)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
 
@@ -121,18 +146,5 @@ public class PluginRiskInformation extends GeneratedIdPojo
 
     public void setCvss3Vector(String cvss3Vector) {
         this.cvss3Vector = cvss3Vector;
-    }
-
-    @Override
-    public void _set(PluginRiskInformation o) {
-        this.__set(o);
-        this.cvssTemporalVector = o.cvssTemporalVector;
-        this.riskFactor = o.riskFactor;
-        this.cvssVector = o.cvssVector;
-        this.cvssTemporalScore = o.cvssTemporalScore;
-        this.cvss3TemporalVector = o.cvss3TemporalVector;
-        this.cvss3BaseScore = o.cvss3BaseScore;
-        this.cvss3Vector = o.cvss3Vector;
-        this.cvss3TemporalScore = o.cvss3TemporalScore;
     }
 }

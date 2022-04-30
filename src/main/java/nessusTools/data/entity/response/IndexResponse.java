@@ -75,5 +75,7 @@ public class IndexResponse extends NessusResponseWithTimestamp {
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
 }

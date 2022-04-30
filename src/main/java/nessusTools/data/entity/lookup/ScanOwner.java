@@ -1,17 +1,15 @@
 package nessusTools.data.entity.lookup;
 
-import com.fasterxml.jackson.annotation.*;
-import nessusTools.data.entity.objectLookup.*;
-import nessusTools.data.entity.template.LookupPojo;
-import nessusTools.data.persistence.LookupDao;
+import nessusTools.data.entity.template.SimpleStringLookupPojo;
+import nessusTools.data.persistence.SimpleStringLookupDao;
 
 import javax.persistence.*;
 
 @Entity(name = "ScanOwner")
 @Table(name = "scan_owner")
-public class ScanOwner extends LookupPojo<ScanOwner> {
-    public static final LookupDao<ScanOwner> dao
-            = new LookupDao<ScanOwner>(ScanOwner.class);
+public class ScanOwner extends SimpleStringLookupPojo<ScanOwner> {
+    public static final SimpleStringLookupDao<ScanOwner> dao
+            = new SimpleStringLookupDao<ScanOwner>(ScanOwner.class);
 
     /*
     @OneToOne(mappedBy = "scanOwner")

@@ -464,7 +464,7 @@ public class TestCRUD {
                         + node.toString());
             }
 
-            searchMap = ObjectLookupDao.makeSearchMapFromJson(jsonSearchMap);
+            searchMap = MapLookupDao.makeSearchMapFromJson(jsonSearchMap);
         }
 
         if (searchId != null) {

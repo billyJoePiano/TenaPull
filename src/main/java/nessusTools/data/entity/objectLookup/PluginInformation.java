@@ -5,14 +5,14 @@ import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
+import java.util.*;
 
 @Entity(name = "PluginInformation")
 @Table(name = "plugin_information")
-public class PluginInformation extends GeneratedIdPojo
-        implements ObjectLookupPojo<PluginInformation> {
+public class PluginInformation extends HashLookupTemplate<PluginInformation> {
 
-    public static final ObjectLookupDao<PluginInformation> dao
-            = new ObjectLookupDao<PluginInformation>(PluginInformation.class);
+    public static final HashLookupDao<PluginInformation> dao
+            = new HashLookupDao<PluginInformation>(PluginInformation.class);
 
     @Column(name = "plugin_version")
     @JsonProperty("plugin_version")
@@ -41,13 +41,34 @@ public class PluginInformation extends GeneratedIdPojo
     @Transient
     @JsonIgnore
     @Override
-    public void _prepare() { }
+    public void _prepare() {
+        this.__prepare();
+    }
+
+    @Override
+    public void _set(PluginInformation o) {
+        this.__set(o);
+        this.pluginVersion = o.pluginVersion;
+        this.pluginId = o.pluginId;
+        this.pluginType = o.pluginType;
+        this.pluginPublicationDate = o.pluginPublicationDate;
+        this.pluginFamily = o.pluginFamily;
+        this.pluginModificationDate = o.pluginModificationDate;
+    }
 
     @Transient
     @JsonIgnore
     @Override
     public boolean _match(PluginInformation o) {
-        return this.equals(o);
+        if (o == this) return true;
+        return o != null
+                && Objects.equals(this.pluginVersion, o.pluginVersion)
+                && Objects.equals(this.pluginId, o.pluginId)
+                && Objects.equals(this.pluginType, o.pluginType)
+                && Objects.equals(this.pluginPublicationDate, o.pluginPublicationDate)
+                && Objects.equals(this.pluginFamily, o.pluginFamily)
+                && Objects.equals(this.pluginModificationDate, o.pluginModificationDate)
+                && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
 
@@ -97,16 +118,5 @@ public class PluginInformation extends GeneratedIdPojo
 
     public void setPluginModificationDate(String pluginModificationDate) {
         this.pluginModificationDate = pluginModificationDate;
-    }
-
-    @Override
-    public void _set(PluginInformation o) {
-        this.__set(o);
-        this.pluginVersion = o.pluginVersion;
-        this.pluginId = o.pluginId;
-        this.pluginType = o.pluginType;
-        this.pluginPublicationDate = o.pluginPublicationDate;
-        this.pluginFamily = o.pluginFamily;
-        this.pluginModificationDate = o.pluginModificationDate;
     }
 }

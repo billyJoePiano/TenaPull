@@ -7,8 +7,8 @@ import javax.persistence.*;
 
 @Entity(name = "PluginDescription")
 @Table(name = "plugin_description")
-public class PluginDescription extends LookupPojo<PluginDescription> {
-    public static final LookupDao<PluginDescription> dao
-            = new LookupDao<PluginDescription>(PluginDescription.class);
+public class PluginDescription extends StringHashLookupPojo<PluginDescription> {
+    public static final StringHashLookupDao<PluginDescription> dao
+            = new StringHashLookupDao<PluginDescription>(PluginDescription.class);
 
 }

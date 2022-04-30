@@ -3,10 +3,12 @@ package nessusTools.data.entity.scan;
 import com.fasterxml.jackson.annotation.*;
 
 import com.fasterxml.jackson.databind.*;
+import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
+import nessusTools.util.*;
 import org.hibernate.annotations.*;
 
 import java.util.*;
@@ -22,10 +24,10 @@ import javax.persistence.Table;
 @Entity(name = "ScanHost")
 @Table(name = "scan_host")
 public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
-        implements LookupSearchMapProvider<ScanHost> {
+        implements MapLookupPojo<ScanHost> {
 
-    public static final ObjectLookupDao<ScanHost>
-            dao = new ObjectLookupDao<ScanHost>(ScanHost.class);
+    public static final MapLookupDao<ScanHost>
+            dao = new MapLookupDao<ScanHost>(ScanHost.class);
 
     @Column(name = "host_id")
     @JsonProperty("host_id")
@@ -103,7 +105,9 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
 
     private Integer severity;
 
-    private String hostname;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "hostname_id")
+    private Hostname hostname;
 
     public SeverityCount getSeveritycount() {
         if (this.severitycount == null) {
@@ -135,6 +139,7 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
     @JsonIgnore
     @Override
     public void _prepare() {
+        this.__prepare();
         this.severityCounts = SeverityLevelCount.dao.getOrCreate(this.severityCounts);
     }
 
@@ -174,17 +179,19 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
     @Override
     @Transient
     @JsonIgnore
-    public boolean _match(ScanHost other) {
-        return  this.__match(other)
-                && this.hostId != null && other.hostId != null
-                && this.hostId.intValue() == other.hostId.intValue();
+    public boolean _match(ScanHost o) {
+        if (o == this) return true;
+        return  this.__match(o)
+                && this.hostId != null && o.hostId != null
+                && this.hostId.intValue() == o.hostId.intValue();
     }
 
     @Override
     @Transient
     @JsonIgnore
     public Map<String, Object> _getSearchMap() {
-        return Map.of("response", this.getResponse(), "hostId", this.hostId);
+        return MakeMap.of(new Object[]
+                { "response", this.getResponse(), "hostId", this.hostId });
     }
 
     @Override
@@ -352,11 +359,11 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
         this.severity = severity;
     }
 
-    public String getHostname() {
+    public Hostname getHostname() {
         return hostname;
     }
 
-    public void setHostname(String hostname) {
+    public void setHostname(Hostname hostname) {
         this.hostname = hostname;
     }
 }

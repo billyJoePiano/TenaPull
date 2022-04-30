@@ -13,6 +13,7 @@ drop table if exists `plugin_ref_information_value`;
 drop table if exists `plugin_attributes_ref_information`;
 drop table if exists `index_response_scan`;
 drop table if exists `index_response_folder`;
+drop table if exists `splunk_output`;
 
 -- Scan data
 drop table if exists `scan_host_info`;
@@ -44,9 +45,12 @@ drop table if exists `severity_base`;
 drop table if exists `acl`;
 
 -- Simple lookup tables
+drop table if exists hostname;
+drop table if exists `host_fqdn`;
 drop table if exists `host_ip`;
 drop table if exists `operating_system`;
 drop table if exists `cpe`;
+drop table if exists `vulnerability_score`;
 drop table if exists `plugin_see_also`;
 drop table if exists `plugin_ref_value`;
 drop table if exists `plugin_description`;
@@ -62,24 +66,22 @@ drop table if exists `scanner`;
 drop table if exists `timezone`;
 drop table if exists `scan_type`;
 drop table if exists `scan_policy`;
-drop table if exists `scan_owner_id`;
 drop table if exists `scan_owner`;
-
-
+drop table if exists `extra_json`;
 
 --
 -- SIMPLE LOOKUPS
 --
 
+create table extra_json (
+    id int auto_increment primary key,
+    value longtext not null,
+    _hash varbinary(64) not null unique -- since we can't index a longtext, make a SHA-512 hash of it
+);
+
 create table scan_owner (
     id int auto_increment primary key,
     value varchar(255) not null unique
-);
-
-create table scan_owner_id (
-    id int primary key, -- nessus id
-    lookup_id int unique null,
-    constraint foreign key (lookup_id) references scan_owner (id)
 );
 
 create table scan_type (
@@ -134,17 +136,20 @@ create table plugin_family (
 
 create table plugin_synopsis (
     id int auto_increment primary key,
-    value longtext not null
+    value longtext not null,
+    _hash varbinary(64) not null unique
 );
 
 create table plugin_script_copyright (
     id int auto_increment primary key,
-    value longtext not null
+    value longtext not null,
+    _hash varbinary(64) not null unique
 );
 
 create table plugin_description (
     id int auto_increment primary key,
-    value longtext not null
+    value longtext not null,
+    _hash varbinary(64) not null unique
 );
 
 create table plugin_ref_value (
@@ -153,6 +158,11 @@ create table plugin_ref_value (
 );
 
 create table plugin_see_also (
+    id int auto_increment primary key,
+    value varchar(255) not null unique
+);
+
+create table vulnerability_score (
     id int auto_increment primary key,
     value varchar(255) not null unique
 );
@@ -172,6 +182,16 @@ create table host_ip (
     value varchar(255) not null unique
 );
 
+create table host_fqdn (
+    id    int auto_increment primary key,
+    value varchar(255) not null unique
+);
+
+create table hostname (
+    id    int auto_increment primary key,
+    value varchar(255) not null unique
+);
+
 
 --
 -- COMPLEX LOOKUPS
@@ -186,17 +206,19 @@ create table acl
     type         varchar(255) null,
     permissions  int          null,
     display_name varchar(255) null,
-    _extra_json  longtext null
+    _extra_json  int null,
+    _hash varbinary (64) not null unique,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table severity_base
 (
-    id      int auto_increment,
+    id      int primary key auto_increment,
     value   varchar(255) null,
     display varchar(255) null,
-    _extra_json  longtext null,
-    constraint severity_base_pk
-        primary key (id)
+    _extra_json  int null,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade,
+    constraint unique (value, display, _extra_json)
 );
 
 create table license
@@ -204,29 +226,39 @@ create table license
     id int auto_increment primary key,
     `limit` varchar(255) null,
     trimmed varchar(255) null,
-    _extra_json longtext null
+    _extra_json int null,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade,
+    constraint unique (`limit`, trimmed, _extra_json)
 );
 
 
 -- create table scan_group (
 --    id int primary key auto_increment,
---    _extra_json  longtext null
+--    _extra_json  int null,
+--    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 -- );
 
 create table severity_level_count (
     id int PRIMARY KEY AUTO_INCREMENT,
     `count` int null,
     severity_level int null,
-    _extra_json longtext null
+    _extra_json int null,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade,
+    constraint unique (`count`, severity_level, _extra_json)
 );
 
 create table plugin_host (
     id int primary key auto_increment,
     host_id int null,
-    host_ip varchar(255) null,
-    host_fqdn varchar(255) null,
-    hostname varchar(255) null,
-    _extra_json varchar(255) null
+    host_ip_id int null,
+    host_fqdn_id int null,
+    hostname_id int null,
+    _extra_json int null,
+    constraint foreign key (host_ip_id) references host_ip (id),
+    constraint foreign key (host_fqdn_id) references host_fqdn (id),
+    constraint foreign key (hostname_id) references hostname (id),
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade,
+    constraint unique (host_id, host_ip_id, host_fqdn_id, hostname_id, _extra_json)
 );
 
 create table plugin_risk_information (
@@ -239,7 +271,9 @@ create table plugin_risk_information (
     cvss3_temporal_vector varchar(255) null,
     cvss3_temporal_score varchar(255) null,
     cvss3_vector varchar(255) null,
-    _extra_json longtext null
+    _extra_json int null,
+    _hash varbinary (64) not null unique,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table plugin_information (
@@ -250,7 +284,9 @@ create table plugin_information (
     plugin_publication_date varchar(255) null,
     plugin_family varchar(255) null,
     plugin_modification_date varchar(255) null,
-    _extra_json longtext null   
+    _extra_json int null,
+    _hash varbinary (64) not null unique,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table plugin_vuln_information (
@@ -260,7 +296,9 @@ create table plugin_vuln_information (
     in_the_news  varchar(255) null,
     vuln_publication_date varchar(255) null,
     patch_publication_date varchar(255) null,
-    _extra_json longtext null
+    _extra_json int null,
+    _hash varbinary (64) not null unique,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table plugin_attributes (
@@ -285,21 +323,25 @@ create table plugin_attributes (
     vuln_information_id int null,
     age_of_vuln varchar(255) null,
     exploit_code_maturity varchar(255) null,
-    _extra_json longtext null,
+    _extra_json int null,
+    _hash varbinary (64) not null unique,
     constraint foreign key (synopsis_id) references plugin_synopsis (id) on update cascade,
     constraint foreign key (script_copyright_id) references plugin_script_copyright (id) on update cascade,
     constraint foreign key (description_id) references plugin_description (id) on update cascade,
     constraint foreign key (risk_information_id) references plugin_risk_information (id) on update cascade,
     constraint foreign key (plugin_name_id) references plugin_name (id) on update cascade,
     constraint foreign key (plugin_information_id) references plugin_information (id) on update cascade,
-    constraint foreign key (vuln_information_id) references plugin_vuln_information (id) on update cascade
+    constraint foreign key (vuln_information_id) references plugin_vuln_information (id) on update cascade,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table plugin_ref_information (
     id int auto_increment primary key,
     name varchar(255) null,
     url varchar(255) null,
-    _extra_json longtext null
+    _extra_json int null,
+    _hash varbinary (64) not null unique,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table plugin (
@@ -308,11 +350,13 @@ create table plugin (
     plugin_name_id int null,
     plugin_attributes_id int null,
     plugin_family_id int null,
-    plugin_id varchar(255) null,
-    _extra_json longtext null,
+    plugin_id varchar(32) null,
+    _extra_json int null,
     constraint foreign key (plugin_name_id) references plugin_name (id) on update cascade,
     constraint foreign key (plugin_attributes_id) references plugin_attributes (id) on update cascade,
-    constraint foreign key (plugin_family_id) references plugin_family (id) on update cascade
+    constraint foreign key (plugin_family_id) references plugin_family (id) on update cascade,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade,
+    constraint unique (severity, plugin_name_id, plugin_attributes_id, plugin_family_id, plugin_id, _extra_json)
 );
 
 create table remediation (
@@ -321,7 +365,9 @@ create table remediation (
     hosts int null,
     value varchar(255) null,
     vulns int null,
-    _extra_json longtext null
+    _extra_json int null,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade,
+    constraint unique (remediation, hosts, value, vulns, _extra_json)
 );
 
 create table vulnerability (
@@ -332,15 +378,19 @@ create table vulnerability (
     plugin_name_id int null,
     plugin_family_id int null,
     plugin_id int null,
-    score varchar(255) null,
+    score_id int null,
     severity int null,
     severity_index int null,
     snoozed int null,
     vuln_index int null,
-    _extra_json longtext null,
+    _extra_json int null,
     constraint foreign key (cpe_id) references cpe (id) on update cascade,
+    constraint foreign key (plugin_name_id) references plugin_name (id) on update cascade,
     constraint foreign key (plugin_family_id) references plugin_family (id) on update cascade,
-    constraint foreign key (plugin_name_id) references plugin_name (id) on update cascade
+    constraint foreign key (score_id) references vulnerability_score (id) on update cascade,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade,
+    constraint unique (`count`, cpe_id, offline, plugin_name_id, plugin_family_id, plugin_id, score_id, severity,
+        severity_index, snoozed, vuln_index, _extra_json)
 );
 
 
@@ -351,7 +401,8 @@ create table vulnerability (
 create table index_response (
     id int primary key auto_increment,
     timestamp timestamp null,
-    _extra_json longtext null
+    _extra_json int null,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table folder (
@@ -361,8 +412,9 @@ create table folder (
     default_tag  int          null,
     custom       int          null,
     unread_count int          null,
-    _extra_json  longtext null,
-    constraint folder_pk primary key (id)
+    _extra_json  int null,
+    constraint folder_pk primary key (id),
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table scan (
@@ -384,23 +436,25 @@ create table scan (
     last_modification_date  timestamp null,
     timezone_id     int          null,
     live_results    int          null,
-    _extra_json  longtext null,
+    _extra_json  int null,
     constraint scan_uuid_id_fk foreign key (uuid_id) references scan_uuid (id) on update cascade,
     -- constraint scan_folder_id_fk foreign key (folder_id) references folder (id) on delete cascade on update cascade,
     constraint scan_scan_owner_id_fk foreign key (owner_id) references scan_owner (id) on update cascade,
     constraint scan_scan_type_id_fk foreign key (scan_type_id) references scan_type (id) on update cascade,
     constraint scan_status_id foreign key (status_id) references scan_status (id) on update cascade,
-    constraint scan_timezone_id_fk foreign key (timezone_id) references timezone (id) on update cascade
+    constraint scan_timezone_id_fk foreign key (timezone_id) references timezone (id) on update cascade,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 
 create table scan_response (
     id int PRIMARY KEY,
-    timestamp Timestamp not null,
+    timestamp timestamp not null,
     threat_level int null, -- JSON is actually nested in the 'prioritzation' container that wraps the "plugins" array,
                            -- but there is no db entity for the prioritization container
-    _extra_json longtext null,
-    constraint scan_response_scan_id_fk foreign key (id) references scan (id) on update cascade
+    _extra_json int null,
+    constraint scan_response_scan_id_fk foreign key (id) references scan (id) on update cascade,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 
@@ -447,7 +501,7 @@ create table scan_info (
     status_id int null,
     current_severity_base_id int null,
     selected_severity_base_id int null,
-    _extra_json  longtext null,
+    _extra_json  int null,
 
     constraint scan_info_scan_response_id_fk foreign key (id) references scan_response (id) on update cascade,
     constraint scan_info_folder_id_fk foreign key (folder_id) references folder (id),
@@ -460,7 +514,8 @@ create table scan_info (
     constraint scan_info_policy_template_uuid_id_fk foreign key (policy_template_uuid_id) references policy_template_uuid (id) on update cascade,
     constraint scan_info_status_id_fk foreign key (status_id) references scan_status (id) on update cascade,
     constraint scan_info_current_severity_base_id_fk foreign key (current_severity_base_id) references severity_base (id) on update cascade,
-    constraint scan_info_selected_severity_base_id_fk foreign key (selected_severity_base_id) references severity_base (id) on update cascade
+    constraint scan_info_selected_severity_base_id_fk foreign key (selected_severity_base_id) references severity_base (id) on update cascade,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 
@@ -486,10 +541,12 @@ create table scan_host (
     low int null,
     info int null,
     severity int null,
-    hostname varchar(255) null,
-    _extra_json longtext null,
+    hostname_id int null,
+    _extra_json int null,
     constraint scan_host_scan_response_id_fk foreign key (scan_id) references scan_response (id),
-    constraint scan_host__host_scan_unique unique (scan_id, host_id)
+    constraint scan_host__host_scan_unique unique (scan_id, host_id),
+    constraint foreign key (hostname_id) references hostname (id),
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table scan_plugin (
@@ -498,11 +555,12 @@ create table scan_plugin (
     scan_id int not null, -- effectively, also scan_id
     plugin_id int null,
     host_count int null,
-    _extra_json longtext null,
+    _extra_json int null,
     __order_for_scan_plugin int null,
     constraint unique (scan_id, plugin_id),
     constraint foreign key (scan_id) references scan_response(id), -- effectively, also scan_response(id) and scan_prioritization(id)
-    constraint foreign key (plugin_id) references plugin(id) on update cascade
+    constraint foreign key (plugin_id) references plugin(id) on update cascade,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table scan_remediations_summary (
@@ -511,8 +569,9 @@ create table scan_remediations_summary (
     num_cves int null,
     num_impacted_hosts int null,
     num_remediated_cves int null,
-    _extra_json longtext null,
-    constraint scan_remediations_summary_scan_response_id_fk foreign key (id) references scan_response(id)
+    _extra_json int null,
+    constraint scan_remediations_summary_scan_response_id_fk foreign key (id) references scan_response(id),
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table scan_history (
@@ -535,7 +594,7 @@ create table scan_history (
                 -- but without knowing the owner name or if the corresponding record in scan_owner_id
                 -- has been created, it is possible a FK constraint would fail ???
     -- __order_for_scan_response int not null, -- they seem to be ordered naturally by history_id
-    _extra_json longtext null,
+    _extra_json int null,
 
     constraint scan_history_scan_response_id_fk foreign key (scan_id) references scan_response (id),
     -- constraint scan_history_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
@@ -543,14 +602,16 @@ create table scan_history (
     constraint foreign key (schedule_type_id) references scan_schedule_type (id) on update cascade,
     constraint scan_history_scan_type_id_fk foreign key (scan_type_id) references scan_type (id) on update cascade,
     constraint scan_history_uuid_id_fk foreign key (uuid_id) references scan_uuid (id) on update cascade,
-    -- constraint foreign key (owner_id) references scan_owner_id (id) on update cascade,
-    constraint unique (scan_id, history_id)
+    constraint unique (scan_id, history_id),
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table scan_host_response (
     id int primary key,
-    _extra_json longtext null,
-    constraint foreign key (id) references scan_host(id)
+    timestamp timestamp null,
+    _extra_json int null,
+    constraint foreign key (id) references scan_host(id),
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
 create table scan_host_info (
@@ -559,10 +620,24 @@ create table scan_host_info (
     host_ip_id int null,
     host_start varchar(255) null,
     host_end varchar(255) null,
-    _extra_json longtext null,
+    _extra_json int null,
     constraint foreign key (id) references scan_host_response (id),
     constraint foreign key (operating_system_id) references operating_system(id) on update cascade,
-    constraint foreign key (host_ip_id) references host_ip(id) on update cascade
+    constraint foreign key (host_ip_id) references host_ip(id) on update cascade,
+    constraint foreign key (_extra_json) references extra_json(id) on update cascade
+);
+
+create table splunk_output (
+    id int primary key auto_increment,
+    timestamp timestamp not null,
+    host_id int not null,
+    vulnerability_id int not null,
+    scan_plugin_id int null,
+    plugin_best_guess_id int null,
+    constraint foreign key (host_id) references scan_host_response (id),
+    constraint foreign key (vulnerability_id) references vulnerability (id),
+    constraint foreign key (scan_plugin_id) references scan_plugin (id),
+    constraint foreign key (plugin_best_guess_id) references plugin (id)
 );
 
 
@@ -637,7 +712,7 @@ create table scan_host_severity_level_count (
     scan_host_id int not null,
     severity_id int not null,
     -- natural ordering by severity_count's severity_level
-    -- _extra_json longtext null,
+    -- _extra_json int null,
     constraint primary key (scan_host_id, severity_id),
     constraint foreign key (scan_host_id) references scan_host (id) on update cascade,
     constraint foreign key (severity_id) references severity_level_count (id) on update cascade
@@ -674,6 +749,7 @@ create table scan_remediation (
     scan_id int not null,
     remediation_id int not null,
     __order_for_scan_remediation int not null,
+    constraint primary key (scan_id, remediation_id),
     constraint foreign key (scan_id) references scan_remediations_summary (id) on update cascade,
     constraint foreign key (remediation_id) references remediation(id) on update cascade
 );
