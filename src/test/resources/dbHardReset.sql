@@ -550,17 +550,17 @@ create table scan_host (
 );
 
 create table scan_plugin (
-    -- sort-of join table, with host_count field.  Surrogate key needed as a result...
+    -- sort-of join table between scan_response and plugin, while also providing a join-point for plugin_host to join
+    -- with plugin and scan_response via this record.  Plus has "host_count" field.  Thus, surrogate key needed...
     id int primary key auto_increment,
     scan_id int not null, -- effectively, also scan_id
     plugin_id int null,
     host_count int null,
-    _extra_json int null,
+    -- extra json goes into the plugin lookup
     __order_for_scan_plugin int null,
     constraint unique (scan_id, plugin_id),
     constraint foreign key (scan_id) references scan_response(id), -- effectively, also scan_response(id) and scan_prioritization(id)
-    constraint foreign key (plugin_id) references plugin(id) on update cascade,
-    constraint foreign key (_extra_json) references extra_json(id) on update cascade
+    constraint foreign key (plugin_id) references plugin(id) on update cascade
 );
 
 create table scan_remediations_summary (

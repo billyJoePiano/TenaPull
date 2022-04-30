@@ -55,8 +55,11 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
 
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode sum = mapper.convertValue(s, ObjectNode.class);
+
+
+        ObjectMapper mapper = new SplunkOutputSerializer();
+
+        ObjectNode sum = mapper.valueToTree(s);
         ObjectNode info;
 
         if (d == null) {
@@ -64,7 +67,7 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
             info.put("NessusTools error",
                     "Cached data from " + summary.getName() + " details couldn't be found.");
         } else {
-            info = mapper.convertValue(d, ObjectNode.class);
+            info = mapper.valueToTree(d);
             for (Iterator<Map.Entry<String, JsonNode>> iterator = info.fields();
                  iterator.hasNext();) {
 

@@ -1,13 +1,15 @@
 package nessusTools.data.entity.template;
 
+import nessusTools.data.persistence.*;
+
 import javax.persistence.*;
 
 @MappedSuperclass
 public interface HashLookupPojo<POJO extends HashLookupPojo<POJO>>
         extends DbPojo, Comparable<POJO> {
 
-    public byte[] get_hash();
-    public void set_hash(byte[] hash) throws IllegalStateException;
+    public Hash get_hash();
+    public void set_hash(Hash hash) throws IllegalStateException;
 
     public boolean _isHashCalculated();
 
@@ -16,13 +18,11 @@ public interface HashLookupPojo<POJO extends HashLookupPojo<POJO>>
 
     default public int compareTo(POJO other) {
         if (other == null) return -1;
-        byte[] mine = this.get_hash();
-        byte[] theirs = other.get_hash();
+        Hash mine = this.get_hash();
+        Hash theirs = other.get_hash();
 
-        for (int i = 0; i < mine.length && i < theirs.length; i++) {
-            if (mine[i] == theirs[i]) continue;
-            return mine[i] < theirs[i] ? -1 : 1;
-        }
-        return 0;
+        if (mine == null) return 1;
+
+        return mine.compareTo(theirs);
     }
 }

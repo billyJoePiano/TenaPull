@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
-import nessusTools.util.*;
 import org.apache.logging.log4j.*;
 import org.hibernate.annotations.*;
 
@@ -45,8 +44,9 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
     @NaturalId
     @Access(AccessType.PROPERTY)
     @Column(name = "_hash")
+    @Convert(converter = Hash.Converter.class)
     @JsonIgnore
-    private byte[] _hash;
+    private Hash _hash;
 
     public ExtraJson() {
         this.value = new JsonMap();
@@ -120,17 +120,17 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
 
     @JsonIgnore
     @Override
-    public byte[] get_hash() {
+    public Hash get_hash() {
         if (this._hash == null) {
-            this._hash = Hash.Sha512(this.toString());
+            this._hash = new Hash(this.toString());
         }
         return this._hash;
     }
 
     @JsonIgnore
     @Override
-    public void set_hash(byte[] hash) throws IllegalStateException {
-        if (this._hash != null && !Hash.equals(this._hash, hash)) {
+    public void set_hash(Hash hash) throws IllegalStateException {
+        if (this._hash != null && !Objects.equals(this._hash, hash)) {
             throw new IllegalStateException("Cannot alter the hash of a HashLookup (" +
                     this.getClass() +") after it has been set!");
         }

@@ -415,7 +415,7 @@ public class SplunkOutput implements DbPojo {
     }
 
     public ObjectNode toJsonNode() {
-        return new ObjectMapper().convertValue(this, ObjectNode.class);
+        return new SplunkOutputSerializer().valueToTree (this);
     }
 
     public String toJsonString() throws JsonProcessingException {

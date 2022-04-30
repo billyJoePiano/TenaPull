@@ -16,7 +16,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 
-import org.junit.runners.MethodSorters;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import static org.junit.jupiter.api.Assertions.*;
@@ -335,4 +334,11 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
         assertEquals(response, persisted);
         assertEquals(node, persisted.toJsonNode());
     }
+
+    /*
+    @AfterClass
+    public static void printHashAvgs() {
+        Hash.printAverages();
+    }
+     */
 }

@@ -11,14 +11,14 @@ import java.util.*;
 public class HashLookupDao<POJO extends HashLookupPojo<POJO>>
         extends AbstractPojoLookupDao<POJO> {
 
-    protected InstancesTracker<byte[], POJO> instancesByHash;
+    protected InstancesTracker<Hash, POJO> instancesByHash;
 
     public HashLookupDao(Class<POJO> pojoType) {
         super(pojoType);
-        this.instancesByHash = new InstancesTracker<byte[], POJO>(byte[].class, pojoType, null);
+        this.instancesByHash = new InstancesTracker<Hash, POJO>(Hash.class, pojoType, null);
     }
 
-    public POJO getByHash(byte[] hash) {
+    public POJO getByHash(Hash hash) {
         if (hash == null) return null;
         return this.instancesByHash.getOrConstructWith(hash, h -> {
             SessionTracker session = getSession();
@@ -113,7 +113,7 @@ public class HashLookupDao<POJO extends HashLookupPojo<POJO>>
 
 
     public String toString() {
-        return "[SimpleStringLookupDao for " + this.getPojoType().getSimpleName() + "]";
+        return "[HashLookupDao for " + this.getPojoType().getSimpleName() + "]";
     }
 
     public static <P extends DbPojo, D extends Dao<P>> D

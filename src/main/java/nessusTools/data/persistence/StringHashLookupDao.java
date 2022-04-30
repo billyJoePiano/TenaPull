@@ -1,7 +1,6 @@
 package nessusTools.data.persistence;
 
 import nessusTools.data.entity.template.*;
-import nessusTools.util.*;
 
 
 public class StringHashLookupDao<POJO extends StringHashLookupPojo<POJO>>
@@ -14,7 +13,7 @@ public class StringHashLookupDao<POJO extends StringHashLookupPojo<POJO>>
     public POJO getOrCreate(String string) {
         if (string == null) return null;
 
-        byte[] hash = Hash.Sha512(string);
+        Hash hash = new Hash(string);
         return this.instancesByHash.getOrConstructWith(hash, h -> {
             if (h == null) return null;
             this.holdSession();

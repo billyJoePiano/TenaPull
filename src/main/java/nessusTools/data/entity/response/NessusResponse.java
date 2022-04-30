@@ -113,6 +113,8 @@ public interface NessusResponse extends DbPojo {
             this.setResponse((R)o.getResponse());
         }
 
+        @Transient
+        @JsonIgnore
         protected boolean __match(POJO other) {
             if (other == null) return false;
             if (other == this) return true;

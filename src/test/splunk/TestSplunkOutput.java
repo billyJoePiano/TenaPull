@@ -8,27 +8,19 @@ import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.splunk.*;
 import nessusTools.data.persistence.*;
-import nessusTools.util.*;
 import org.hibernate.*;
-import org.hibernate.proxy.*;
 import org.junit.*;
-import testUtils.*;
-
-import org.junit.jupiter.api.BeforeAll;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.time.*;
 import java.util.*;
 
 
-import org.junit.runners.MethodSorters;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import org.apache.logging.log4j.*;
 
@@ -43,7 +35,7 @@ public class TestSplunkOutput {
     private static List<ScanResponse> scanResponses = ScanResponse.dao.getAll();
 
     @Parameterized.Parameters
-    public static Collection testParams() {
+    public static Collection getTestParams() {
         ScanHostResponse.dao.holdSession();
         try {
             Hibernate.initialize(scanResponses);
@@ -138,7 +130,7 @@ public class TestSplunkOutput {
         Timestamp orig = output.getTimestamp();
         Timestamp pers = persisted.getTimestamp();
         if (orig.getTime() != pers.getTime()
-            && ((int)Math.round((double)orig.getTime() / 1000) * 1000)
+            && ((long)Math.round((double)orig.getTime() / 1000) * 1000)
                         == pers.getTime()) {
 
             output.setTimestamp(pers);
@@ -164,12 +156,14 @@ public class TestSplunkOutput {
                             new FileOutputStream(filename))) {
 
             ObjectMapper mapper = new ObjectMapper();
-            mapper.writeValue(writer, results);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(writer, results);
 
         } catch (FileNotFoundException e) {
             logger.error(e);
         } catch (IOException e) {
             logger.error(e);
         }
+
+        //Hash.printAverages();
     }
 }

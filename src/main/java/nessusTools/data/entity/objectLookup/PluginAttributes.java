@@ -323,7 +323,7 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     }
 
     public void setRiskInformation(PluginRiskInformation riskInformation) {
-        this.riskInformation = PluginRiskInformation.dao.getOrCreate(riskInformation);
+        this.riskInformation = riskInformation;
     }
 
     public String getThreatSourcesLast28() {
@@ -403,7 +403,7 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     }
 
     public void setPluginInformation(PluginInformation pluginInformation) {
-        this.pluginInformation = PluginInformation.dao.getOrCreate(pluginInformation);
+        this.pluginInformation = pluginInformation;
     }
 
     public String getRequiredPort() {
@@ -435,7 +435,7 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     }
 
     public void setPluginVulnInformation(PluginVulnInformation pluginVulnInformation) {
-        this.pluginVulnInformation = PluginVulnInformation.dao.getOrCreate(pluginVulnInformation);
+        this.pluginVulnInformation = pluginVulnInformation;
     }
 
     public String getAgeOfVuln() {
