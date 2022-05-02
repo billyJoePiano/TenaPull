@@ -81,7 +81,7 @@ public abstract class ExtensibleJsonPojo {
     }
 
     public String toJsonString() throws JsonProcessingException {
-        return new ObjectMapper().writeValueAsString(this);
+        return this.toJsonNode().toString();
     }
 
     public String toString() {

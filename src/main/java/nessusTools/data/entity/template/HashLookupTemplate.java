@@ -1,6 +1,7 @@
 package nessusTools.data.entity.template;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.persistence.*;
 import org.hibernate.annotations.*;
 
@@ -50,4 +51,29 @@ public abstract class HashLookupTemplate<POJO extends HashLookupTemplate<POJO>>
     public boolean _isHashCalculated() {
         return this._hash != null;
     }
+
+
+    private static Map<Class<? extends HashLookupTemplate>, Map<Hash, CacheMaps>>
+            nodes = new LinkedHashMap<>();
+
+    private static class CacheMaps {
+
+    }
+
+    private static class NodeCache {
+        private final Hash hash;
+        private final ObjectNode node;
+        private final String string;
+        private NodeCache(ObjectNode node) {
+            this.node = node;
+            this.string = node.toString();
+            this.hash = new Hash(this.string);
+        }
+    }
+
+
+    public ObjectNode toJsonNode() {
+        return super.toJsonNode();
+    }
+
 }
