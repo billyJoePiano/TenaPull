@@ -77,7 +77,7 @@ public abstract class ExtensibleJsonPojo {
     }
 
     public ObjectNode toJsonNode() {
-        return new ObjectMapper().convertValue(this, ObjectNode.class);
+        return new ObjectMapper().valueToTree (this);
     }
 
     public String toJsonString() throws JsonProcessingException {

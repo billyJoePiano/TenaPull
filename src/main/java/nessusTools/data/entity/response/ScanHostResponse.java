@@ -102,42 +102,59 @@ public class ScanHostResponse extends NessusResponseGenerateTimestamp {
 
     //Transient.  For use by SplunkOutput
     public ScanResponse getScanResponse() {
+        if (this.host instanceof HibernateProxy) {
+            this.host = ScanHost.dao.unproxy(this.host);
+        }
+
+        if (this.scanResponse == null && this.host != null) {
+            this.scanResponse = this.host.getResponse();
+        }
+
+        if (this.scanResponse instanceof HibernateProxy) {
+            this.scanResponse = ScanResponse.dao.unproxy(this.scanResponse);
+        }
+
         if (this.scanResponse == null || this.scanResponse instanceof HibernateProxy) {
-            if (this.host == null || this.host instanceof HibernateProxy) {
-                ScanHost.dao.holdSession();
-                try {
-                    this.host = ScanHost.dao.getById(this.getId());
-                    if (this.host != null) {
-                        this.scanResponse = host.getResponse();
-                        if (this.scanResponse instanceof HibernateProxy) {
-                            Hibernate.initialize(this.scanResponse);
-                        }
+            altGetScanResponse();
+        }
+
+        return this.scanResponse;
+    }
+
+    private void altGetScanResponse() {
+        if (this.host == null || this.host instanceof HibernateProxy) {
+            ScanHost.dao.holdSession();
+            try {
+                this.host = ScanHost.dao.getById(this.getId());
+                if (this.host != null) {
+                    this.scanResponse = host.getResponse();
+                    if (this.scanResponse instanceof HibernateProxy) {
+                        Hibernate.initialize(this.scanResponse);
                     }
+                }
+
+            } catch (HibernateException e) {
+                logger.warn(e);
+
+            } finally {
+                ScanHost.dao.releaseSession();
+            }
+
+        } else {
+            if (this.scanResponse == null) {
+                this.scanResponse = this.host.getResponse();
+            }
+            if (scanResponse instanceof HibernateProxy) {
+                try {
+                    this.scanResponse =
+                            ScanResponse.dao.getById(this.scanResponse.getId());
 
                 } catch (HibernateException e) {
+                    this.scanResponse = null;
                     logger.warn(e);
-
-                } finally {
-                    ScanHost.dao.releaseSession();
-                }
-
-            } else {
-                if (this.scanResponse == null) {
-                    this.scanResponse = this.host.getResponse();
-                }
-                if (scanResponse instanceof HibernateProxy) {
-                    try {
-                        this.scanResponse =
-                                ScanResponse.dao.getById(this.scanResponse.getId());
-
-                    } catch (HibernateException e) {
-                        this.scanResponse = null;
-                        logger.warn(e);
-                    }
                 }
             }
         }
-        return this.scanResponse;
     }
 
     public void setScanResponse(ScanResponse scanResponse) {

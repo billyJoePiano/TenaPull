@@ -74,10 +74,12 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
 
     @Column(name = "vpr_score")
     @JsonProperty("vpr_score")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
     String vprScore;
 
     @Column(name = "cvss_score_source")
     @JsonProperty("cvss_score_source")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String cvssScoreSource;
 
     @Column(name = "see_also_id")
@@ -90,21 +92,25 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     )
     @OrderColumn(name = "__order_for_plugin_attributes_see_also", nullable = false)
     @JsonProperty("see_also")
-    @JsonSerialize(using = Lists.EmptyToNullSerializer.class)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     List<PluginSeeAlso> seeAlso;
 
     @Column(name = "product_coverage")
     @JsonProperty("product_coverage")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
     String productCoverage;
 
     @Column(name = "threat_recency")
     @JsonProperty("threat_recency")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
     String threatRecency;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
     String fname;
 
     @Column(name = "cvss_v3_impact_score")
     @JsonProperty("cvssV3_impactScore")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
     String cvssV3ImpactScore;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
@@ -115,6 +121,7 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
 
     @Column(name = "required_port")
     @JsonProperty("required_port")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String requiredPort;
 
     String dependency;
@@ -140,6 +147,7 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     @Override
     public void _prepare() {
         this.__prepare();
+        this.pluginVulnInformation = PluginVulnInformation.dao.getOrCreate(this.pluginVulnInformation);
         this.riskInformation = PluginRiskInformation.dao.getOrCreate(this.riskInformation);
         this.setRefInformation(PluginRefInformation.dao.getOrCreate(refInformation));
         this.pluginInformation = PluginInformation.dao.getOrCreate(this.pluginInformation);

@@ -95,8 +95,14 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         return value.map.get(key);
     }
 
+    @Transient
     public String toString() {
         return this.value.toString();
+    }
+
+    @Transient
+    public int size() {
+        return this.value.map.size();
     }
 
     @Override
@@ -155,7 +161,7 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
     @Transient
     @JsonIgnore
     public ObjectNode toJsonNode() {
-        return new ObjectMapper().convertValue(this.value, ObjectNode.class);
+        return new ObjectMapper().valueToTree(this.value);
     }
 
     @Transient

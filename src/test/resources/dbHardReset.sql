@@ -265,6 +265,7 @@ create table plugin_risk_information (
     id int auto_increment primary key,
     cvss_temporal_vector varchar(255) null,
     risk_factor varchar(255) null,
+    cvss_base_score varchar(255) null,
     cvss_vector varchar(255) null,
     cvss_temporal_score varchar(255) null,
     cvss3_base_score varchar(255) null,

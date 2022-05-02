@@ -36,7 +36,12 @@ public class HashLookupDao<POJO extends HashLookupPojo<POJO>>
 
         if (!pojo._isHashCalculated()) {
             POJO result = tryMatchFilter(pojo);
-            if (result != null) return finalizeResult(pojo, result);
+            if (result != null) {
+                if (result != pojo && result._isHashCalculated()) {
+                    pojo.set_hash(result.get_hash());
+                }
+                return finalizeResult(pojo, result);
+            }
         }
 
         return finalizeResult(pojo, useHash(pojo));
@@ -81,7 +86,7 @@ public class HashLookupDao<POJO extends HashLookupPojo<POJO>>
                     return r;
                 }
 
-                int i = this.insert(pojo);
+                int i = this.insert(pojo, false);
                 if (i != -1) {
                     return this.instances.constructWith(i, ii -> pojo);
 

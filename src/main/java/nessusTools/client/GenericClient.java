@@ -14,7 +14,7 @@ import java.util.*;
 public abstract class GenericClient {
     private static final Logger logger = LogManager.getLogger(GenericClient.class);
 
-    private final Client client = AcceptAnySSL.makeClient();
+    private final Client client;
 
     /**
      * Loads a properties file into a Properties instance and returns it.
@@ -35,7 +35,14 @@ public abstract class GenericClient {
         return properties;
     }
 
-    public GenericClient() { }
+    public GenericClient(boolean acceptAnySSL) {
+        if (acceptAnySSL) {
+            this.client = AcceptAnySSL.makeClient();
+
+        } else {
+            this.client = ClientBuilder.newClient();
+        }
+    }
 
     public String fetch(String URL) {
         return fetch(URL, null, null, String.class);

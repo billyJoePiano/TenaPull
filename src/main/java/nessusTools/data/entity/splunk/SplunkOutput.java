@@ -35,12 +35,17 @@ public class SplunkOutput implements DbPojo {
     private int id;
 
     @CreationTimestamp
+    @JsonSerialize(using = FriendlyTimestamp.Sql.class)
     private Timestamp timestamp;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @JoinColumn(name = "host_id")
     @JsonIgnore
     private ScanHostResponse hostResponse;
+
+    @Transient
+    @JsonIgnore
+    boolean hostResponseAlreadyPrepared;
 
     @Transient
     private final ScanHostSummary host = new ScanHostSummary();
@@ -79,20 +84,22 @@ public class SplunkOutput implements DbPojo {
 
     public SplunkOutput() { }
 
-    public SplunkOutput(ScanHostResponse hostResponse, Vulnerability vulnerability) {
-        this.hostResponse = hostResponse;
+    public SplunkOutput(ScanHostResponse preparedHostResponse, Vulnerability vulnerability) {
         this.vulnerability = vulnerability;
-        this.getPlugin();
+        if (preparedHostResponse != null) {
+            hostResponseAlreadyPrepared = true;
+            this.hostResponse = preparedHostResponse;
+            if (this.vulnerability != null) {
+                this.findPlugin();
+            }
+        }
     }
 
-    public void setPlugin(ScanPlugin plugin) {
-        this.plugin = plugin;
-
-    }
-
+    @Transient
+    @JsonIgnore
     @Override
     public void _prepare() {
-        if (this.hostResponse != null) {
+        if (this.hostResponse != null && !this.hostResponseAlreadyPrepared) {
             this.hostResponse._prepare();
         }
 
@@ -101,11 +108,17 @@ public class SplunkOutput implements DbPojo {
         this.pluginBestGuess = Plugin.dao.getOrCreate(this.pluginBestGuess);
     }
 
-    public ScanPlugin getPlugin() {
-        if (this.plugin != null) return this.plugin;
+    @Transient
+    @JsonIgnore
+    public boolean findPlugin() throws IllegalStateException {
+        if (this.id != 0) {
+            throw new IllegalStateException("Cannot invoke findPlugin() on a SplunkOutput record that has " +
+                    "already been inserted into the DB.");
+        }
 
         if (hostResponse == null || vulnerability == null) {
-            return null;
+            throw new IllegalStateException("Cannot invoke findPlugin() on a SplunkOutput until a " +
+                    "ScanHostResponse and Vulnerability have been set.");
         }
 
         Integer pluginId = vulnerability.getPluginId();
@@ -116,7 +129,7 @@ public class SplunkOutput implements DbPojo {
 
         if (scanResponse == null) {
             this.pluginBestGuess = findAltPlugin(pluginId, pluginIdStr, name);
-            return this.plugin;
+            return this.pluginBestGuess != null;
         }
 
         Map<ScanPlugin, Integer> candidates = new LinkedHashMap<>();
@@ -128,7 +141,8 @@ public class SplunkOutput implements DbPojo {
                 if (plugin == null) continue;
                 int rating = this.matchPlugin(plugin.getPlugin(), pluginId, pluginIdStr, name);
                 if (rating >= 4) {
-                    return this.plugin = plugin;
+                    this.plugin = plugin;
+                    return true;
 
                 } else if (rating > 0) {
                     candidates.put(plugin, rating);
@@ -141,11 +155,12 @@ public class SplunkOutput implements DbPojo {
 
         for (Map.Entry<ScanPlugin, Integer> entry : candidates.entrySet()) {
             if (entry.getValue() == highest) {
-                return this.plugin = entry.getKey();
+                this.plugin = entry.getKey();
+                return true;
             }
         }
         this.pluginBestGuess = findAltPlugin(pluginId, pluginIdStr, name);
-        return this.plugin;
+        return this.pluginBestGuess != null;
     }
 
     private static Plugin findAltPlugin(Integer pluginId,
@@ -396,6 +411,15 @@ public class SplunkOutput implements DbPojo {
 
     public void setHostResponse(ScanHostResponse hostResponse) {
         this.hostResponse = hostResponse;
+        this.hostResponseAlreadyPrepared = false;
+    }
+
+    public boolean isHostResponseAlreadyPrepared() {
+        return this.hostResponseAlreadyPrepared;
+    }
+
+    public void setHostResponseAlreadyPrepared(boolean hostResponseAlreadyPrepared) {
+        this.hostResponseAlreadyPrepared = hostResponseAlreadyPrepared;
     }
 
     public Vulnerability getVulnerability() {
@@ -404,6 +428,15 @@ public class SplunkOutput implements DbPojo {
 
     public void setVulnerability(Vulnerability vulnerability) {
         this.vulnerability = vulnerability;
+    }
+
+    public void setPlugin(ScanPlugin plugin) {
+        this.plugin = plugin;
+
+    }
+
+    public ScanPlugin getPlugin() {
+        return this.plugin;
     }
 
     public ScanSummary getScan() {

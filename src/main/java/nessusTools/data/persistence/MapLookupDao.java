@@ -26,17 +26,26 @@ public class MapLookupDao<POJO extends MapLookupPojo<POJO>> extends AbstractPojo
                     other == pojo || (other != null && pojo._match(other)), 1);
 
             for (POJO p : list) {
-                if (p != null) {
+                if (p != null && p._match(pojo)) {
                     result = p;
                     break;
                 }
             }
 
-
             if (result == null) {
-                int id = this.insert(pojo);
-                if (id != -1) {
-                    result = this.instances.constructWith(id, i -> pojo);
+                list = this.findByPropertyEqual(pojo._getSearchMap());
+                for (POJO p : list) {
+                    if (p != null && p._match(pojo)) {
+                        result = this.instances.getOrConstructWith(p.getId(), i -> p);
+                        break;
+                    }
+                }
+
+                if (result == null) {
+                    int id = this.insert(pojo);
+                    if (id != -1) {
+                        result = this.instances.constructWith(id, i -> pojo);
+                    }
                 }
             }
         }

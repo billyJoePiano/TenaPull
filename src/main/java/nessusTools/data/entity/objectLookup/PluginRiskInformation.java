@@ -16,34 +16,47 @@ public class PluginRiskInformation extends HashLookupTemplate<PluginRiskInformat
 
     @Column(name = "cvss_temporal_vector")
     @JsonProperty("cvss_temporal_vector")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
     String cvssTemporalVector;
 
     @Column(name = "risk_factor")
     @JsonProperty("risk_factor")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
     String riskFactor;
+
+    @Column(name = "cvss_base_score")
+    @JsonProperty("cvss_base_score")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ???
+    String cvssBaseScore;
 
     @Column(name = "cvss_vector")
     @JsonProperty("cvss_vector")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     String cvssVector;
 
     @Column(name = "cvss_temporal_score")
     @JsonProperty("cvss_temporal_score")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     String cvssTemporalScore;
 
     @Column(name = "cvss3_base_score")
     @JsonProperty("cvss3_base_score")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     String cvss3BaseScore;
 
     @Column(name = "cvss3_temporal_vector")
     @JsonProperty("cvss3_temporal_vector")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     String cvss3TemporalVector;
 
     @Column(name = "cvss3_temporal_score")
     @JsonProperty("cvss3_temporal_score")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     String cvss3TemporalScore;
 
     @Column(name = "cvss3_vector")
     @JsonProperty("cvss3_vector")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
     String cvss3Vector;
 
     @Transient
@@ -58,6 +71,7 @@ public class PluginRiskInformation extends HashLookupTemplate<PluginRiskInformat
         this.__set(o);
         this.cvssTemporalVector = o.cvssTemporalVector;
         this.riskFactor = o.riskFactor;
+        this.cvssBaseScore = o.cvssBaseScore;
         this.cvssVector = o.cvssVector;
         this.cvssTemporalScore = o.cvssTemporalScore;
         this.cvss3TemporalVector = o.cvss3TemporalVector;
@@ -74,6 +88,7 @@ public class PluginRiskInformation extends HashLookupTemplate<PluginRiskInformat
         return o != null
                 && Objects.equals(this.cvssTemporalVector, o.cvssTemporalVector)
                 && Objects.equals(this.riskFactor, o.riskFactor)
+                && Objects.equals(this.cvssBaseScore, o.cvssBaseScore)
                 && Objects.equals(this.cvssVector, o.cvssVector)
                 && Objects.equals(this.cvssTemporalScore, o.cvssTemporalScore)
                 && Objects.equals(this.cvss3TemporalVector, o.cvss3TemporalVector)
@@ -98,6 +113,14 @@ public class PluginRiskInformation extends HashLookupTemplate<PluginRiskInformat
 
     public void setRiskFactor(String riskFactor) {
         this.riskFactor = riskFactor;
+    }
+
+    public String getCvssBaseScore() {
+        return cvssBaseScore;
+    }
+
+    public void setCvssBaseScore(String cvssBaseScore) {
+        this.cvssBaseScore = cvssBaseScore;
     }
 
     public String getCvssVector() {

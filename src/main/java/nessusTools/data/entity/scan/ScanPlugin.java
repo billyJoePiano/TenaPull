@@ -3,6 +3,7 @@ package nessusTools.data.entity.scan;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
@@ -32,6 +33,7 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
     private int id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scan_id")
     @Access(AccessType.PROPERTY)
     @JsonIgnore
     private ScanResponse response;
@@ -58,22 +60,39 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
 
     @Override
     public int getId() {
-        return 0;
+        return this.id;
     }
 
     @Override
     public void setId(int id) {
-
+        this.id = id;
     }
 
+    @Transient
+    @JsonIgnore
     @Override
-    public JsonNode toJsonNode() {
-        return null;
+    public ObjectNode toJsonNode() {
+        return new ObjectMapper().valueToTree (this);
     }
 
+    @Transient
+    @JsonIgnore
     @Override
     public String toJsonString() throws JsonProcessingException {
-        return null;
+        return new ObjectMapper().writeValueAsString(this);
+    }
+
+    @Transient
+    @JsonIgnore
+    @Override
+    public String toString() {
+        try {
+            return this.toJsonString();
+        } catch (JsonProcessingException e) {
+            return "toString() could not convert to JSON for '"
+                    + super.toString() + "' :\n"
+                    + e.getMessage();
+        }
     }
 
     @Transient

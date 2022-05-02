@@ -10,6 +10,7 @@ import java.util.*;
 
 public class Hash implements Comparable<Hash> {
     private static Logger logger = LogManager.getLogger(Hash.class);
+    public static final String ALGORITHM = "SHA-512";
     public static final int HASH_SIZE = 64;
 
     static {
@@ -18,7 +19,7 @@ public class Hash implements Comparable<Hash> {
 
     private static MessageDigest makeDigest() {
         try {
-            return MessageDigest.getInstance("SHA-512");
+            return MessageDigest.getInstance(ALGORITHM);
 
         } catch (NoSuchAlgorithmException e) {
             logger.error(e);
@@ -134,7 +135,27 @@ public class Hash implements Comparable<Hash> {
             return false;
         }
 
-        return equals(this.bytes, ((Hash)o).bytes);
+        return Hash.equals(this.bytes, ((Hash)o).bytes);
+    }
+
+    private Integer javaHashCode = null;
+
+    @Override
+    public int hashCode() {
+        if (javaHashCode != null) return javaHashCode;
+        int result = 0;
+        for (int i = 0; i < this.bytes.length; i += 4) {
+            int mask = 0;
+            int endIndex = Math.min(this.bytes.length - i, 4);
+            for (int j = 0; j < endIndex; j++) {
+                int b = 0xFF & this.bytes[j + i];
+                b <<= j * 8;
+                mask |= b;
+            }
+
+            result ^= mask;
+        }
+        return this.javaHashCode = result;
     }
 
     public static boolean equals(byte[] mine, byte[] theirs) {
@@ -142,7 +163,10 @@ public class Hash implements Comparable<Hash> {
             return theirs == null;
 
         } else if (theirs == null || theirs.length != mine.length) {
-            return checkedCompareTo(mine, theirs) == 0;
+            return false;
+
+        } else if (mine == theirs) {
+            return true;
         }
 
         for (int i = 0; i < mine.length; i++) {
@@ -166,33 +190,29 @@ public class Hash implements Comparable<Hash> {
         return compareTo(mine, theirs);
     }
 
-    private static int checkedCompareTo(byte[] t, byte[] o) {
-        int diff = t.length - o.length;
-        int i = 0, j = 0;
+    private static int checkedCompareTo(byte[] mine, byte[] theirs) {
+        if (mine == null) {
+            return theirs == null ? 0 : 1;
 
-        if (diff > 0) {
-            for (; i < diff; i++) {
-                if (t[i] != 0) return 1;
-            }
+        } else if (theirs == null) {
+            return -1;
 
-        } else if (diff < 0) {
-            diff = -diff;
-            for (; j < diff; j++) {
-                if (o[j] != 0) return -1;
-            }
+        } else if (theirs.length != mine.length) {
+            return mine.length < theirs.length ? -1 : 1;
         }
 
-        for (; i < t.length; i++, j++) {
-            if (t[i] == o[j]) continue;
-            //1's compliment ... need to consider negatives as *larger* than positives
-            if (t[i] < 0) {
-                if (o[j] >= 0) return 1;
+        for (int i = 0; i < mine.length; i++) {
+            if (mine[i] == theirs[i]) continue;
 
-            } else if (o[j] < 0) {
+            //1's compliment ... need to consider negatives as *larger* than positives/zero
+            if (mine[i] < 0) {
+                if (theirs[i] >= 0) return 1;
+
+            } else if (theirs[i] < 0) {
                 return -1;
             }
 
-            return t[i] < o[j] ? -1 : 1;
+            return mine[i] < theirs[i] ? -1 : 1;
         }
         return 0;
     }

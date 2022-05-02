@@ -24,16 +24,16 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
     }
 
     @Override
-    public void serialize(Summary<S, D> summary,
+    public void serialize(Summary<S, D> container,
                           JsonGenerator jg,
                           SerializerProvider sp) throws IOException {
 
-        S s = summary.getSummary();
-        D d = summary.getDetails();
+        S summary = container.getSummary();
+        D deets = container.getDetails();
 
-        if (s == null) {
-            String name = summary.getName();
-            if (d == null) {
+        if (summary == null) {
+            String name = container.getName();
+            if (deets == null) {
                 jg.writeStartObject();
                 jg.writeStringField("NessusTools error",
                         "Cached data from both the " + name + " summary and "
@@ -43,14 +43,14 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
             }
 
             jg.writeStartObject();
-            Integer id = summary.getId();
+            Integer id = container.getId();
             if (id != null) {
                 jg.writeNumberField("id", id);
             }
             jg.writeStringField("NessusTools error",
                     "Cached data from the " + name + " summary couldn't be found");
 
-            jg.writeObjectField(summary.getDetailsKey(), d);
+            jg.writeObjectField(container.getDetailsKey(), deets);
             return;
 
         }
@@ -59,15 +59,15 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
 
         ObjectMapper mapper = new SplunkOutputSerializer();
 
-        ObjectNode sum = mapper.valueToTree(s);
+        ObjectNode sum = mapper.valueToTree(summary);
         ObjectNode info;
 
-        if (d == null) {
+        if (deets == null) {
             info = mapper.createObjectNode();
             info.put("NessusTools error",
-                    "Cached data from " + summary.getName() + " details couldn't be found.");
+                    "Cached data from " + container.getName() + " details couldn't be found.");
         } else {
-            info = mapper.valueToTree(d);
+            info = mapper.valueToTree(deets);
             for (Iterator<Map.Entry<String, JsonNode>> iterator = info.fields();
                  iterator.hasNext();) {
 
@@ -80,7 +80,7 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
             }
         }
 
-        sum.set(summary.getDetailsKey(), info);
+        sum.set(container.getDetailsKey(), info);
 
         jg.writeObject(sum);
     }

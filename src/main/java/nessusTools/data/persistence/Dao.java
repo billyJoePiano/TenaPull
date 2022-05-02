@@ -1,7 +1,5 @@
 package nessusTools.data.persistence;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import com.sun.istack.*;
 import nessusTools.data.entity.template.DbPojo;
 import org.apache.logging.log4j.*;
@@ -219,7 +217,7 @@ public class Dao<POJO extends DbPojo> {
 
         protected void done(Dao dao) {
             if (this.sharers == null) {
-                this.close();
+                this.close(dao);
                 return;
             }
 
@@ -229,7 +227,7 @@ public class Dao<POJO extends DbPojo> {
                 this.sharers.remove(index);
             }
             if (this.sharers.size() <= 0) {
-                this.close();
+                this.close(dao);
                 this.sharers = null;
                 synchronized (dao.sessions) {
                     List<SessionTracker> sessions
@@ -244,18 +242,25 @@ public class Dao<POJO extends DbPojo> {
         }
 
         // only call from done() ... session users should only call done(this)
-        private void close() {
+        private void close(Dao closer) {
             if (this.transaction != null) {
+                Transaction transaction = this.transaction;
+                this.transaction = null;
                 try {
-                    Transaction transaction = this.transaction;
-                    this.transaction = null;
                     transaction.commit();
 
                 } catch (Exception e) {
-                    staticLogger.error(e);
+                    transaction.rollback();
+                    closer.logger.error(e);
                 }
             }
-            session.close();
+
+            try {
+                session.close();
+
+            } catch (Exception e) {
+                closer.logger.error(e);
+            }
         }
 
 
@@ -332,16 +337,7 @@ public class Dao<POJO extends DbPojo> {
             session.session.saveOrUpdate(pojo);
 
         } catch (Exception e) {
-            String json;
-
-            try {
-                json = pojo.toJsonString();
-
-            } catch (JsonProcessingException ex) {
-                json = "<ERROR PROCESSING JSON : " + pojo.toString() + " >";
-            }
-
-            logger.error("Error saving/updating record:\n" + json, e);
+            logger.error("Error saving/updating record:\n" + pojo, e);
 
             if (session != null) {
                 session.failed(e, this);
@@ -381,16 +377,7 @@ public class Dao<POJO extends DbPojo> {
             id = (Integer) session.session.save(pojo);
 
         } catch (Exception e) {
-            String json;
-
-            try {
-                json = pojo.toJsonString();
-
-            } catch (JsonProcessingException ex) {
-                json = "<ERROR PROCESSING JSON : " + pojo.toString() + " >";
-            }
-
-            logger.error("Error inserting record:\n" + json, e);
+            logger.error("Error inserting record:\n" + pojo, e);
 
             if (session != null) {
                 session.failed(e, this);
@@ -430,16 +417,7 @@ public class Dao<POJO extends DbPojo> {
             session.session.delete(pojo);
 
         } catch (Exception e) {
-            String json;
-
-            try {
-                json = pojo.toJsonString();
-
-            } catch (JsonProcessingException ex) {
-                json = "<ERROR PROCESSING JSON : " + pojo.toString() + " >";
-            }
-
-            logger.error("Error deleting record:\n" + json, e);
+            logger.error("Error deleting record:\n" + pojo, e);
 
             if (session != null) {
                 session.failed(e, this);

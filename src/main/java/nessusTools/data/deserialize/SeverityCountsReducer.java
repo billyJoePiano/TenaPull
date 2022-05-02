@@ -57,16 +57,16 @@ public class SeverityCountsReducer extends JsonSerializer<SeverityCount> {
             Integer key = entry.getKey();
             List<Integer> values = entry.getValue();
             if (values.size() == 1) {
-                jg.writeStringField(key.toString(), values.get(0).toString());
+                jg.writeNumberField("level_" + key.toString(), values.get(0));
 
             } else {
-                jg.writeFieldName(key.toString());
+                jg.writeFieldName("level_" + key.toString());
                 jg.writeObject(values);
             }
         }
 
         if (nullList != null) {
-            jg.writeFieldName("null");
+            jg.writeFieldName("level_null");
             jg.writeObject(nullList);
         }
 

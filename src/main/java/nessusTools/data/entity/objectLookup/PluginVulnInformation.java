@@ -16,22 +16,27 @@ public class PluginVulnInformation extends HashLookupTemplate<PluginVulnInformat
 
     @Column(name = "exploitability_ease")
     @JsonProperty("exploitability_ease")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private String exploitabilityEase;
 
     @Column(name = "in_the_news")
     @JsonProperty("in_the_news")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String inTheNews;
 
     @Column(name = "exploit_available")
     @JsonProperty("exploit_available")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String exploitAvailable;
 
     @Column(name = "vuln_publication_date")
     @JsonProperty("vuln_publication_date")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String vulnPublicationDate;
 
     @Column(name = "patch_publication_date")
     @JsonProperty("patch_publication_date")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String patchPublicationDate;
 
     @Transient

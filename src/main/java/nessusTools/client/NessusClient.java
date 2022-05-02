@@ -22,12 +22,14 @@ public class NessusClient extends GenericClient {
     public static final String API_URL = API_PROTOCOL + "://" + API_HOST
             + (API_PORT.length() > 0 ? ":" + API_PORT : "");
 
+    public static final boolean ACCEPT_ANY_SSL = properties.containsKey("client.acceptAnySSL");
+
     private static final String API_ACCESS_KEY = properties.getProperty("api.key.access");
     private static final String API_SECRET_KEY = properties.getProperty("api.key.secret");
     private static final String API_FULL_KEY = "accessKey=" + API_ACCESS_KEY +"; secretKey=" + API_SECRET_KEY;
     private static final String API_KEY_HEADER_KEY = "X-ApiKeys";
 
-    private static final Map<String, String> apiHeaders = Map.of(API_KEY_HEADER_KEY, API_FULL_KEY);
+    private static final Map<String, String> API_HEADERS = Map.of(API_KEY_HEADER_KEY, API_FULL_KEY);
 
     private static Properties loadProperties() {
         Properties properties = new Properties();
@@ -44,7 +46,9 @@ public class NessusClient extends GenericClient {
     }
 
 
-    public NessusClient() { }
+    public NessusClient() {
+        super(ACCEPT_ANY_SSL);
+    }
 
     public void fetchAllScans() {
         IndexResponse response = null;
@@ -135,11 +139,11 @@ public class NessusClient extends GenericClient {
         String URL = API_URL + pathOnly;
 
         if (headers == null) {
-            return super.fetchJson(URL, apiHeaders, mapToType, mapper);
+            return super.fetchJson(URL, API_HEADERS, mapToType, mapper);
 
         } else {
             Map<String, String> combinedHeaders = new LinkedHashMap();
-            combinedHeaders.putAll(apiHeaders);
+            combinedHeaders.putAll(API_HEADERS);
             combinedHeaders.putAll(headers);
             return super.fetchJson(URL, combinedHeaders, mapToType, mapper);
         }

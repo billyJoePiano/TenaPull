@@ -7,7 +7,8 @@ import nessusTools.data.entity.scan.*;
 import nessusTools.data.persistence.*;
 import nessusTools.util.*;
 import org.junit.*;
-import testUtils.*;
+import testUtils.Database;
+import testUtils.CustomObjectMapper;
 
 import org.junit.jupiter.api.BeforeAll;
 

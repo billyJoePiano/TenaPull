@@ -115,29 +115,42 @@ public class TestSplunkOutput {
                 + ", vulnerability id " + this.vuln.getId());
 
         SplunkOutput output = new SplunkOutput(this.response, this.vuln);
-        SplunkOutput.dao.saveOrUpdate(output);
+
+        int id = SplunkOutput.dao.insert(output);
+
+        assertNotEquals(id, -1);
+        assertEquals(id, output.getId());
 
         ObjectNode node = output.toJsonNode();
 
         assertNotNull(node);
-        logger.info("\n" + node.toString());
+        logger.info("\n" + node);
 
         results.add(node);
 
+        SplunkOutput persisted = null;
         SplunkOutput.dao.holdSession();
-        SplunkOutput persisted = SplunkOutput.dao.getById(output.getId());
+        try {
+            persisted = SplunkOutput.dao.getById(output.getId());
 
-        Timestamp orig = output.getTimestamp();
-        Timestamp pers = persisted.getTimestamp();
-        if (orig.getTime() != pers.getTime()
-            && ((long)Math.round((double)orig.getTime() / 1000) * 1000)
-                        == pers.getTime()) {
+            Timestamp orig = output.getTimestamp();
+            Timestamp pers = persisted.getTimestamp();
+            if (orig.getTime() != pers.getTime()
+                    && ((long) Math.round((double) orig.getTime() / 1000) * 1000)
+                    == pers.getTime()) {
 
-            output.setTimestamp(pers);
+                output.setTimestamp(pers);
+            }
+
+            assertEquals(output, persisted);
+
+        } catch(Throwable e) {
+            throw e;
+
+        } finally {
+            SplunkOutput.dao.releaseSession();
         }
 
-        assertEquals(output, persisted);
-        SplunkOutput.dao.releaseSession();
     }
 
 
