@@ -16,6 +16,8 @@ public abstract class GenericClient {
 
     private final Client client;
 
+    private String response;
+
     /**
      * Loads a properties file into a Properties instance and returns it.
      *
@@ -42,6 +44,10 @@ public abstract class GenericClient {
         } else {
             this.client = ClientBuilder.newClient();
         }
+    }
+
+    public String getResponse() {
+        return this.response;
     }
 
     public String fetch(String URL) {
@@ -116,6 +122,7 @@ public abstract class GenericClient {
             throws JsonProcessingException {
 
         String response = fetch(URL, headers, MediaType.APPLICATION_JSON_TYPE);
+        this.response = response;
 
         if (response == null || response.length() < 2) {
             //JSON needs at least two characters to be valid

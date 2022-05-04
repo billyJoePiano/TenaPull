@@ -33,11 +33,11 @@ public abstract class Job {
 
     abstract protected boolean isReady();
 
-    abstract protected void fetch();
+    abstract protected void fetch() throws Exception;
 
-    abstract protected void process();
+    abstract protected void process() throws Exception;
 
-    abstract protected void output();
+    abstract protected void output() throws Exception;
 
     abstract protected boolean exceptionHandler(Exception e, Stage stage);
 
@@ -111,32 +111,39 @@ public abstract class Job {
 
     private final synchronized void runStages() {
         long tryTime = this.tryAtTime;
-        while (this.stage.ordinal() < Stage.DONE.ordinal()) try {
-            try {
-                switch (this.stage) {
-                    case IDLE:
-                        if (!this.isReady()) {
-                            throw new JobNotReadyException();
+        try {
+            while (this.stage.ordinal() < Stage.DONE.ordinal()) {
+                try {
+                    switch (this.stage) {
+                        case IDLE:
+                            if (!this.isReady()) {
+                                throw new JobNotReadyException();
+                            }
+                            this.stage = Stage.FETCH;
+
+                        case FETCH:
+                            this.fetch();
+                            this.stage = Stage.PROCESS;
+
+                        case PROCESS:
+                            this.process();
+                            this.stage = Stage.OUTPUT;
+
+                        case OUTPUT:
+                            this.output();
+                            this.stage = Stage.DONE;
+
+                    }
+
+                } catch (Throwable e) {
+                    if (!(e instanceof JobNotReadyException)
+                            && e instanceof Exception) {
+
+                        if (exceptionHandler((Exception) e, this.stage)
+                                && !this.failed) {
+                            continue;
                         }
-                        this.stage = Stage.FETCH;
-
-                    case FETCH:
-                        this.fetch();
-                        this.stage = Stage.PROCESS;
-
-                    case PROCESS:
-                        this.process();
-                        this.stage = Stage.OUTPUT;
-
-                    case OUTPUT:
-                        this.output();
-                        this.stage = Stage.DONE;
-
-                }
-
-            } catch (Exception e) {
-                if (e instanceof JobNotReadyException
-                        || !exceptionHandler(e, this.stage)) {
+                    }
 
                     this.exception = true;
                     if (this.failed) {
@@ -147,13 +154,6 @@ public abstract class Job {
                     }
                     return;
                 }
-
-            } catch (Throwable e) {
-                this.exception = true;
-                if (this.tryAtTime == tryTime) {
-                    this.tryAgainIn(DEFAULT_TRY_AGAIN_TIME);
-                }
-                throw e;
             }
 
         } finally {

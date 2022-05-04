@@ -3,13 +3,18 @@ package nessusTools.data.entity.response;
 import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.*;
+import nessusTools.data.deserialize.*;
+import nessusTools.data.entity.objectLookup.*;
+import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.*;
 
 import javax.persistence.*;
 import javax.persistence.AccessType;
 
 @MappedSuperclass
-public interface NessusResponse extends DbPojo {
+public interface NessusResponse<RES extends NessusResponse<RES>>
+        extends IdCachingSerializer.NodeCacher<RES> {
     public String getUrlPath();
 
     public Timestamp getTimestamp();
@@ -32,7 +37,8 @@ public interface NessusResponse extends DbPojo {
                         <POJO extends SingleChildTemplate<POJO, R>,
                             R extends NessusResponse>
             extends NaturalIdPojo
-            implements ResponseChild<POJO, R> {
+            implements ResponseChild<POJO, R>,
+                        IdCachingSerializer.NodeCacher<POJO> {
 
         @OneToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id")
@@ -69,6 +75,33 @@ public interface NessusResponse extends DbPojo {
             super.__set(o);
             this.setResponse((R)o.getResponse());
         }
+
+        @Transient
+        @JsonIgnore
+        private IdCachingSerializer.MainCachedNode<POJO> cachedNode;
+
+        public IdCachingSerializer.MainCachedNode<POJO> getCachedNode() {
+            return this.cachedNode;
+        }
+
+        public void setCachedNode(IdCachingSerializer.MainCachedNode<POJO> cachedNode) {
+            if (cachedNode != null) {
+                assert cachedNode.getId() == this.getId() && cachedNode.represents((POJO)this);
+            }
+            this.cachedNode = cachedNode;
+        }
+
+        public static JsonSerializer
+                getCachingSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
+
+            return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
+        }
+
+        public static JsonSerializer
+                getCacheResetSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
+
+            return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
+        }
     }
 
 
@@ -78,7 +111,8 @@ public interface NessusResponse extends DbPojo {
             <POJO extends MultiChildTemplate<POJO, R>,
                     R extends NessusResponse>
             extends GeneratedIdPojo
-            implements ResponseChild<POJO, R> {
+            implements ResponseChild<POJO, R>,
+                        IdCachingSerializer.NodeCacher<POJO> {
 
         @ManyToOne(fetch = FetchType.LAZY)
         @Access(AccessType.PROPERTY)
@@ -133,6 +167,33 @@ public interface NessusResponse extends DbPojo {
                 }
             }
             return true;
+        }
+
+        @Transient
+        @JsonIgnore
+        private IdCachingSerializer.MainCachedNode<POJO> cachedNode;
+
+        public IdCachingSerializer.MainCachedNode<POJO> getCachedNode() {
+            return this.cachedNode;
+        }
+
+        public void setCachedNode(IdCachingSerializer.MainCachedNode<POJO> cachedNode) {
+            if (cachedNode != null) {
+                assert cachedNode.getId() == this.getId() && cachedNode.represents((POJO)this);
+            }
+            this.cachedNode = cachedNode;
+        }
+
+        public static JsonSerializer
+                getCachingSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
+
+            return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
+        }
+
+        public static JsonSerializer
+                getCacheResetSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
+
+            return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
         }
     }
 

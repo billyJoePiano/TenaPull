@@ -1,6 +1,8 @@
 package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
@@ -16,7 +18,7 @@ import java.util.*;
 @Entity(name = "Plugin")
 @Table(name = "plugin")
 public class Plugin extends GeneratedIdPojo
-        implements MapLookupPojo<Plugin> {
+        implements MapLookupPojo<Plugin>, IdCachingSerializer.NodeCacher<Plugin> {
 
     public static final MapLookupDao<Plugin> dao = new MapLookupDao<Plugin>(Plugin.class);
 
@@ -126,5 +128,32 @@ public class Plugin extends GeneratedIdPojo
                 "pluginId", this.pluginId,
                 "extraJson", this.getExtraJson()
         });
+    }
+
+    @Transient
+    @JsonIgnore
+    private IdCachingSerializer.MainCachedNode<Plugin> cachedNode;
+
+    public IdCachingSerializer.MainCachedNode<Plugin> getCachedNode() {
+        return this.cachedNode;
+    }
+
+    public void setCachedNode(IdCachingSerializer.MainCachedNode<Plugin> cachedNode) {
+        if (cachedNode != null) {
+            assert cachedNode.getId() == this.getId() && cachedNode.represents(this);
+        }
+        this.cachedNode = cachedNode;
+    }
+
+    public static JsonSerializer<Plugin>
+            getCachingSerializer(JsonSerializer<Plugin> defaultSerializer, ObjectMapper mapper) {
+
+        return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
+    }
+
+    public static JsonSerializer<Plugin>
+            getCacheResetSerializer(JsonSerializer<Plugin> defaultSerializer, ObjectMapper mapper) {
+
+        return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
     }
 }

@@ -2,6 +2,7 @@ package data;
 
 
 import com.fasterxml.jackson.databind.node.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.persistence.*;
@@ -281,12 +282,10 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
             throws NoSuchMethodException, InvocationTargetException,
                     InstantiationException, IllegalAccessException {
 
-        ObjectMapper mapper = new CustomObjectMapper();
-
         try {
 
             // https://stackoverflow.com/questions/12173416/how-do-i-get-the-compact-form-of-pretty-printed-json-code
-            this.node = mapper.readValue(origJson, ObjectNode.class);
+            this.node = CachingMapper.mapper.readValue(origJson, ObjectNode.class);
 
         } catch (JsonProcessingException e) {
             fail(e);
@@ -300,7 +299,7 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
         }
 
         try {
-            response = mapper.readValue(origJson, this.responseType);
+            response = CachingMapper.mapper.readValue(origJson, this.responseType);
 
         } catch (JsonProcessingException e) {
             fail(e);

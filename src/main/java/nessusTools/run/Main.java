@@ -15,10 +15,9 @@ public class Main {
     private Main() { } //never instantiated ... static only
 
     public static void main(String[] args) {
-        StackTracePrinter.startThread(90000);
         Var<JobFactory.Init> init = new Var();
         JobFactory.init(init);
-        init.value.runJobsLoop(new MakeJobs());
+        init.value.runJobsLoop(new IndexJob());
     }
 
     public static boolean isMain() {

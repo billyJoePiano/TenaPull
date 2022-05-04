@@ -1,9 +1,7 @@
-package nessusTools.data.entity.splunk;
+package nessusTools.data.deserialize;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.*;
-import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.scan.*;
@@ -11,8 +9,8 @@ import nessusTools.data.entity.scan.*;
 import java.sql.*;
 import java.util.*;
 
-public class MixIns {
-    private MixIns() { }
+public class SplunkMixIns {
+    private SplunkMixIns() { }
 
     public abstract class Scan {
         @JsonSerialize(using = FriendlyTimestamp.Sql.class)

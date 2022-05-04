@@ -3,6 +3,7 @@ package splunk;
 
 
 import com.fasterxml.jackson.databind.node.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
@@ -121,7 +122,7 @@ public class TestSplunkOutput {
         assertNotEquals(id, -1);
         assertEquals(id, output.getId());
 
-        ObjectNode node = output.toJsonNode();
+        ObjectNode node = SplunkOutputMapper.mapper.valueToTree(output);
 
         assertNotNull(node);
         logger.info("\n" + node);

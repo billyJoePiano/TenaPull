@@ -135,6 +135,16 @@ public final class Type<T> {
         return this.params.clone();
     }
 
+    public int hashCode() {
+        int code = this.type.hashCode();
+
+        if (this.params != null)
+        for (Type type : this.params) {
+            code ^= this.params.hashCode();
+        }
+        return code;
+    }
+
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;

@@ -48,7 +48,8 @@ public class SplunkOutput implements DbPojo {
     boolean hostResponseAlreadyPrepared;
 
     @Transient
-    private final ScanHostSummary host = new ScanHostSummary();
+    @JsonSerialize(using = SummarySerializer.class)
+    private final ScanHostSummary host = new ScanHostSummary(this);
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "vulnerability_id")
@@ -80,7 +81,8 @@ public class SplunkOutput implements DbPojo {
     private Plugin pluginBestGuess;
 
     @Transient
-    private final ScanSummary scan = new ScanSummary();
+    @JsonSerialize(using = SummarySerializer.class)
+    private final ScanSummary scan = new ScanSummary(this);
 
     public SplunkOutput() { }
 
@@ -287,12 +289,16 @@ public class SplunkOutput implements DbPojo {
         return rating;
     }
 
+    public static class ScanSummary
+            implements SummarySerializer.Summary<Scan, ScanInfo>,
+                        IdCachingSerializer.NodeCacher<ScanSummary> {
 
-    @JsonSerialize(using = SummarySerializer.class)
-    public class ScanSummary implements SummarySerializer.Summary<Scan, ScanInfo> {
-        private ScanSummary() { }
+        private ScanSummary(SplunkOutput parent) {
+            this.parent = parent;
+        }
 
-        Integer id;
+        private final SplunkOutput parent;
+        private Integer id;
 
         @Override
         public String getName() {
@@ -300,13 +306,38 @@ public class SplunkOutput implements DbPojo {
         }
 
         @Override
-        public Integer getId() {
+        public Integer getOptionalId() {
+            return this.id;
+        }
+
+        public void setId(int id) { }
+
+        @Override
+        public JsonNode toJsonNode() {
+            return null;
+        }
+
+        @Override
+        public String toJsonString() throws JsonProcessingException {
+            return null;
+        }
+
+        @Override
+        public void _prepare() {
+
+        }
+
+        public int getId() {
+            if (this.id == null) {
+                this.getScanResponse();
+                if (this.id == null) return 0;
+            }
             return this.id;
         }
 
         private ScanResponse getScanResponse() {
-            if (SplunkOutput.this.hostResponse == null) return null;
-            ScanResponse sr = SplunkOutput.this.hostResponse.getScanResponse();
+            if (parent.hostResponse == null) return null;
+            ScanResponse sr = parent.hostResponse.getScanResponse();
             if (sr != null) {
                 this.id = sr.getId();
             }
@@ -340,13 +371,69 @@ public class SplunkOutput implements DbPojo {
             }
             return info;
         }
+
+        @JsonIgnore
+        private IdCachingSerializer.MainCachedNode<ScanSummary> cachedNode;
+
+        public IdCachingSerializer.MainCachedNode<ScanSummary> getCachedNode() {
+            return this.cachedNode;
+        }
+
+        public void setCachedNode(IdCachingSerializer.MainCachedNode<ScanSummary> cachedNode) {
+            if (cachedNode != null) {
+                assert cachedNode.getId() == this.getId() && cachedNode.represents(this);
+            }
+            this.cachedNode = cachedNode;
+        }
+
+        public static JsonSerializer<ScanSummary>
+                getCachingSerializer(JsonSerializer<ScanSummary> defaultSerializer, ObjectMapper mapper) {
+
+            return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
+        }
+
+        public static JsonSerializer<ScanSummary>
+                getCacheResetSerializer(JsonSerializer<ScanSummary> defaultSerializer, ObjectMapper mapper) {
+
+            return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
+        }
     }
 
-    @JsonSerialize(using = SummarySerializer.class)
-    public class ScanHostSummary implements SummarySerializer.Summary<ScanHostInfo, ScanHost> {
-        private ScanHostSummary() { }
+    public static class ScanHostSummary
+            implements SummarySerializer.Summary<ScanHostInfo, ScanHost>,
+                        IdCachingSerializer.NodeCacher<ScanHostSummary> {
+        private ScanHostSummary(SplunkOutput parent) {
+            this.parent = parent;
+        }
 
-        Integer id;
+        private final SplunkOutput parent;
+        private Integer surrogateId;
+        private Integer hostId;
+
+        @Override
+        public void setId(int id) { }
+
+        @Override
+        public int getId() {
+            if (this.surrogateId != null) return this.surrogateId;
+            if (parent.hostResponse == null) return 0;
+            return this.surrogateId = parent.hostResponse.getId();
+        }
+
+        @Override
+        public JsonNode toJsonNode() {
+            return null;
+        }
+
+        @Override
+        public String toJsonString() throws JsonProcessingException {
+            return null;
+        }
+
+        @Override
+        public void _prepare() {
+
+        }
 
         @Override
         public String getName() {
@@ -354,20 +441,19 @@ public class SplunkOutput implements DbPojo {
         }
 
         @Override
-        public Integer getId() {
-            return id;
+        public Integer getOptionalId() {
+            return hostId;
         }
 
         @Override
         public ScanHostInfo getSummary() {
-            if (SplunkOutput.this.hostResponse == null) return null;
-            this.id = SplunkOutput.this.hostResponse.getId();
+            if (parent.hostResponse == null) return null;
 
-            ScanHostInfo info = SplunkOutput.this.hostResponse.getInfo();
+            ScanHostInfo info = this.parent.hostResponse.getInfo();
             if (info == null) {
-                info = ScanHostInfo.dao.getById(SplunkOutput.this.hostResponse.getId());
+                info = ScanHostInfo.dao.getById(this.parent.hostResponse.getId());
                 if (info != null) {
-                    SplunkOutput.this.hostResponse.setInfo(info);
+                    this.parent.hostResponse.setInfo(info);
                 }
             }
             return info;
@@ -375,17 +461,43 @@ public class SplunkOutput implements DbPojo {
 
         @Override
         public ScanHost getDetails() {
-            if (SplunkOutput.this.hostResponse == null) return null;
-            this.id = SplunkOutput.this.hostResponse.getId();
+            if (this.parent == null) return null;
 
-            ScanHost host = SplunkOutput.this.hostResponse.getHost();
+            ScanHost host = this.parent.hostResponse.getHost();
             if (host == null) {
-                host = ScanHost.dao.getById(SplunkOutput.this.hostResponse.getId());
+                host = ScanHost.dao.getById(this.parent.hostResponse.getId());
                 if (host != null) {
-                    SplunkOutput.this.hostResponse.setHost(host);
+                    this.hostId = host.getHostId();
+                    this.parent.hostResponse.setHost(host);
                 }
             }
             return host;
+        }
+
+        @JsonIgnore
+        private IdCachingSerializer.MainCachedNode<ScanHostSummary> cachedNode;
+
+        public IdCachingSerializer.MainCachedNode<ScanHostSummary> getCachedNode() {
+            return this.cachedNode;
+        }
+
+        public void setCachedNode(IdCachingSerializer.MainCachedNode<ScanHostSummary> cachedNode) {
+            if (cachedNode != null) {
+                assert cachedNode.getId() == this.getId() && cachedNode.represents(this);
+            }
+            this.cachedNode = cachedNode;
+        }
+
+        public static JsonSerializer<ScanHostSummary>
+                getCachingSerializer(JsonSerializer<ScanHostSummary> defaultSerializer, ObjectMapper mapper) {
+
+            return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
+        }
+
+        public static JsonSerializer<ScanHostSummary>
+                getCacheResetSerializer(JsonSerializer<ScanHostSummary> defaultSerializer, ObjectMapper mapper) {
+
+            return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
         }
     }
 
@@ -447,12 +559,13 @@ public class SplunkOutput implements DbPojo {
         return host;
     }
 
+
     public ObjectNode toJsonNode() {
-        return new SplunkOutputSerializer().valueToTree (this);
+        return SplunkOutputMapper.mapper.valueToTree (this);
     }
 
     public String toJsonString() throws JsonProcessingException {
-        return new ObjectMapper().writeValueAsString(this);
+        return SplunkOutputMapper.mapper.writeValueAsString(this);
     }
 
     public String toString() {

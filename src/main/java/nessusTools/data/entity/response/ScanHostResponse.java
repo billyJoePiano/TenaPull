@@ -37,6 +37,10 @@ public class ScanHostResponse extends NessusResponseGenerateTimestamp {
         return "/scans/" + scanId + "/hosts/" + scanHostId;
     }
 
+    public static String getUrlPath(ScanHost host) throws NullPointerException {
+        return getUrlPath(host.getResponse().getId(), host.getId());
+    }
+
     @Transient
     @JsonIgnore
     public String getUrlPath() throws IllegalStateException {

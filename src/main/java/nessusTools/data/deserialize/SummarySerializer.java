@@ -18,7 +18,7 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
         default String getDetailsKey() {
             return "info";
         }
-        default Integer getId() {
+        default Integer getOptionalId() {
             return null;
         }
     }
@@ -43,7 +43,7 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
             }
 
             jg.writeStartObject();
-            Integer id = container.getId();
+            Integer id = container.getOptionalId();
             if (id != null) {
                 jg.writeNumberField("id", id);
             }
@@ -57,7 +57,7 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
 
 
 
-        ObjectMapper mapper = new SplunkOutputSerializer();
+        ObjectMapper mapper = (ObjectMapper)jg.getCodec();
 
         ObjectNode sum = mapper.valueToTree(summary);
         ObjectNode info;
