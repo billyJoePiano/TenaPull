@@ -126,7 +126,9 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
 
     String dependency;
 
-    String solution;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "solution_id")
+    PluginSolution solution;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "vuln_information_id")
@@ -430,11 +432,11 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
         this.dependency = dependency;
     }
 
-    public String getSolution() {
+    public PluginSolution getSolution() {
         return solution;
     }
 
-    public void setSolution(String solution) {
+    public void setSolution(PluginSolution solution) {
         this.solution = solution;
     }
 

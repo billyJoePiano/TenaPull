@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.*;
 import nessusTools.client.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
+import nessusTools.data.persistence.*;
 import org.apache.logging.log4j.*;
 
 import java.sql.*;
@@ -21,6 +22,13 @@ public class ScanHostJob extends Job {
 
     @Override
     protected boolean isReady() {
+        ScanHostResponse old = ScanHostResponse.dao.getById(this.host.getId());
+        if (old == null) {
+            old = new ScanHostResponse();
+            old.setId(this.host.getId());
+            ScanHostResponse.dao.insert(old);
+        }
+        assert old.getId() == this.host.getId();
         return true;
     }
 
@@ -31,7 +39,8 @@ public class ScanHostJob extends Job {
 
     @Override
     protected void process() {
-        ScanHostResponse.dao.saveOrUpdate(response);
+        this.response.setId(this.host.getId());
+        ScanHostResponse.dao.saveOrUpdate(this.response);
     }
 
     @Override
@@ -41,6 +50,10 @@ public class ScanHostJob extends Job {
             response.setScanResponse(scanResponse);
         } else {
             scanResponse = response.getScanResponse();
+            if (scanResponse == null) {
+                throw new IllegalStateException("ScanResponse could not be found for ScanHost id:\n"
+                        + this.host);
+            }
         }
         this.addJob(new SplunkOutputJob(scanResponse, response));
     }

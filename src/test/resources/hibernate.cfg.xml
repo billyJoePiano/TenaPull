@@ -37,6 +37,8 @@
         <mapping class="nessusTools.data.entity.lookup.ScanStatus" />
         <mapping class="nessusTools.data.entity.lookup.ScanType" />
         <mapping class="nessusTools.data.entity.lookup.ScanUuid" />
+        <mapping class="nessusTools.data.entity.lookup.ScanTargets" />
+        <mapping class="nessusTools.data.entity.lookup.PluginSolution" />
         <mapping class="nessusTools.data.entity.lookup.Timezone" />
         <mapping class="nessusTools.data.entity.lookup.Scanner" />
         <mapping class="nessusTools.data.entity.lookup.ScanOwner" />

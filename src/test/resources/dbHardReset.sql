@@ -45,7 +45,7 @@ drop table if exists `severity_base`;
 drop table if exists `acl`;
 
 -- Simple lookup tables
-drop table if exists hostname;
+drop table if exists `hostname`;
 drop table if exists `host_fqdn`;
 drop table if exists `host_ip`;
 drop table if exists `operating_system`;
@@ -58,6 +58,8 @@ drop table if exists `plugin_script_copyright`;
 drop table if exists `plugin_synopsis`;
 drop table if exists `plugin_family`;
 drop table if exists `plugin_name`;
+drop table if exists `plugin_solution`;
+drop table if exists `scan_targets`;
 drop table if exists `policy_template_uuid`;
 drop table if exists `scan_uuid`;
 drop table if exists `scan_schedule_type`;
@@ -122,6 +124,18 @@ create table scan_uuid (
 create table policy_template_uuid (
     id int auto_increment primary key,
     value varchar(255) not null unique
+);
+
+create table scan_targets (
+    id int auto_increment primary key,
+    value longtext not null,
+    _hash varbinary(64) not null unique
+);
+
+create table plugin_solution (
+    id int auto_increment primary key,
+    value longtext not null,
+    _hash varbinary(64) not null unique
 );
 
 create table plugin_name (
@@ -320,7 +334,7 @@ create table plugin_attributes (
     plugin_information_id int null,
     required_port varchar(255) null,
     dependency varchar(255) null,
-    solution varchar(255) null,
+    solution_id int null,
     vuln_information_id int null,
     age_of_vuln varchar(255) null,
     exploit_code_maturity varchar(255) null,
@@ -332,6 +346,7 @@ create table plugin_attributes (
     constraint foreign key (risk_information_id) references plugin_risk_information (id) on update cascade,
     constraint foreign key (plugin_name_id) references plugin_name (id) on update cascade,
     constraint foreign key (plugin_information_id) references plugin_information (id) on update cascade,
+    constraint foreign key (solution_id) references plugin_solution (id) on update cascade,
     constraint foreign key (vuln_information_id) references plugin_vuln_information (id) on update cascade,
     constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
@@ -467,7 +482,7 @@ create table scan_info (
     scan_type_id int null,
     edit_allowed bool null,
     scan_group int null,
-    targets varchar(255) null,
+    scan_targets_id int null,
     scanner_start timestamp null,
     scanner_end timestamp null,
     oses_found bool null,
@@ -509,6 +524,7 @@ create table scan_info (
     constraint scan_info_uuid_id_fk foreign key (uuid_id) references scan_uuid (id) on update cascade,
     constraint scan_info_scan_type_id_fk foreign key (scan_type_id) references scan_type(id) on update cascade,
     -- constraint scan_info_scan_group_id_fk foreign key (scan_group_id) references scan_group (id)  on update cascade,
+    constraint foreign key (scan_targets_id) references scan_targets (id) on update cascade,
     constraint scan_info_policy_id_fk foreign key (policy_id) references scan_policy (id) on update cascade,
     constraint scan_info_scanner_id_fk foreign key (scanner_id) references scanner (id) on update cascade,
     constraint scan_info_license_id_fk foreign key (license_id) references license (id) on update cascade,

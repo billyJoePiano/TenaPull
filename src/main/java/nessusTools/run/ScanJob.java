@@ -20,7 +20,6 @@ public class ScanJob extends Job {
     private final Scan scan;
     private final NessusClient client = new NessusClient();
     private ScanResponse response;
-    boolean preexisting;
     Long startWait;
 
     public ScanJob(Scan scan) {
@@ -44,9 +43,12 @@ public class ScanJob extends Job {
         }
 
         ScanResponse old = ScanResponse.dao.getById(scan.getId());
-        if (old == null) return true;
-
-        preexisting = true;
+        if (old == null) {
+            ScanResponse temp = new ScanResponse();
+            temp.setId(scan.getId());
+            ScanResponse.dao.insert(temp);
+            return true;
+        }
 
         ScanInfo oldInfo = old.getInfo();
         if (oldInfo == null) return true;
@@ -75,13 +77,15 @@ public class ScanJob extends Job {
 
     @Override
     protected void process() {
+        response.setId(this.scan.getId());
         ScanResponse.dao.saveOrUpdate(response);
-        if (preexisting) CachingMapper.resetCaches.valueToTree(this.scan);
     }
 
     @Override
     protected void output() {
+        CachingMapper.resetCaches.valueToTree(this.scan);
         for (ScanHost host : response.getHosts()) {
+            if (host == null) continue;
             this.addJob(new ScanHostJob(host));
         }
     }

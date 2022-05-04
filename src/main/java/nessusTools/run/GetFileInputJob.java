@@ -87,7 +87,7 @@ public class GetFileInputJob<R extends NessusResponse> extends Job {
         }
 
         if (this.responseType == ScanHostResponse.class) {
-            this.addJob(new SplunkOutputJob((ScanHostResponse)this.response));
+            this.addJob(new SplunkOutputJob(((ScanHostResponse)this.response).getScanResponse() , (ScanHostResponse)this.response));
         }
     }
 

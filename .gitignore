@@ -52,8 +52,9 @@ fabric.properties
 
 
 notes/api-fetch-1.json
+nessus-api.properties*
 nessus-api.properties
-nessus-api.properties.bak
+hibernate.cfg.xml
 
 /src/test/resources/deserializationPersistence-params/*
 /src/test/resources/splunk-output/*

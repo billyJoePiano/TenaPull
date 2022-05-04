@@ -86,7 +86,9 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     @JsonProperty("scan_group")
     private Integer scanGroup;
 
-    private String targets;
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="scan_targets_id")
+    private ScanTargets targets;
 
     @Column(name = "scanner_start")
     @JsonProperty("scanner_start")
@@ -476,11 +478,11 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
         this.scanGroup = scanGroup;
     }
 
-    public String getTargets() {
+    public ScanTargets getTargets() {
         return targets;
     }
 
-    public void setTargets(String targets) {
+    public void setTargets(ScanTargets targets) {
         this.targets = targets;
     }
 
