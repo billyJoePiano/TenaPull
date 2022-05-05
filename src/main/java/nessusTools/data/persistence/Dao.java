@@ -251,7 +251,7 @@ public class Dao<POJO extends DbPojo> {
 
                 } catch (Exception e) {
                     transaction.rollback();
-                    closer.logger.error(e);
+                    closer.logger.error("Error committing DB transaction", e);
                 }
             }
 
@@ -259,7 +259,7 @@ public class Dao<POJO extends DbPojo> {
                 session.close();
 
             } catch (Exception e) {
-                closer.logger.error(e);
+                closer.logger.error("Error closing DB session", e);
             }
         }
 

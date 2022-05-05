@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
@@ -72,27 +73,28 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
     @JsonIgnore
     @Override
     public ObjectNode toJsonNode() {
-        return new ObjectMapper().valueToTree (this);
+        //use the cached node from plugin
+        if (this.plugin == null) return CachingMapper.mapper.valueToTree (this);
+        ObjectNode node = this.plugin.toJsonNode();
+        node.put("host_count", hostCount);
+        if (this.hosts != null) {
+            node.set("hosts", CachingMapper.mapper.valueToTree(this.hosts));
+        }
+        return node;
     }
 
     @Transient
     @JsonIgnore
     @Override
-    public String toJsonString() throws JsonProcessingException {
-        return new ObjectMapper().writeValueAsString(this);
+    public String toJsonString() {
+        return this.toJsonNode().toString();
     }
 
     @Transient
     @JsonIgnore
     @Override
     public String toString() {
-        try {
-            return this.toJsonString();
-        } catch (JsonProcessingException e) {
-            return "toString() could not convert to JSON for '"
-                    + super.toString() + "' :\n"
-                    + e.getMessage();
-        }
+        return this.toJsonString();
     }
 
     @Transient

@@ -59,14 +59,21 @@ public abstract class HashLookupTemplate<POJO extends HashLookupTemplate<POJO>>
         return this._hash != null;
     }
 
-    @Override
-    public final ObjectNode toJsonNode() {
-        return this.getOrCreateNodeCache().getNode();
+    public void __prepare() {
+        super.__prepare();
+        if (this._hash == null) this.get_hash();
     }
 
     @Override
-    public final String toJsonString() {
-        return this.getOrCreateNodeCache().getString();
+    public final ObjectNode toJsonNode() {
+        if (this._hash == null) return super.toJsonNode();
+        else return this.getOrCreateNodeCache().getNode();
+    }
+
+    @Override
+    public final String toJsonString() throws JsonProcessingException {
+        if (this._hash == null) return super.toJsonString();
+        else return this.getOrCreateNodeCache().getString();
     }
 
 

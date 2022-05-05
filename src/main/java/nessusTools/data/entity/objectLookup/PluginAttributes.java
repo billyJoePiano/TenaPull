@@ -144,6 +144,17 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     @JsonProperty("exploit_code_maturity")
     String exploitCodeMaturity;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    String cert;
+
+    @Column(name = "required_key")
+    @JsonProperty("required_key")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    String requiredKey;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    String iava;
+
     @Transient
     @JsonIgnore
     @Override
@@ -222,6 +233,9 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
         this.pluginVulnInformation = o.pluginVulnInformation;
         this.ageOfVuln = o.ageOfVuln;
         this.exploitCodeMaturity = o.exploitCodeMaturity;
+        this.cert = o.cert;
+        this.requiredKey = o.requiredKey;
+        this.iava = o.iava;
 
         if (this.ref_information != null) {
             this.ref_information.clearParent();
@@ -261,6 +275,9 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
                         : o.pluginVulnInformation == null)
                 && Objects.equals(this.ageOfVuln, o.ageOfVuln)
                 && Objects.equals(this.exploitCodeMaturity, o.exploitCodeMaturity)
+                && Objects.equals(this.cert, o.cert)
+                && Objects.equals(this.requiredKey, o.requiredKey)
+                && Objects.equals(this.iava, o.iava)
                 && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
@@ -462,5 +479,29 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
 
     public void setExploitCodeMaturity(String exploitCodeMaturity) {
         this.exploitCodeMaturity = exploitCodeMaturity;
+    }
+
+    public String getCert() {
+        return cert;
+    }
+
+    public void setCert(String cert) {
+        this.cert = cert;
+    }
+
+    public String getRequiredKey() {
+        return requiredKey;
+    }
+
+    public void setRequiredKey(String requiredKey) {
+        this.requiredKey = requiredKey;
+    }
+
+    public String getIava() {
+        return iava;
+    }
+
+    public void setIava(String iava) {
+        this.iava = iava;
     }
 }

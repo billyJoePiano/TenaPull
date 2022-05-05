@@ -115,17 +115,25 @@ public class Hash implements Comparable<Hash> {
     }
      */
 
-    public static String hexString(String str) {
-        byte[] bytes = dirtyHash(str);
+    public String toString() {
+        return "[Hash] 0x" + hexString(this.bytes);
+    }
+
+    public static String hexString(byte[] bytes) {
         StringBuilder hash = new StringBuilder();
         for (byte bt : bytes) {
-            String hex = Integer.toString(bt, 16);
+            String hex = Integer.toString(bt & 0xFF, 16);
             while (hex.length() < 2) {
                 hex = "0" + hex;
             }
             hash.append(hex);
         }
         return hash.toString();
+    }
+
+    public static String hexString(String str) {
+        byte[] bytes = dirtyHash(str);
+        return hexString(bytes);
     }
 
     public boolean equals(Object o) {

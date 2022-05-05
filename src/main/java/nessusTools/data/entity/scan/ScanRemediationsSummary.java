@@ -21,18 +21,9 @@ import java.util.*;
 public class ScanRemediationsSummary extends ScanResponse.SingleChild<ScanRemediationsSummary> {
     public static final Dao<ScanRemediationsSummary> dao = new Dao(ScanRemediationsSummary.class);
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @LazyCollection(LazyCollectionOption.FALSE)
-    @Fetch(value = FetchMode.SUBSELECT)
-    @Access(AccessType.PROPERTY)
-    @JoinTable(
-            name = "scan_remediation",
-            joinColumns = { @JoinColumn(name = "scan_id") },
-            inverseJoinColumns = { @JoinColumn(name = "remediation_id") }
-    )
-    @OrderColumn(name = "__order_for_scan_remediation", nullable = false)
+    @Transient // shared with / obtained from ScanResponse parent
     @JsonSerialize(using = Lists.EmptyToNullSerializer.class)
-    private List<Remediation> remediations;
+    private List<ScanRemediation> remediations;
 
     @Column(name = "num_hosts")
     @JsonProperty("num_hosts")
@@ -55,15 +46,29 @@ public class ScanRemediationsSummary extends ScanResponse.SingleChild<ScanRemedi
     @Override
     public void _prepare() {
         this.__prepare();
-        this.remediations = Remediation.dao.getOrCreate(remediations);
     }
 
-    public List<Remediation> getRemediations() {
+    @Override
+    public void setResponse(ScanResponse response) {
+        ScanResponse old = this.getResponse();
+        super.setResponse(response);
+        if (response != old && old != null) {
+            old.setRemediations(null); // ScanResponse handles list detachment
+        }
+    }
+
+    public List<ScanRemediation> getRemediations() {
         return remediations;
     }
 
-    public void setRemediations(List<Remediation> remediations) {
+    public void setRemediations(List<ScanRemediation> remediations) {
+        if (remediations == this.remediations) return;
         this.remediations = remediations;
+
+        ScanResponse response = this.getResponse();
+        if (response == null || response.getRemediations() != this) return;
+
+        response.setRemediationsList(remediations);
     }
 
     public Integer getNumHosts() {

@@ -11,7 +11,7 @@ import org.apache.logging.log4j.*;
 import java.sql.*;
 import java.util.*;
 
-public class ScanJob extends Job {
+public class ScanJob extends DbManagerJob.Child {
     private static Logger logger = LogManager.getLogger(ScanJob.class);
     private static final ScanStatus COMPLETED = ScanStatus.dao.getOrCreate("completed");
     private static final ScanStatus CANCELED = ScanStatus.dao.getOrCreate("canceled");
@@ -112,5 +112,14 @@ public class ScanJob extends Job {
         }
         this.failed();
         return false;
+    }
+
+    private boolean dbErredOnce;
+
+    @Override
+    protected boolean dbExceptionHandler(Exception e) {
+        logger.error("Db error", e);
+        if (dbErredOnce) return false;
+        return dbErredOnce = true;
     }
 }

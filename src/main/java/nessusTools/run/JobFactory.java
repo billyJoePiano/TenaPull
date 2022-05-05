@@ -3,11 +3,15 @@ package nessusTools.run;
 import nessusTools.sync.*;
 import nessusTools.util.*;
 import org.apache.logging.log4j.*;
-import org.hibernate.query.criteria.internal.expression.function.*;
 
 import java.util.*;
 
 public class JobFactory {
+    public static final long MAX_NEW_JOB_PROCESSING_TIME_MS = 1000;
+    public static final int NUM_WORKER_THREADS = 1;
+    public static final long MAX_MAIN_WAIT_TIME = 300000;
+
+
     private final WorkerThread thread;
     private boolean kill = false;
 
@@ -93,8 +97,6 @@ public class JobFactory {
         }
     }
 
-    public static final int NUM_WORKER_THREADS = 8;
-    public static final long MAX_WAIT_TIME = 300000;
 
     private static final Logger logger = LogManager.getLogger(JobFactory.class);
     private static final Set<Job> newJobProviders = new LinkedHashSet<>();
@@ -122,7 +124,7 @@ public class JobFactory {
         }
     }
 
-    public static final long MAX_NEW_JOB_PROCESSING_TIME_MS = 1000;
+
     private static boolean haveNewJobsToProcess = false;
     private static boolean haveDelayedJobs = false;
     private static boolean haveUnderwayJobs = false;
@@ -389,7 +391,7 @@ public class JobFactory {
     }
 
     private static void waitForNextJob() {
-        long exitAt = System.currentTimeMillis() + MAX_WAIT_TIME;
+        long exitAt = System.currentTimeMillis() + MAX_MAIN_WAIT_TIME;
         while (System.currentTimeMillis() < exitAt) {
 
             processUnderwayJobs();
@@ -404,7 +406,7 @@ public class JobFactory {
                 checkWorkerThreads();
 
                 try {
-                    newJobProviders.wait(MAX_WAIT_TIME);
+                    newJobProviders.wait(MAX_MAIN_WAIT_TIME);
 
                 } catch (InterruptedException e) { }
 
@@ -422,10 +424,12 @@ public class JobFactory {
             Job.Accessor accessor = null;
 
             //restart the iterator each time
+            Long mappedTryAtTime = null;
             for (Iterator<Map.Entry<Long, Job>> iterator = delayedJobs.entrySet().iterator();
                  iterator.hasNext(); ) {
 
                 Map.Entry<Long, Job> entry = iterator.next();
+                mappedTryAtTime = entry.getKey();
                 Job j = entry.getValue();
                 if (j == null) {
                     iterator.remove();
@@ -444,7 +448,16 @@ public class JobFactory {
 
             if (job == null || accessor == null) return;
 
+            assert mappedTryAtTime != null;
+
             long tryAtTime = accessor.getTryAtTime();
+
+            if (tryAtTime != mappedTryAtTime) {
+                delayedJobs.remove(mappedTryAtTime);
+                delayedJobs.put(tryAtTime, job);
+                if (tryAtTime > mappedTryAtTime) continue;
+            }
+
             long sleepTime = tryAtTime - calcAvgDelay() - System.currentTimeMillis();
 
             if (sleepTime > 0) {
@@ -455,7 +468,7 @@ public class JobFactory {
                         if (newJobProviders.size() > 0) return;
 
                         checkWorkerThreads();
-                        newJobProviders.wait(Math.min(sleepTime, MAX_WAIT_TIME));
+                        newJobProviders.wait(Math.min(sleepTime, MAX_MAIN_WAIT_TIME));
 
                         if (accessor.getTryAtTime() > calcAvgDelay() + System.currentTimeMillis()) {
                             // premature waking-up of thread probably means a new jobProvider or job done
@@ -470,7 +483,7 @@ public class JobFactory {
             }
             haveDispatcedJobs = true;
             haveUnderwayJobs = true;
-            delayedJobs.remove(job);
+            delayedJobs.remove(tryAtTime);
             synchronized (readyJobs) {
                 readyJobs.add(job);
                 readyJobs.notify();

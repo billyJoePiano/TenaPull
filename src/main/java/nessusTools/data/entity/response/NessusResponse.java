@@ -3,7 +3,9 @@ package nessusTools.data.entity.response;
 import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.scan.*;
@@ -102,6 +104,28 @@ public interface NessusResponse<RES extends NessusResponse<RES>>
 
             return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
         }
+
+        @Override
+        public ObjectNode toJsonNode() {
+            if (this.cachedNode == null){
+                if (this.getId() == 0) {
+                    return super.toJsonNode();
+                }
+                this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((POJO)this);
+            }
+            return this.cachedNode.getNode();
+        }
+
+        @Override
+        public String toJsonString() throws JsonProcessingException {
+            if (this.cachedNode == null){
+                if (this.getId() == 0) {
+                    return super.toJsonString();
+                }
+                this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((POJO)this);
+            }
+            return this.cachedNode.getString();
+        }
     }
 
 
@@ -195,6 +219,27 @@ public interface NessusResponse<RES extends NessusResponse<RES>>
 
             return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
         }
-    }
 
+        @Override
+        public ObjectNode toJsonNode() {
+            if (this.cachedNode == null){
+                if (this.getId() == 0) {
+                    return super.toJsonNode();
+                }
+                this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((POJO)this);
+            }
+            return this.cachedNode.getNode();
+        }
+
+        @Override
+        public String toJsonString() throws JsonProcessingException {
+            if (this.cachedNode == null){
+                if (this.getId() == 0) {
+                    return super.toJsonString();
+                }
+                this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((POJO)this);
+            }
+            return this.cachedNode.getString();
+        }
+    }
 }

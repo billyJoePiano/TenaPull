@@ -2,6 +2,8 @@ package nessusTools.data.entity.response;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.*;
@@ -60,7 +62,16 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     private List<ScanHost> hosts;
 
     @OneToOne(mappedBy = "response", cascade = { CascadeType.ALL }, fetch = FetchType.EAGER)
+    @Access(AccessType.PROPERTY)
     private ScanRemediationsSummary remediations;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "response")
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @Fetch(value = FetchMode.SUBSELECT)
+    @Access(AccessType.PROPERTY)
+    @OrderColumn(name = "__order_for_scan_remediation", nullable = false)
+    @JsonIgnore
+    private List<ScanRemediation> remediationsList;
 
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
@@ -85,7 +96,7 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     private List<ScanPlugin> plugins;
 
     @Transient
-    ScanPrioritization prioritization;
+    private ScanPrioritization prioritization;
 
     @Column(name = "threat_level")
     @Access(AccessType.PROPERTY) //force hibernate to use the getter/setter, which puts this value into the ScanPrioritization wrapper
@@ -121,13 +132,14 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         this.vulnerabilities = Vulnerability.dao.getOrCreate(vulnerabilities);
         this.history = ScanHistory.dao.getOrCreate(history);
         this.setPlugins(ScanPlugin.dao.getOrCreate(plugins));
+        this.setRemediationsList(ScanRemediation.dao.getOrCreate(this.remediationsList));
 
         this.setChildren();
     }
 
     private void setChildren() {
         List<ScanResponseChild>[] children = new List[]
-                {this.hosts, this.history, this.plugins};
+                {this.hosts, this.history, this.plugins, this.remediationsList};
 
         for (List<ScanResponseChild> list : children) {
             if (list == null) continue;
@@ -216,7 +228,38 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     }
 
     public void setRemediations(ScanRemediationsSummary remediations) {
+        if (remediations == this.remediations) return;
+
+        if (this.remediations != null && this.remediationsList != null
+                && this.remediations.getRemediations() == this.remediationsList) {
+
+            //detach the two instances so they no longer share a list
+            this.remediations.setRemediations(new ArrayList(this.remediationsList));
+        }
+
+        if (remediations != null) {
+            if (this.remediationsList == null) {
+                this.remediationsList = remediations.getRemediations();
+
+            } else if (remediations.getRemediations() == null) {
+                remediations.setRemediations(this.remediationsList);
+            }
+        }
+
         this.remediations = remediations;
+    }
+
+    public List<ScanRemediation> getRemediationsList() {
+        return remediationsList;
+    }
+
+    public void setRemediationsList(List<ScanRemediation> remediationsList) {
+        if (this.remediationsList == remediationsList) return;
+        this.remediationsList = remediationsList;
+
+        if (this.remediations != null) {
+            this.remediations.setRemediations(remediationsList);
+        }
     }
 
     public List<ScanHistory> getHistory() {

@@ -1,7 +1,9 @@
 package nessusTools.data.entity.response;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.template.*;
@@ -58,5 +60,27 @@ public abstract class NessusResponseGenerateTimestamp<RES extends NessusResponse
             getCacheResetSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
 
         return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
+    }
+
+    @Override
+    public final ObjectNode toJsonNode() {
+        if (this.cachedNode == null){
+            if (this.getId() == 0) {
+                return super.toJsonNode();
+            }
+            this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((RES)this);
+        }
+        return this.cachedNode.getNode();
+    }
+
+    @Override
+    public final String toJsonString() throws JsonProcessingException {
+        if (this.cachedNode == null){
+            if (this.getId() == 0) {
+                return super.toJsonString();
+            }
+            this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((RES)this);
+        }
+        return this.cachedNode.getString();
     }
 }

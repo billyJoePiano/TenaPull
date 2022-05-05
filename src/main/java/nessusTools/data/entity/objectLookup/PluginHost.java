@@ -2,7 +2,9 @@ package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
 
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.template.*;
@@ -136,5 +138,27 @@ public class PluginHost extends GeneratedIdPojo
             getCacheResetSerializer(JsonSerializer<PluginHost> defaultSerializer, ObjectMapper mapper) {
 
         return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
+    }
+
+    @Override
+    public ObjectNode toJsonNode() {
+        if (this.cachedNode == null){
+            if (this.getId() == 0) {
+                return super.toJsonNode();
+            }
+            this.cachedNode = IdCachingSerializer.getOrCreateNodeCache(this);
+        }
+        return this.cachedNode.getNode();
+    }
+
+    @Override
+    public String toJsonString() throws JsonProcessingException {
+        if (this.cachedNode == null){
+            if (this.getId() == 0) {
+                return super.toJsonString();
+            }
+            this.cachedNode = IdCachingSerializer.getOrCreateNodeCache(this);
+        }
+        return this.cachedNode.getString();
     }
 }

@@ -3,9 +3,9 @@ package nessusTools.data.entity.objectLookup;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.annotation.*;
 import com.fasterxml.jackson.databind.node.*;
 import nessusTools.data.deserialize.*;
+import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import nessusTools.util.*;
@@ -13,41 +13,17 @@ import nessusTools.util.*;
 import javax.persistence.*;
 import java.util.*;
 
-@Entity(name = "License")
-@Table(name = "license")
-public class License extends GeneratedIdPojo
-        implements MapLookupPojo<License>, IdCachingSerializer.NodeCacher<License> {
+@Entity(name = "RemediationDetails")
+@Table(name = "remediation_details")
+public class RemediationDetails extends GeneratedIdPojo
+        implements MapLookupPojo<RemediationDetails>, IdCachingSerializer.NodeCacher<RemediationDetails> {
 
-	public static final MapLookupDao<License> dao
-			= new MapLookupDao<License>(License.class);
+    public static final MapLookupDao<RemediationDetails> dao = new MapLookupDao<>(RemediationDetails.class);
 
-	@Column(name = "`limit`") // tick marks to escape the field name, because 'limit' is a SQL keyword
-    @Convert(converter = MultiTypeWrapper.Converter.class)
-    @JsonDeserialize(using = MultiType.Deserializer.class)
-    @JsonSerialize(using = MultiType.Serializer.class)
-	private MultiTypeWrapper limit;
-
-    @Column
-    @Convert(converter = MultiTypeWrapper.Converter.class)
-    @JsonDeserialize(using = MultiType.Deserializer.class)
-    @JsonSerialize(using = MultiType.Serializer.class)
-	private MultiTypeWrapper trimmed;
-
-	public MultiTypeWrapper getLimit(){
-		return this.limit;
-	}
-
-	public MultiTypeWrapper getTrimmed(){
-		return this.trimmed;
-	}
-
-    public void setLimit(MultiTypeWrapper limit) {
-        this.limit = limit;
-    }
-
-    public void setTrimmed(MultiTypeWrapper trimmed) {
-        this.trimmed = trimmed;
-    }
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "remediation_id")
+    private Remediation remediation;
+    private String value;
 
     @Transient
     @JsonIgnore
@@ -57,58 +33,58 @@ public class License extends GeneratedIdPojo
     }
 
     @Override
-    public void _set(License o) {
+    public void _set(RemediationDetails o) {
         this.__set(o);
-        this.limit = o.limit;
-        this.trimmed = o.trimmed;
+        this.remediation = o.remediation;
+        this.value = o.value;
     }
 
     @Transient
     @JsonIgnore
     @Override
-    public boolean _match(License o) {
+    public boolean _match(RemediationDetails o) {
         if (o == this) return true;
         return o != null
-                && Objects.equals(this.limit, o.limit)
-                && Objects.equals(this.trimmed, o.trimmed)
+                && Objects.equals(this.remediation, o.remediation)
+                && Objects.equals(this.value, o.value)
                 && Objects.equals(this.getExtraJson(), o.getExtraJson());
+                
     }
-
 
     @Transient
     @JsonIgnore
     @Override
     public Map<String, Object> _getSearchMap() {
         return MakeMap.of(new Object[] {
-                "limit", this.limit,
-                "trimmed", this.trimmed,
+                "remediation", this.remediation,
+                "value", this.value,
                 "extraJson", this.getExtraJson()
-        });
+            });
     }
 
     @Transient
     @JsonIgnore
-    private IdCachingSerializer.MainCachedNode<License> cachedNode;
+    private IdCachingSerializer.MainCachedNode<RemediationDetails> cachedNode;
 
-    public IdCachingSerializer.MainCachedNode<License> getCachedNode() {
+    public IdCachingSerializer.MainCachedNode<RemediationDetails> getCachedNode() {
         return this.cachedNode;
     }
 
-    public void setCachedNode(IdCachingSerializer.MainCachedNode<License> cachedNode) {
+    public void setCachedNode(IdCachingSerializer.MainCachedNode<RemediationDetails> cachedNode) {
         if (cachedNode != null) {
             assert cachedNode.getId() == this.getId() && cachedNode.represents(this);
         }
         this.cachedNode = cachedNode;
     }
 
-    public static JsonSerializer<PluginHost>
-            getCachingSerializer(JsonSerializer<PluginHost> defaultSerializer, ObjectMapper mapper) {
+    public static JsonSerializer<RemediationDetails>
+            getCachingSerializer(JsonSerializer<RemediationDetails> defaultSerializer, ObjectMapper mapper) {
 
         return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
     }
 
-    public static JsonSerializer<PluginHost>
-            getCacheResetSerializer(JsonSerializer<PluginHost> defaultSerializer, ObjectMapper mapper) {
+    public static JsonSerializer<RemediationDetails>
+            getCacheResetSerializer(JsonSerializer<RemediationDetails> defaultSerializer, ObjectMapper mapper) {
 
         return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
     }
@@ -133,5 +109,21 @@ public class License extends GeneratedIdPojo
             this.cachedNode = IdCachingSerializer.getOrCreateNodeCache(this);
         }
         return this.cachedNode.getString();
+    }
+
+    public Remediation getRemediation() {
+        return remediation;
+    }
+
+    public void setRemediation(Remediation remediation) {
+        this.remediation = remediation;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 }

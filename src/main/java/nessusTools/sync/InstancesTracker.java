@@ -187,10 +187,25 @@ public class InstancesTracker<K, I> {
                 for (Map.Entry<K, CreateLock> entry : underConstruction.entrySet()) {
                     CreateLock lock = entry.getValue();
                     I instance = lock.run(entry.getKey());
+
+                    //instances comparison instead of list.contains() which requires .equals() method
                     if (instance == null) continue;
-                    if (accepted.contains(instance) || rejected.contains(instance)){
-                        continue;
+                    for (I other : accepted) {
+                        if (instance == other) {
+                            instance = null;
+                            break;
+                        }
                     }
+
+                    if (instance == null) continue;
+                    for (I other : rejected) {
+                        if (instance == other) {
+                            instance = null;
+                            break;
+                        }
+                    }
+                    if (instance == null) continue;
+
                     Boolean filterResult = filter.call(instance);
                     if (filterResult != null && filterResult) {
                         accepted.add(instance);
@@ -309,7 +324,7 @@ public class InstancesTracker<K, I> {
         underConstruction.write(underConstruction -> {
             for (Map.Entry<K, CreateLock> entry : underConstruction.entrySet()) {
                 CreateLock lock = entry.getValue();
-                if (Objects.equals(instance, lock.run(entry.getKey()))) {
+                if (instance == lock.run(entry.getKey())) {
                     lock.finalizeConstruction(instances, underConstruction);
                 }
             }
@@ -354,8 +369,10 @@ public class InstancesTracker<K, I> {
         CreateLock myLock = this.getCurrentThreadLock();
 
         return instances.write(instType, instances -> {
-            if (instances.containsKey(instance)) {
-                return putWithLock(key, instance, instances);
+            for (I other: instances.keySet()) {
+                if (instance == other) {
+                    return putWithLock(key, instance, instances);
+                }
             }
 
             return underConstruction.write(instType, underConstruction -> {
@@ -1140,11 +1157,19 @@ public class InstancesTracker<K, I> {
             synchronized (this) {
                 if (this.stage == Stage.FINALIZING
                         && this.finishedInstance != null
-                        && this.finishedInstance != instanceWithKey
-                        && !instances.containsKey(this.finishedInstance)) {
+                        && this.finishedInstance != instanceWithKey) {
 
-                    instances.put(this.finishedInstance,
-                            InstancesTracker.this.makeKeySet());
+                    boolean found = false;
+                    for (I other : instances.keySet()) {
+                        if (other == this.finishedInstance) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        instances.put(this.finishedInstance,
+                                InstancesTracker.this.makeKeySet());
+                    }
                 }
                 overriddenBy = this.overriddenBy;
             }
@@ -1614,6 +1639,10 @@ public class InstancesTracker<K, I> {
                 // Time that will be allocated for finalizing should never exceed inactive time
                 if (inactiveTime > BILLION) { // Maximum of one second
                     inactiveTime = (long)BILLION;
+
+                } else if (inactiveTime < BILLION / 8) {
+                    //EDIT: but with a minimum of 1/8 of a second;
+                    inactiveTime = (long)BILLION / 8;
                 }
 
                 Thread.sleep(500);

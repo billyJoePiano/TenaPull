@@ -85,6 +85,11 @@ public abstract class SimpleStringLookupPojo<POJO extends SimpleStringLookupPojo
 
     public int compareTo(POJO other) {
         if (other == null) return -1;
-        return this.getValue().compareTo(other.getValue());
+        String theirs = other.getValue();
+        if (this.value == null) {
+            if (theirs == null) return 0;
+            else return -theirs.compareTo(null);
+        }
+        return this.getValue().compareTo(theirs);
     }
 }

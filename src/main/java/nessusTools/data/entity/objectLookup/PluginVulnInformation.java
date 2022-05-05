@@ -1,6 +1,7 @@
 package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
+import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
@@ -39,6 +40,11 @@ public class PluginVulnInformation extends HashLookupTemplate<PluginVulnInformat
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String patchPublicationDate;
 
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="cpe_id")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Cpe cpe;
+
     @Transient
     @JsonIgnore
     @Override
@@ -54,6 +60,7 @@ public class PluginVulnInformation extends HashLookupTemplate<PluginVulnInformat
         this.exploitAvailable = o.exploitAvailable;
         this.vulnPublicationDate = o.vulnPublicationDate;
         this.patchPublicationDate = o.patchPublicationDate;
+        this.cpe = o.cpe;
     }
 
     @Transient
@@ -67,6 +74,7 @@ public class PluginVulnInformation extends HashLookupTemplate<PluginVulnInformat
                 && Objects.equals(this.exploitAvailable, o.exploitAvailable)
                 && Objects.equals(this.vulnPublicationDate, o.vulnPublicationDate)
                 && Objects.equals(this.patchPublicationDate, o.patchPublicationDate)
+                && Objects.equals(this.cpe, o.cpe)
                 && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
@@ -108,5 +116,13 @@ public class PluginVulnInformation extends HashLookupTemplate<PluginVulnInformat
 
     public void setPatchPublicationDate(String patchPublicationDate) {
         this.patchPublicationDate = patchPublicationDate;
+    }
+
+    public Cpe getCpe() {
+        return cpe;
+    }
+
+    public void setCpe(Cpe cpe) {
+        this.cpe = cpe;
     }
 }

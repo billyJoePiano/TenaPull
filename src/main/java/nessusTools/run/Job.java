@@ -1,11 +1,13 @@
 package nessusTools.run;
 
+import org.apache.logging.log4j.*;
 import org.hibernate.annotations.*;
 
 import java.util.*;
 
 public abstract class Job {
     public static long DEFAULT_TRY_AGAIN_TIME = 600000;
+    private static Logger logger = LogManager.getLogger(Job.class);
 
     public enum Stage {
         IDLE,
@@ -17,7 +19,7 @@ public abstract class Job {
 
     private final Accessor accessor = new Accessor();
     private boolean accessorDelivered = false;
-    private Thread runThread;
+    private WorkerThread runThread;
     private Stage stage = Stage.IDLE;
     private boolean exception = false;
     private boolean failed = false;
@@ -66,7 +68,7 @@ public abstract class Job {
         return this.stage;
     }
 
-    protected final void addJob(Job newJob) {
+    protected void addJob(Job newJob) {
         checkForRunThread();
         if (newJob == null) return;
         accessor.addJob(newJob);
@@ -80,7 +82,7 @@ public abstract class Job {
         JobFactory.notifyOfJobProvider(this);
     }
 
-    public final void start() {
+    public final void start(WorkerThread runThread) {
         synchronized (accessor) {
             if (this.failed) {
                 throw new IllegalStateException("Cannot call start() on a job which was marked as failed");
@@ -92,9 +94,12 @@ public abstract class Job {
                 throw new IllegalStateException(
                         "Cannot invoke start() on a job that is already done!\n" + this.getClass()
                                 + "\n" + Thread.currentThread());
+
+            } else if (runThread != null && !Objects.equals(runThread, Thread.currentThread())) {
+                throw new IllegalStateException("Jobs must be run with a WorkerThread, not " + runThread);
             }
 
-            this.runThread = Thread.currentThread();
+            this.runThread = runThread;
             this.exception = false;
         }
 
@@ -114,20 +119,24 @@ public abstract class Job {
         try {
             while (this.stage.ordinal() < Stage.DONE.ordinal()) {
                 try {
+                    if (this.failed) throw new JobFailedException();
                     switch (this.stage) {
                         case IDLE:
                             if (!this.isReady()) {
                                 throw new JobNotReadyException();
                             }
                             this.stage = Stage.FETCH;
+                            break;
 
                         case FETCH:
                             this.fetch();
                             this.stage = Stage.PROCESS;
+                            break;
 
                         case PROCESS:
                             this.process();
                             this.stage = Stage.OUTPUT;
+                            break;
 
                         case OUTPUT:
                             this.output();
@@ -135,34 +144,34 @@ public abstract class Job {
 
                     }
 
-                } catch (Throwable e) {
-                    if (!(e instanceof JobNotReadyException)
-                            && e instanceof Exception) {
-
-                        if (exceptionHandler((Exception) e, this.stage)
+                } catch (Exception e) {
+                    if (!(e instanceof JobException)) {
+                        if (exceptionHandler(e, this.stage)
                                 && !this.failed) {
                             continue;
                         }
                     }
-
                     this.exception = true;
-                    if (this.failed) {
-                        this.stage = Stage.DONE;
-
-                    } else if (this.tryAtTime == tryTime) {
-                        this.tryAgainIn(DEFAULT_TRY_AGAIN_TIME);
-                    }
                     return;
                 }
             }
 
         } finally {
+            if (this.failed || !this.exception) {
+                this.stage = Stage.DONE;
+            }
             this.notifyAll();
         }
     }
 
-    public static class JobNotReadyException extends RuntimeException {
+    private static abstract class JobException extends RuntimeException { }
+
+    private static class JobNotReadyException extends JobException {
         private JobNotReadyException() { }
+    }
+
+    private static class JobFailedException extends JobException {
+        private JobFailedException() { }
     }
 
     private void checkForRunThread() {

@@ -33,6 +33,7 @@ public class IndexJob extends Job {
     @Override
     protected void output() {
         for (Scan scan : response.getScans()) {
+            if (scan == null) continue;
             this.addJob(new ScanJob(scan));
         }
 
