@@ -86,7 +86,7 @@ public class ReadWriteLock<O, R> {
     private Thread garbageCollector = null;
     private final Lock addLock = new Lock();
     private final Lock removeLock = new Lock();
-    private final Lock gcLock = new Lock();
+    //private final Lock gcLock = new Lock();
 
     private final long id;
 
@@ -165,8 +165,9 @@ public class ReadWriteLock<O, R> {
             this.checkDisruptable(false);
         }
 
-        synchronized (readLock) {
-            try {
+
+        try {
+            synchronized (readLock) {
                 synchronized (addLock) {
                     synchronized (removeLock) {
                         readLocks.put(readLock.thread, readLock);
@@ -176,23 +177,22 @@ public class ReadWriteLock<O, R> {
                     this.waitingForRead.remove(readLock.thread);
                 }
 
-                return lambda.call(view);
+                try {
+                    return lambda.call(view);
 
-            } finally {
-                readLock.active = false;
-                readLock.thread = null;
-                this.readThreads.mutated = true;
-                // don't hold up the current thread with removing the read lock from the map
-                // setting readLock.thread to null will allow for garbage collection of the entry
-                // once the thread dies (or maybe even sooner?) since readLock is a WeakHashMap ????
-
-                synchronized (this.gcLock) {
-                    if (this.garbageCollector == null) {
-                        startGarbageCollector();
-                    }
+                } finally {
+                    readLock.active = false;
+                    readLock.thread = null;
+                    this.readThreads.mutated = true;
                 }
             }
+
+        } finally {
+            synchronized (removeLock) {
+                readLocks.remove(readLock.thread, readLock);
+            }
         }
+
     }
 
     public final <T> T write(Class<T> returnType, Lambda1<O, T> lambda)
@@ -586,7 +586,7 @@ public class ReadWriteLock<O, R> {
     }
 
 
-
+    /*
     private void clearGarbageCollector() {
         this.garbageCollector = null;
     }
@@ -697,6 +697,7 @@ public class ReadWriteLock<O, R> {
         }
         inactive.clear();
     }
+    */
 
     private class ReadThreadsSet implements Set<Thread> {
         private Set<Thread> keySet = ReadWriteLock.this.readLocks.keySet();

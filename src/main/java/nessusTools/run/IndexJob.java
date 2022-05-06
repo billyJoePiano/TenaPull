@@ -38,7 +38,9 @@ public class IndexJob extends Job {
             if (scan == null) continue;
             scanJobList.add(new ScanJob(scan));
         }
-        this.addJob(new DbManagerJob(scanJobList));
+        DbManagerJob dbManagerJob = new DbManagerJob("Process Scans", scanJobList);
+        dbManagerJob.setNameForNext("Process Host Vulnerabilities");
+        this.addJob(dbManagerJob);
     }
 
     @Override

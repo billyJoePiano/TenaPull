@@ -6,21 +6,27 @@ import java.util.*;
 
 public class DbManagerJob extends Job {
     private static final Logger logger = LogManager.getLogger(DbManagerJob.class);
+    public static int NUM_HELPERS = 1;
+    public static int MAX_JOBS_TASKS = 64;
 
+    private final String name;
+    private String nameForNext;
     private final List<Child> newChildJobs = new LinkedList<>();
     private final List<Child> childJobs = new LinkedList<>();
     private final Map<Runnable, Child> dbTasks = new LinkedHashMap<>();
     private final List<Child> nextJobs = new LinkedList<>();
     private final List<Job> addAfterDone = new LinkedList<>();
+    private final List<Helper> helpers = new LinkedList<>();
 
     private final Object monitor = new Object();
     private boolean done = false;
 
-    public DbManagerJob() {
-        this(null);
+    public DbManagerJob(String name) {
+        this(name, null);
     }
 
-    public DbManagerJob(List<Child> childJobs) {
+    public DbManagerJob(String name, List<Child> childJobs) {
+        this.name = name;
         if (childJobs == null) return;
         for (Child job : childJobs) {
             if (job == null) continue;
@@ -35,42 +41,83 @@ public class DbManagerJob extends Job {
 
     @Override
     protected void fetch() {
-        while (!processNewChildJobs()) {
+        logger.info("DbManagerJob '" + this.name + "' starting");
+        while (true) {
             synchronized (this.monitor) {
+                synchronized (this.newChildJobs) {
+                    if (this.newChildJobs.size() > 0) return;
+                }
+
                 try {
                     this.monitor.wait(JobFactory.MAX_MAIN_WAIT_TIME);
                 } catch (InterruptedException e) { }
             }
         }
+
+
     }
 
     @Override
     protected void process() throws Exception {
-        while (true) {
-            boolean dbTask = this.processNextDbTask();
-            synchronized (this.monitor) {
-                this.processNewChildJobs();
-                boolean childrenRunning = this.checkStatusOfChildren();
-                if (dbTask) continue;
-                synchronized (this.dbTasks) {
-                    if (this.dbTasks.size() > 0) continue;
-                }
+        do {
+            this.checkHelperJobs();
 
-                if (childrenRunning || this.processNewChildJobs()) {
-                    try {
-                        this.monitor.wait(JobFactory.MAX_MAIN_WAIT_TIME);
-                    } catch (InterruptedException e) { }
+        } while (this.processLoop(this));
 
-                } else {
-                    this.done = true;
-                    return;
-                }
+        this.done = true;
+    }
+
+    protected boolean processLoop(Job runningJob) throws Exception {
+        boolean dbTask;
+        if (runningJob != this) {
+            dbTask = this.processNextDbTask();
+            if (dbTask) return true;
+        } else {
+            dbTask = false;
+        }
+
+        synchronized (this.monitor) {
+            this.processNewChildJobs(runningJob);
+            boolean childrenRunning = this.checkStatusOfChildren();
+            if (dbTask) return true;
+            synchronized (this.dbTasks) {
+                if (this.dbTasks.size() > 0) return true;
             }
+
+            if (childrenRunning || this.processNewChildJobs(runningJob)) {
+                try {
+                    this.monitor.wait(JobFactory.MAX_MAIN_WAIT_TIME);
+                } catch (InterruptedException e) { }
+
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void checkHelperJobs() {
+        for (ListIterator<Helper> iterator = this.helpers.listIterator();
+                iterator.hasNext();) {
+
+            Helper helper = iterator.next();
+            if (helper == null) {
+                iterator.remove();
+
+            } else if (helper.getStage() == Stage.DONE && !helper.done) {
+                iterator.remove();
+                iterator.add(new Helper());
+
+            }
+        }
+        while (this.helpers.size() < NUM_HELPERS) {
+            this.helpers.add(new Helper());
         }
     }
 
     @Override
     protected void output() {
+        logger.info("DbManagerJob '" + this.name + "' finished");
         synchronized (this.addAfterDone) {
             for (Job job : this.addAfterDone) {
                 this.addJob(job);
@@ -78,23 +125,40 @@ public class DbManagerJob extends Job {
         }
 
         synchronized (this.nextJobs) {
+            if (this.nameForNext == null) {
+                this.nameForNext = "After " + this.name;
+            }
             if (this.nextJobs.size() > 0) {
-                this.addJob(new DbManagerJob(this.nextJobs));
+                this.addJob(new DbManagerJob(this.nameForNext, this.nextJobs));
             }
         }
     }
 
-    private boolean processNewChildJobs() {
-        List<Child> copy;
+    private boolean processNewChildJobs(Job runningJob) {
+        int addJobs;
+        synchronized (this.dbTasks) {
+            addJobs = MAX_JOBS_TASKS - this.dbTasks.size() - this.childJobs.size();
+        }
+
+        List<Child> copy = addJobs > 0 ? new ArrayList<>(addJobs) : null;
         synchronized (this.newChildJobs) {
             if (this.newChildJobs.size() <= 0) return false;
-            copy = new ArrayList<>(this.newChildJobs);
-            this.newChildJobs.clear();
+            else if (addJobs <= 0) return true;
+            for (Iterator<Child> iterator = this.newChildJobs.iterator();
+                        iterator.hasNext();) {
+
+                Child child = iterator.next();
+                iterator.remove();
+                if (child != null) {
+                    copy.add(child);
+                    if (copy.size() >= addJobs) break;
+                }
+            }
         }
         this.childJobs.addAll(copy);
         for (Child job : copy) {
             if (job == null) continue;
-            this.addJob(job);
+            runningJob.addJob(job);
         }
         return true;
     }
@@ -129,6 +193,36 @@ public class DbManagerJob extends Job {
             }
         }
         return true;
+    }
+
+    private class Helper extends Job {
+        private boolean done = false;
+
+        private Helper() {
+            DbManagerJob.this.addJob(this);
+        }
+
+        @Override
+        protected boolean isReady() {
+            return true;
+        }
+
+        @Override
+        protected void fetch() { }
+
+        @Override
+        protected void process() throws Exception {
+            while (DbManagerJob.this.processLoop(this)) { }
+            this.done = true;
+        }
+
+        @Override
+        protected void output() throws Exception { }
+
+        @Override
+        protected boolean exceptionHandler(Exception e, Stage stage) {
+            return DbManagerJob.this.exceptionHandler(e, stage);
+        }
     }
 
     private boolean checkStatusOfChildren() {
@@ -191,10 +285,19 @@ public class DbManagerJob extends Job {
         }
     }
 
+    public void setNameForNext(String name) {
+        checkStatus();
+        this.nameForNext = name;
+    }
+
+    public String getNameForNext() {
+        return this.nameForNext;
+    }
+
     private void checkStatus() {
         synchronized (this.monitor) {
             if (this.done) {
-                throw new IllegalStateException("Cannot call DbManagerJob add methods after the processing stage is done!");
+                throw new IllegalStateException("Cannot call DbManagerJob special methods after the processing stage is done!");
             }
         }
     }

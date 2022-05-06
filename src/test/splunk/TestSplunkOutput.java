@@ -130,7 +130,7 @@ public class TestSplunkOutput {
         List<HostVulnerabilityOutput> list = new ArrayList<>(this.vulns.size());
 
         for (Vulnerability vuln : vulns) {
-            list.add(new HostVulnerabilityOutput(this.scanResponse, this.host, this.response, vuln));
+            list.add(new HostVulnerabilityOutput(this.scanResponse, this.host, this.response, vuln, output));
         }
 
         output.setVulnerabilities(list);

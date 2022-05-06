@@ -77,7 +77,7 @@ public class ScanHostJob extends DbManagerJob.Child {
         List<HostVulnerabilityOutput> list = new ArrayList<>(this.vulns.size());
 
         for (Vulnerability vuln : this.vulns) {
-            list.add(new HostVulnerabilityOutput(this.scanResponse, this.host, this.response, vuln));
+            list.add(new HostVulnerabilityOutput(this.scanResponse, this.host, this.response, vuln, this.output));
         }
 
         ScanInfo info = scanResponse.getInfo();
