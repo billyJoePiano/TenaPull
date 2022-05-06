@@ -1,7 +1,5 @@
 package nessusTools.util;
 
-import org.jetbrains.annotations.*;
-
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -100,8 +98,7 @@ public class ReverseMap<K, V> implements Map<K, Set<V>> {
     public Set<V> get(Object key) {
         return map.get(key);
     }
-
-    @Nullable
+    
     @Override
     public Set<V> put(K key, Set<V> value) {
         return map.put(key, value);
@@ -113,7 +110,7 @@ public class ReverseMap<K, V> implements Map<K, Set<V>> {
     }
 
     @Override
-    public void putAll(@NotNull Map<? extends K, ? extends Set<V>> m) {
+    public void putAll(Map<? extends K, ? extends Set<V>> m) {
         map.putAll(m);
     }
 
@@ -122,19 +119,16 @@ public class ReverseMap<K, V> implements Map<K, Set<V>> {
         map.clear();
     }
 
-    @NotNull
     @Override
     public Set<K> keySet() {
         return map.keySet();
     }
 
-    @NotNull
     @Override
     public Collection<Set<V>> values() {
         return map.values();
     }
 
-    @NotNull
     @Override
     public Set<Entry<K, Set<V>>> entrySet() {
         return map.entrySet();

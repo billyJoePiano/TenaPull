@@ -3,7 +3,6 @@ package nessusTools.sync;
 
 import nessusTools.util.*;
 import org.apache.logging.log4j.*;
-import org.jetbrains.annotations.*;
 
 import java.lang.ref.*;
 import java.util.*;
