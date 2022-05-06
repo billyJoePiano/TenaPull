@@ -109,7 +109,7 @@ public class ScanHostJob extends DbManagerJob.Child {
         logger.info("Writing " +  output.size() + " results to " + filename);
 
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(filename));
-        SplunkOutputMapper.get().writerWithDefaultPrettyPrinter().writeValue(writer, output);
+        SplunkOutputMapper.get().writeValue(writer, output);
 
         this.output.setOutputTimestamp(Timestamp.valueOf(now));
 
