@@ -132,14 +132,21 @@ public class DbManagerJob extends Job {
     }
 
     private boolean checkStatusOfChildren() {
+        boolean stillRunning = false;
         synchronized (this.childJobs) {
-            for (Child child : this.childJobs) {
-                if (child.getStage() != Stage.DONE) {
-                    return true;
+            for (Iterator<Child> iterator = this.childJobs.iterator();
+                        iterator.hasNext();) {
+
+                Child child = iterator.next();
+                if (child == null || child.getStage() == Stage.DONE) {
+                    iterator.remove();
+
+                } else {
+                    stillRunning = true;
                 }
             }
         }
-        return false;
+        return stillRunning;
     }
 
     @Override

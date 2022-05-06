@@ -3,6 +3,7 @@ package nessusTools.data.deserialize;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.template.*;
 
 import java.io.*;
@@ -14,6 +15,7 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
     public interface Summary<S extends DbPojo, D extends DbPojo> {
         S getSummary();
         D getDetails();
+        ExtraJson getOther();
         String getName();
         default String getDetailsKey() {
             return "info";
@@ -30,9 +32,11 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
 
         S summary = container.getSummary();
         D deets = container.getDetails();
+        Integer id = container.getOptionalId();
+        ExtraJson xtra = container.getOther();
+        String name = container.getName();
 
         if (summary == null) {
-            String name = container.getName();
             if (deets == null) {
                 jg.writeStartObject();
                 jg.writeStringField("NessusTools error",
@@ -43,7 +47,6 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
             }
 
             jg.writeStartObject();
-            Integer id = container.getOptionalId();
             if (id != null) {
                 jg.writeNumberField("id", id);
             }
@@ -51,21 +54,33 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
                     "Cached data from the " + name + " summary couldn't be found");
 
             jg.writeObjectField(container.getDetailsKey(), deets);
+
+            if (xtra != null) {
+                jg.writeObjectField(name + "_other_info", xtra.getValue().getView());
+            }
+
             return;
 
         }
 
 
-
         ObjectMapper mapper = (ObjectMapper)jg.getCodec();
+        ObjectNode sum;
+        if (id != null) {
+            sum = mapper.createObjectNode();
+            sum.put("id", id);
+            sum.setAll((ObjectNode)mapper.valueToTree(summary));
 
-        ObjectNode sum = mapper.valueToTree(summary);
+        } else {
+            sum = mapper.valueToTree(summary);
+        }
+
+
         ObjectNode info;
-
         if (deets == null) {
             info = mapper.createObjectNode();
             info.put("NessusTools error",
-                    "Cached data from " + container.getName() + " details couldn't be found.");
+                    "Cached data from " + name + " details couldn't be found.");
         } else {
             info = mapper.valueToTree(deets);
             for (Iterator<Map.Entry<String, JsonNode>> iterator = info.fields();
@@ -81,6 +96,9 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
         }
 
         sum.set(container.getDetailsKey(), info);
+        if (xtra != null) {
+            sum.set(name + "_other", mapper.valueToTree(xtra.getValue().getView()));
+        }
 
         jg.writeObject(sum);
     }

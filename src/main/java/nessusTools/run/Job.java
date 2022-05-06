@@ -63,7 +63,6 @@ public abstract class Job {
 
 
     public final Stage getStage() {
-        //checkForRunThread();
         return this.stage;
     }
 

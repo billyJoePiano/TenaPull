@@ -1,19 +1,34 @@
 package nessusTools.data.deserialize;
 
+import com.fasterxml.jackson.databind.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.splunk.*;
 
-public class SplunkOutputMapper extends CachingMapper {
-    public static final SplunkOutputMapper mapper = new SplunkOutputMapper();
-    public static final SplunkOutputMapper resetCaches = new SplunkOutputMapper(null);
+import java.util.*;
+
+public class SplunkOutputMapper extends ObjectMapper {
+    private static final Map<Thread, SplunkOutputMapper> mappers = new WeakHashMap<>();
+
+    public static SplunkOutputMapper get() {
+        Thread current = Thread.currentThread();
+        SplunkOutputMapper mapper;
+        synchronized (mappers) {
+            mapper = mappers.get(current);
+        }
+        if (mapper == null) {
+            mapper = new SplunkOutputMapper();
+            synchronized (mappers) {
+                mappers.put(current, mapper);
+            }
+        }
+        return mapper;
+    }
+
+
     protected SplunkOutputMapper() {
         super();
         this.addMixins();
-    }
-
-    protected SplunkOutputMapper(Void resetCaches) {
-        super(resetCaches);
     }
 
     private void addMixins() {

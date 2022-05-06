@@ -15,8 +15,7 @@ import java.util.*;
 
 @Entity(name = "RemediationDetails")
 @Table(name = "remediation_details")
-public class RemediationDetails extends GeneratedIdPojo
-        implements MapLookupPojo<RemediationDetails>, IdCachingSerializer.NodeCacher<RemediationDetails> {
+public class RemediationDetails extends GeneratedIdPojo implements MapLookupPojo<RemediationDetails> {
 
     public static final MapLookupDao<RemediationDetails> dao = new MapLookupDao<>(RemediationDetails.class);
 
@@ -60,55 +59,6 @@ public class RemediationDetails extends GeneratedIdPojo
                 "value", this.value,
                 "extraJson", this.getExtraJson()
             });
-    }
-
-    @Transient
-    @JsonIgnore
-    private IdCachingSerializer.MainCachedNode<RemediationDetails> cachedNode;
-
-    public IdCachingSerializer.MainCachedNode<RemediationDetails> getCachedNode() {
-        return this.cachedNode;
-    }
-
-    public void setCachedNode(IdCachingSerializer.MainCachedNode<RemediationDetails> cachedNode) {
-        if (cachedNode != null) {
-            assert cachedNode.getId() == this.getId() && cachedNode.represents(this);
-        }
-        this.cachedNode = cachedNode;
-    }
-
-    public static JsonSerializer<RemediationDetails>
-            getCachingSerializer(JsonSerializer<RemediationDetails> defaultSerializer, ObjectMapper mapper) {
-
-        return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
-    }
-
-    public static JsonSerializer<RemediationDetails>
-            getCacheResetSerializer(JsonSerializer<RemediationDetails> defaultSerializer, ObjectMapper mapper) {
-
-        return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
-    }
-
-    @Override
-    public ObjectNode toJsonNode() {
-        if (this.cachedNode == null){
-            if (this.getId() == 0) {
-                return super.toJsonNode();
-            }
-            this.cachedNode = IdCachingSerializer.getOrCreateNodeCache(this);
-        }
-        return this.cachedNode.getNode();
-    }
-
-    @Override
-    public String toJsonString() throws JsonProcessingException {
-        if (this.cachedNode == null){
-            if (this.getId() == 0) {
-                return super.toJsonString();
-            }
-            this.cachedNode = IdCachingSerializer.getOrCreateNodeCache(this);
-        }
-        return this.cachedNode.getString();
     }
 
     public Remediation getRemediation() {

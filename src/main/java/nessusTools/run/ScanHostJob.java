@@ -104,10 +104,12 @@ public class ScanHostJob extends DbManagerJob.Child {
         String filename = OUTPUT_DIR + dateStr + "." + scanResponse.getId()
                 + "." + hostId + ".json";
 
+        this.output.setFilename(filename);
+
         logger.info("Writing " +  output.size() + " results to " + filename);
 
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(filename));
-        SplunkOutputMapper.mapper.writerWithDefaultPrettyPrinter().writeValue(writer, output);
+        SplunkOutputMapper.get().writerWithDefaultPrettyPrinter().writeValue(writer, output);
 
         this.output.setOutputTimestamp(Timestamp.valueOf(now));
 

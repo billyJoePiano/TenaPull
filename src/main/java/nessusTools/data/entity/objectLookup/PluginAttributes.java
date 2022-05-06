@@ -283,6 +283,17 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
                 && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (o == this) return true;
+        if (!Objects.equals(this.getClass(), o.getClass())) {
+            return false;
+        }
+
+        PluginAttributes other = (PluginAttributes) o;
+        return this.getId() == other.getId() && this._match(other);
+    }
+
     @Transient
     @JsonIgnore
     private boolean _matchRefInformation(List<PluginRefInformation> o) {

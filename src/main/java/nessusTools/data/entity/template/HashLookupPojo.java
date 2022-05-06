@@ -1,5 +1,6 @@
 package nessusTools.data.entity.template;
 
+import com.fasterxml.jackson.core.*;
 import nessusTools.data.persistence.*;
 
 import javax.persistence.*;

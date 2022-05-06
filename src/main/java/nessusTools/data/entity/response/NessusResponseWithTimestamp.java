@@ -32,30 +32,4 @@ public abstract class NessusResponseWithTimestamp<RES extends NessusResponseWith
         this.timestamp = timestamp;
     }
 
-    @Transient
-    @JsonIgnore
-    private IdCachingSerializer.MainCachedNode<RES> cachedNode;
-
-    public IdCachingSerializer.MainCachedNode<RES> getCachedNode() {
-        return this.cachedNode;
-    }
-
-    public void setCachedNode(IdCachingSerializer.MainCachedNode<RES> cachedNode) {
-        if (cachedNode != null) {
-            assert cachedNode.getId() == this.getId() && cachedNode.represents((RES)this);
-        }
-        this.cachedNode = cachedNode;
-    }
-
-    public static JsonSerializer
-            getCachingSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
-
-        return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
-    }
-
-    public static JsonSerializer
-            getCacheResetSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
-
-        return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
-    }
 }

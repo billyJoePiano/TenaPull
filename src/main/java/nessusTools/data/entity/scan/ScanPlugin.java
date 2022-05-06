@@ -75,7 +75,7 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
     @Override
     public ObjectNode toJsonNode() {
         //use the cached node from plugin
-        if (this.plugin == null) return CachingMapper.mapper.valueToTree (this);
+        if (this.plugin == null) return new ObjectMapper().valueToTree (this);
         ObjectNode node = this.plugin.toJsonNode();
         node.put("host_count", hostCount);
         if (this.hosts != null) {
@@ -96,7 +96,7 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
     @JsonIgnore
     @Override
     public String toString() {
-        return this.toJsonString();
+        return this.toJsonNode().toString();
     }
 
     @Transient

@@ -15,8 +15,7 @@ import javax.persistence.*;
 import javax.persistence.AccessType;
 
 @MappedSuperclass
-public interface NessusResponse<RES extends NessusResponse<RES>>
-        extends IdCachingSerializer.NodeCacher<RES> {
+public interface NessusResponse<RES extends NessusResponse<RES>> extends DbPojo {
     public String getUrlPath();
 
     public Timestamp getTimestamp();
@@ -39,8 +38,7 @@ public interface NessusResponse<RES extends NessusResponse<RES>>
                         <POJO extends SingleChildTemplate<POJO, R>,
                             R extends NessusResponse>
             extends NaturalIdPojo
-            implements ResponseChild<POJO, R>,
-                        IdCachingSerializer.NodeCacher<POJO> {
+            implements ResponseChild<POJO, R> {
 
         @OneToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id")
@@ -77,55 +75,6 @@ public interface NessusResponse<RES extends NessusResponse<RES>>
             super.__set(o);
             this.setResponse((R)o.getResponse());
         }
-
-        @Transient
-        @JsonIgnore
-        private IdCachingSerializer.MainCachedNode<POJO> cachedNode;
-
-        public IdCachingSerializer.MainCachedNode<POJO> getCachedNode() {
-            return this.cachedNode;
-        }
-
-        public void setCachedNode(IdCachingSerializer.MainCachedNode<POJO> cachedNode) {
-            if (cachedNode != null) {
-                assert cachedNode.getId() == this.getId() && cachedNode.represents((POJO)this);
-            }
-            this.cachedNode = cachedNode;
-        }
-
-        public static JsonSerializer
-                getCachingSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
-
-            return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
-        }
-
-        public static JsonSerializer
-                getCacheResetSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
-
-            return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
-        }
-
-        @Override
-        public ObjectNode toJsonNode() {
-            if (this.cachedNode == null){
-                if (this.getId() == 0) {
-                    return super.toJsonNode();
-                }
-                this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((POJO)this);
-            }
-            return this.cachedNode.getNode();
-        }
-
-        @Override
-        public String toJsonString() throws JsonProcessingException {
-            if (this.cachedNode == null){
-                if (this.getId() == 0) {
-                    return super.toJsonString();
-                }
-                this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((POJO)this);
-            }
-            return this.cachedNode.getString();
-        }
     }
 
 
@@ -135,8 +84,7 @@ public interface NessusResponse<RES extends NessusResponse<RES>>
             <POJO extends MultiChildTemplate<POJO, R>,
                     R extends NessusResponse>
             extends GeneratedIdPojo
-            implements ResponseChild<POJO, R>,
-                        IdCachingSerializer.NodeCacher<POJO> {
+            implements ResponseChild<POJO, R> {
 
         @ManyToOne(fetch = FetchType.LAZY)
         @Access(AccessType.PROPERTY)
@@ -191,55 +139,6 @@ public interface NessusResponse<RES extends NessusResponse<RES>>
                 }
             }
             return true;
-        }
-
-        @Transient
-        @JsonIgnore
-        private IdCachingSerializer.MainCachedNode<POJO> cachedNode;
-
-        public IdCachingSerializer.MainCachedNode<POJO> getCachedNode() {
-            return this.cachedNode;
-        }
-
-        public void setCachedNode(IdCachingSerializer.MainCachedNode<POJO> cachedNode) {
-            if (cachedNode != null) {
-                assert cachedNode.getId() == this.getId() && cachedNode.represents((POJO)this);
-            }
-            this.cachedNode = cachedNode;
-        }
-
-        public static JsonSerializer
-                getCachingSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
-
-            return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
-        }
-
-        public static JsonSerializer
-                getCacheResetSerializer(JsonSerializer defaultSerializer, ObjectMapper mapper) {
-
-            return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
-        }
-
-        @Override
-        public ObjectNode toJsonNode() {
-            if (this.cachedNode == null){
-                if (this.getId() == 0) {
-                    return super.toJsonNode();
-                }
-                this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((POJO)this);
-            }
-            return this.cachedNode.getNode();
-        }
-
-        @Override
-        public String toJsonString() throws JsonProcessingException {
-            if (this.cachedNode == null){
-                if (this.getId() == 0) {
-                    return super.toJsonString();
-                }
-                this.cachedNode = IdCachingSerializer.getOrCreateNodeCache((POJO)this);
-            }
-            return this.cachedNode.getString();
         }
     }
 }

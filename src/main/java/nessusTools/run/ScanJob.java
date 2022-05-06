@@ -13,16 +13,16 @@ import java.util.*;
 
 public class ScanJob extends DbManagerJob.Child {
     private static Logger logger = LogManager.getLogger(ScanJob.class);
-    private static final ScanStatus COMPLETED = ScanStatus.dao.getOrCreate("completed");
-    private static final ScanStatus CANCELED = ScanStatus.dao.getOrCreate("canceled");
+    //private static final ScanStatus COMPLETED = ScanStatus.dao.getOrCreate("completed");
+    //private static final ScanStatus CANCELED = ScanStatus.dao.getOrCreate("canceled");
     private static final ScanStatus RUNNING = ScanStatus.dao.getOrCreate("running");
-    private static final long CHECK_BACK_FOR_COMPLETION = 5 * 60 * 1000; // 5 minutes in ms
-    private static final long MAX_WAIT_FOR_COMPLETION = 2 * 60 * 60 * 1000; //2 hours in ms
+    //private static final long CHECK_BACK_FOR_COMPLETION = 5 * 60 * 1000; // 5 minutes in ms
+    //private static final long MAX_WAIT_FOR_COMPLETION = 2 * 60 * 60 * 1000; //2 hours in ms
 
     private final Scan scan;
     private final NessusClient client = new NessusClient();
     private ScanResponse response;
-    Long startWait;
+    //private Long startWait;
 
     public ScanJob(Scan scan) {
         this.scan = scan;
@@ -31,11 +31,11 @@ public class ScanJob extends DbManagerJob.Child {
     @Override
     protected boolean isReady() {
         ScanStatus status = scan.getStatus();
-        if (Objects.equals(CANCELED, status)) {
+        if (Objects.equals(RUNNING, status)) {
             this.failed();
             return false;
 
-        } else if (Objects.equals(RUNNING, status)) {
+        }/* else if (Objects.equals(RUNNING, status)) {
             if (this.startWait == null) {
                 this.startWait = System.currentTimeMillis();
                 return false;
@@ -63,6 +63,7 @@ public class ScanJob extends DbManagerJob.Child {
                 return false;
             }
         }
+        */
 
         ScanResponse old = ScanResponse.dao.getById(scan.getId());
         if (old == null) {
@@ -137,7 +138,6 @@ public class ScanJob extends DbManagerJob.Child {
     @Override
     protected void process() {
         this.response.setId(this.scan.getId());
-        //CachingMapper.resetCaches.valueToTree(this.scan);
     }
 
     @Override

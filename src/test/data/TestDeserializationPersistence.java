@@ -282,10 +282,11 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
             throws NoSuchMethodException, InvocationTargetException,
                     InstantiationException, IllegalAccessException {
 
+        ObjectMapper mapper = new ObjectMapper();
         try {
 
             // https://stackoverflow.com/questions/12173416/how-do-i-get-the-compact-form-of-pretty-printed-json-code
-            this.node = CachingMapper.mapper.readValue(origJson, ObjectNode.class);
+            this.node = mapper.readValue(origJson, ObjectNode.class);
 
         } catch (JsonProcessingException e) {
             fail(e);
@@ -299,7 +300,7 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
         }
 
         try {
-            response = CachingMapper.mapper.readValue(origJson, this.responseType);
+            response = mapper.readValue(origJson, this.responseType);
 
         } catch (JsonProcessingException e) {
             fail(e);

@@ -15,8 +15,7 @@ import java.util.*;
 
 @Entity(name = "License")
 @Table(name = "license")
-public class License extends GeneratedIdPojo
-        implements MapLookupPojo<License>, IdCachingSerializer.NodeCacher<License> {
+public class License extends GeneratedIdPojo implements MapLookupPojo<License> {
 
 	public static final MapLookupDao<License> dao
 			= new MapLookupDao<License>(License.class);
@@ -84,54 +83,5 @@ public class License extends GeneratedIdPojo
                 "trimmed", this.trimmed,
                 "extraJson", this.getExtraJson()
         });
-    }
-
-    @Transient
-    @JsonIgnore
-    private IdCachingSerializer.MainCachedNode<License> cachedNode;
-
-    public IdCachingSerializer.MainCachedNode<License> getCachedNode() {
-        return this.cachedNode;
-    }
-
-    public void setCachedNode(IdCachingSerializer.MainCachedNode<License> cachedNode) {
-        if (cachedNode != null) {
-            assert cachedNode.getId() == this.getId() && cachedNode.represents(this);
-        }
-        this.cachedNode = cachedNode;
-    }
-
-    public static JsonSerializer<PluginHost>
-            getCachingSerializer(JsonSerializer<PluginHost> defaultSerializer, ObjectMapper mapper) {
-
-        return IdCachingSerializer.getIdCachingSerializer(defaultSerializer, mapper);
-    }
-
-    public static JsonSerializer<PluginHost>
-            getCacheResetSerializer(JsonSerializer<PluginHost> defaultSerializer, ObjectMapper mapper) {
-
-        return IdCachingSerializer.getCacheResetSerializer(defaultSerializer, mapper);
-    }
-
-    @Override
-    public ObjectNode toJsonNode() {
-        if (this.cachedNode == null){
-            if (this.getId() == 0) {
-                return super.toJsonNode();
-            }
-            this.cachedNode = IdCachingSerializer.getOrCreateNodeCache(this);
-        }
-        return this.cachedNode.getNode();
-    }
-
-    @Override
-    public String toJsonString() throws JsonProcessingException {
-        if (this.cachedNode == null){
-            if (this.getId() == 0) {
-                return super.toJsonString();
-            }
-            this.cachedNode = IdCachingSerializer.getOrCreateNodeCache(this);
-        }
-        return this.cachedNode.getString();
     }
 }

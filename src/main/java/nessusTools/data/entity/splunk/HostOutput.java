@@ -42,10 +42,12 @@ public class HostOutput implements DbPojo {
     @Column(name = "output_timestamp")
     private Timestamp outputTimestamp;
 
+    private String filename;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "hostOutput")
     @LazyCollection(LazyCollectionOption.FALSE)
     @Fetch(value = FetchMode.SUBSELECT)
-    @OrderColumn(name = "__order_for_host_vulnerability_output")
+    //@OrderColumn(name = "__order_for_host_vulnerability_output", nullable = true)
     private List<HostVulnerabilityOutput> vulnerabilities;
 
 
@@ -59,12 +61,12 @@ public class HostOutput implements DbPojo {
 
     @Override
     public JsonNode toJsonNode() {
-        return SplunkOutputMapper.mapper.valueToTree(this);
+        return SplunkOutputMapper.get().valueToTree(this);
     }
 
     @Override
     public String toJsonString() throws JsonProcessingException {
-        return SplunkOutputMapper.mapper.writeValueAsString(this);
+        return SplunkOutputMapper.get().writeValueAsString(this);
     }
 
     @Override
@@ -134,6 +136,19 @@ public class HostOutput implements DbPojo {
 
     public void setVulnerabilities(List<HostVulnerabilityOutput> vulnerabilityOutputs) {
         this.vulnerabilities = vulnerabilityOutputs;
+        if (vulnerabilityOutputs == null) return;
+        for (HostVulnerabilityOutput vuln : vulnerabilityOutputs) {
+            if (vuln == null) continue;
+            vuln.setHostOutput(this);
+        }
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 
     @Transient
