@@ -705,7 +705,7 @@ create table scan_host_info (
     _extra_json int null,
     constraint foreign key (id) references scan_host_response (id),
     constraint foreign key (operating_system_id) references operating_system (id) on update cascade,
-    constraint foreign key (host_fqdn_id) references operating_system (id) on update cascade,
+    constraint foreign key (host_fqdn_id) references host_fqdn (id) on update cascade,
     constraint foreign key (netbios_name_id) references host_netbios_name (id) on update cascade,
     constraint foreign key (host_ip_id) references host_ip (id) on update cascade,
     constraint foreign key (_extra_json) references extra_json (id) on update cascade
