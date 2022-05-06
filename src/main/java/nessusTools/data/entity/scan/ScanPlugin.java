@@ -18,6 +18,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.*;
 import java.util.*;
+import java.util.stream.*;
 
 @Entity(name = "ScanPlugin")
 @Table(name = "scan_plugin")
@@ -78,7 +79,8 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
         ObjectNode node = this.plugin.toJsonNode();
         node.put("host_count", hostCount);
         if (this.hosts != null) {
-            node.set("hosts", CachingMapper.mapper.valueToTree(this.hosts));
+            List<ObjectNode> list = this.hosts.stream().map(PluginHost::toJsonNode).collect(Collectors.toList());
+            node.set("hosts", new ObjectMapper().valueToTree(list));
         }
         return node;
     }

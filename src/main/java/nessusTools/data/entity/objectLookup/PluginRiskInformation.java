@@ -1,6 +1,7 @@
 package nessusTools.data.entity.objectLookup;
 
 import com.fasterxml.jackson.annotation.*;
+import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 
@@ -14,50 +15,61 @@ public class PluginRiskInformation extends HashLookupTemplate<PluginRiskInformat
     public static final HashLookupDao<PluginRiskInformation> dao
             = new HashLookupDao<PluginRiskInformation>(PluginRiskInformation.class);
 
-    @Column(name = "cvss_temporal_vector")
-    @JsonProperty("cvss_temporal_vector")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
-    String cvssTemporalVector;
-
-    @Column(name = "risk_factor")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="risk_factor_id")
     @JsonProperty("risk_factor")
     @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
-    String riskFactor;
+    PluginRiskFactor riskFactor;
 
-    @Column(name = "cvss_base_score")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="cvss_base_score_id")
     @JsonProperty("cvss_base_score")
     @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ???
-    String cvssBaseScore;
+    VulnerabilityScore cvssBaseScore;
 
-    @Column(name = "cvss_vector")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="cvss_vector_id")
     @JsonProperty("cvss_vector")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    String cvssVector;
+    CvssVector cvssVector;
 
-    @Column(name = "cvss_temporal_score")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="cvss_temporal_score_id")
     @JsonProperty("cvss_temporal_score")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    String cvssTemporalScore;
+    VulnerabilityScore cvssTemporalScore;
 
-    @Column(name = "cvss3_base_score")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="cvss_temporal_vector_id")
+    @JsonProperty("cvss_temporal_vector")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
+    CvssTemporalVector cvssTemporalVector;
+
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="cvss3_base_score_id")
     @JsonProperty("cvss3_base_score")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    String cvss3BaseScore;
+    VulnerabilityScore cvss3BaseScore;
 
-    @Column(name = "cvss3_temporal_vector")
-    @JsonProperty("cvss3_temporal_vector")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    String cvss3TemporalVector;
-
-    @Column(name = "cvss3_temporal_score")
-    @JsonProperty("cvss3_temporal_score")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    String cvss3TemporalScore;
-
-    @Column(name = "cvss3_vector")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="cvss3_vector_id")
     @JsonProperty("cvss3_vector")
     @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
-    String cvss3Vector;
+    CvssVector cvss3Vector;
+
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="cvss3_temporal_score_id")
+    @JsonProperty("cvss3_temporal_score")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    VulnerabilityScore cvss3TemporalScore;
+
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="cvss3_temporal_vector_id")
+    @JsonProperty("cvss3_temporal_vector")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    CvssTemporalVector cvss3TemporalVector;
+
+
 
     @Transient
     @JsonIgnore
@@ -98,76 +110,75 @@ public class PluginRiskInformation extends HashLookupTemplate<PluginRiskInformat
                 && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
-
-    public String getCvssTemporalVector() {
-        return cvssTemporalVector;
-    }
-
-    public void setCvssTemporalVector(String cvssTemporalVector) {
-        this.cvssTemporalVector = cvssTemporalVector;
-    }
-
-    public String getRiskFactor() {
+    public PluginRiskFactor getRiskFactor() {
         return riskFactor;
     }
 
-    public void setRiskFactor(String riskFactor) {
+    public void setRiskFactor(PluginRiskFactor riskFactor) {
         this.riskFactor = riskFactor;
     }
 
-    public String getCvssBaseScore() {
+    public VulnerabilityScore getCvssBaseScore() {
         return cvssBaseScore;
     }
 
-    public void setCvssBaseScore(String cvssBaseScore) {
+    public void setCvssBaseScore(VulnerabilityScore cvssBaseScore) {
         this.cvssBaseScore = cvssBaseScore;
     }
 
-    public String getCvssVector() {
+    public CvssVector getCvssVector() {
         return cvssVector;
     }
 
-    public void setCvssVector(String cvssVector) {
+    public void setCvssVector(CvssVector cvssVector) {
         this.cvssVector = cvssVector;
     }
 
-    public String getCvssTemporalScore() {
+    public VulnerabilityScore getCvssTemporalScore() {
         return cvssTemporalScore;
     }
 
-    public void setCvssTemporalScore(String cvssTemporalScore) {
+    public void setCvssTemporalScore(VulnerabilityScore cvssTemporalScore) {
         this.cvssTemporalScore = cvssTemporalScore;
     }
 
-    public String getCvss3BaseScore() {
+    public CvssTemporalVector getCvssTemporalVector() {
+        return cvssTemporalVector;
+    }
+
+    public void setCvssTemporalVector(CvssTemporalVector cvssTemporalVector) {
+        this.cvssTemporalVector = cvssTemporalVector;
+    }
+
+    public VulnerabilityScore getCvss3BaseScore() {
         return cvss3BaseScore;
     }
 
-    public void setCvss3BaseScore(String cvss3BaseScore) {
+    public void setCvss3BaseScore(VulnerabilityScore cvss3BaseScore) {
         this.cvss3BaseScore = cvss3BaseScore;
     }
 
-    public String getCvss3TemporalVector() {
-        return cvss3TemporalVector;
-    }
-
-    public void setCvss3TemporalVector(String cvss3TemporalVector) {
-        this.cvss3TemporalVector = cvss3TemporalVector;
-    }
-
-    public String getCvss3TemporalScore() {
-        return cvss3TemporalScore;
-    }
-
-    public void setCvss3TemporalScore(String cvss3TemporalScore) {
-        this.cvss3TemporalScore = cvss3TemporalScore;
-    }
-
-    public String getCvss3Vector() {
+    public CvssVector getCvss3Vector() {
         return cvss3Vector;
     }
 
-    public void setCvss3Vector(String cvss3Vector) {
+    public void setCvss3Vector(CvssVector cvss3Vector) {
         this.cvss3Vector = cvss3Vector;
+    }
+
+    public VulnerabilityScore getCvss3TemporalScore() {
+        return cvss3TemporalScore;
+    }
+
+    public void setCvss3TemporalScore(VulnerabilityScore cvss3TemporalScore) {
+        this.cvss3TemporalScore = cvss3TemporalScore;
+    }
+
+    public CvssTemporalVector getCvss3TemporalVector() {
+        return cvss3TemporalVector;
+    }
+
+    public void setCvss3TemporalVector(CvssTemporalVector cvss3TemporalVector) {
+        this.cvss3TemporalVector = cvss3TemporalVector;
     }
 }

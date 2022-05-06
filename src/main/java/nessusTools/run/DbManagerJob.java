@@ -16,11 +16,11 @@ public class DbManagerJob extends Job {
     private final Object monitor = new Object();
     private boolean done = false;
 
-    private DbManagerJob() {
+    public DbManagerJob() {
         this(null);
     }
 
-    private DbManagerJob(List<Child> childJobs) {
+    public DbManagerJob(List<Child> childJobs) {
         if (childJobs == null) return;
         for (Child job : childJobs) {
             if (job == null) continue;
@@ -59,10 +59,11 @@ public class DbManagerJob extends Job {
                 if (childrenRunning || this.processNewChildJobs()) {
                     try {
                         this.monitor.wait(JobFactory.MAX_MAIN_WAIT_TIME);
-                    } catch (InterruptedException e) {
-                    }
+                    } catch (InterruptedException e) { }
+
                 } else {
                     this.done = true;
+                    return;
                 }
             }
         }
@@ -70,6 +71,12 @@ public class DbManagerJob extends Job {
 
     @Override
     protected void output() {
+        synchronized (this.addAfterDone) {
+            for (Job job : this.addAfterDone) {
+                this.addJob(job);
+            }
+        }
+
         synchronized (this.nextJobs) {
             if (this.nextJobs.size() > 0) {
                 this.addJob(new DbManagerJob(this.nextJobs));
@@ -93,32 +100,32 @@ public class DbManagerJob extends Job {
     }
 
     private boolean processNextDbTask() {
-        Map.Entry<Runnable, Child> entry = null;
+        Child child = null;
+        Runnable task = null;
         synchronized (this.dbTasks) {
             if (this.dbTasks.size() > 0) {
                 for (Iterator<Map.Entry<Runnable, Child>>
                      iterator = this.dbTasks.entrySet().iterator();
                      iterator.hasNext();) {
 
-                    entry = iterator.next();
+                    Map.Entry<Runnable, Child> entry = iterator.next();
                     iterator.remove();
-                    if (entry != null) break;
+                    task = entry.getKey();
+                    child = entry.getValue();
+                    if (task != null) break;
                 }
             }
         }
-        if (entry == null) {
+        if (task == null) {
             return false;
         }
-
-        Runnable task = entry.getKey();
-        if (task == null) return false;
 
         try {
             task.run();
 
         } catch (Exception e) {
-            if (entry.getValue().dbExceptionHandler(e)) {
-                this.addDbTask(task, entry.getValue());
+            if (child != null && child.dbExceptionHandler(e)) {
+                this.addDbTask(task, child);
             }
         }
         return true;
@@ -152,16 +159,28 @@ public class DbManagerJob extends Job {
             this.dbManager.addDbTask(task, this);
         }
 
-        protected final void addToNextDbJobs(Child jobToRunAfterDone) {
-            this.dbManager.addToNextDbJobs(jobToRunAfterDone);
+        protected final void addToNextDbJobs(Child dbJobToRunAfterDone) {
+            if (dbJobToRunAfterDone == null) return;
+            this.dbManager.addToNextDbJobs(dbJobToRunAfterDone);
         }
 
         protected final void addAfterDone(Job nonDbJobToRunAfterDone) {
+            if (nonDbJobToRunAfterDone == null) return;
             this.dbManager.addAfterDone(nonDbJobToRunAfterDone);
         }
 
         protected final void addCurrentChildJob(Child jobToRunBeforeDone) {
+            if (jobToRunBeforeDone == null) return;
             this.dbManager.addCurrentChildJob(jobToRunBeforeDone);
+        }
+
+        @Override
+        protected final void notifyOfExit() {
+            if (this.dbManager != null) {
+                synchronized (this.dbManager.monitor) {
+                    this.dbManager.monitor.notifyAll();
+                }
+            }
         }
     }
 
@@ -178,15 +197,15 @@ public class DbManagerJob extends Job {
         synchronized (this.dbTasks) {
             this.dbTasks.put(task, child);
         }
-        notifyParent();
+        notifyManager();
     }
 
-    private final void addToNextDbJobs(Child jobToRunAfterDone) {
+    private final void addToNextDbJobs(Child dbJobToRunAfterDone) {
         checkStatus();
         synchronized (this.nextJobs) {
-            this.nextJobs.add(jobToRunAfterDone);
+            this.nextJobs.add(dbJobToRunAfterDone);
         }
-        notifyParent();
+        notifyManager();
     }
 
     private final void addAfterDone(Job nonDbJobToRunAfterDone) {
@@ -198,10 +217,8 @@ public class DbManagerJob extends Job {
 
     private final void addCurrentChildJob(Child jobToRunBeforeDone) {
         checkStatus();
-        if (jobToRunBeforeDone != null) {
-            this.addCurrentChildSkipCheck(jobToRunBeforeDone);
-        }
-        notifyParent();
+        this.addCurrentChildSkipCheck(jobToRunBeforeDone);
+        notifyManager();
     }
 
     private final void addCurrentChildSkipCheck(Child jobToRunBeforeDone) {
@@ -218,7 +235,7 @@ public class DbManagerJob extends Job {
         }
     }
 
-    private void notifyParent() {
+    private void notifyManager() {
         synchronized (this.monitor) {
             this.monitor.notifyAll();
         }

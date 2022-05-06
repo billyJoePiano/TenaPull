@@ -8,6 +8,7 @@ import org.apache.logging.log4j.*;
 
 import java.sql.*;
 import java.time.*;
+import java.util.*;
 
 public class IndexJob extends Job {
     private static Logger logger = LogManager.getLogger(IndexJob.class);
@@ -32,11 +33,12 @@ public class IndexJob extends Job {
 
     @Override
     protected void output() {
+        List<DbManagerJob.Child> scanJobList = new ArrayList<>(response.getScans().size());
         for (Scan scan : response.getScans()) {
             if (scan == null) continue;
-            this.addJob(new ScanJob(scan));
+            scanJobList.add(new ScanJob(scan));
         }
-
+        this.addJob(new DbManagerJob(scanJobList));
     }
 
     @Override

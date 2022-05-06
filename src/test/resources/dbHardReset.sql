@@ -12,9 +12,10 @@ drop table if exists `plugin_ref_information_value`;
 drop table if exists `plugin_attributes_ref_information`;
 drop table if exists `index_response_scan`;
 drop table if exists `index_response_folder`;
-drop table if exists `splunk_output`;
 
--- Scan data
+-- Scan and host data
+drop table if exists `host_vulnerability_output`;
+drop table if exists `host_output`;
 drop table if exists `scan_host_info`;
 drop table if exists `scan_host_response`;
 drop table if exists `scan_history`;
@@ -45,12 +46,17 @@ drop table if exists `severity_base`;
 drop table if exists `acl`;
 
 -- Simple lookup tables
+drop table if exists `url`;
 drop table if exists `hostname`;
+drop table if exists `host_netbios_name`;
 drop table if exists `host_fqdn`;
 drop table if exists `host_ip`;
 drop table if exists `operating_system`;
 drop table if exists `cpe`;
 drop table if exists `vulnerability_score`;
+drop table if exists `cvss_temporal_vector`;
+drop table if exists `cvss_vector`;
+drop table if exists `plugin_risk_factor`;
 drop table if exists `plugin_see_also`;
 drop table if exists `plugin_ref_value`;
 drop table if exists `plugin_description`;
@@ -71,6 +77,7 @@ drop table if exists `scan_type`;
 drop table if exists `scan_policy`;
 drop table if exists `scan_owner`;
 drop table if exists `extra_json`;
+
 
 --
 -- SIMPLE LOOKUPS
@@ -183,9 +190,24 @@ create table plugin_see_also (
     value varchar(255) not null unique
 );
 
+create table cvss_vector (
+    id int auto_increment primary key,
+    value varchar(64) not null unique
+);
+
+create table cvss_temporal_vector (
+    id int auto_increment primary key,
+    value varchar(64) not null unique
+);
+
+create table plugin_risk_factor (
+    id int auto_increment primary key,
+    value varchar(16) not null unique
+);
+
 create table vulnerability_score (
     id int auto_increment primary key,
-    value varchar(255) not null unique
+    value varchar(8) not null unique
 );
 
 create table cpe (
@@ -209,12 +231,20 @@ create table host_fqdn (
     value varchar(255) not null unique
 );
 
+create table host_netbios_name (
+    id    int auto_increment primary key,
+    value varchar(255) not null unique
+);
+
 create table hostname (
     id    int auto_increment primary key,
     value varchar(255) not null unique
 );
 
-
+create table url (
+    id    int auto_increment primary key,
+    value varchar(255) not null unique
+);
 --
 -- COMPLEX LOOKUPS
 --
@@ -285,17 +315,26 @@ create table plugin_host (
 
 create table plugin_risk_information (
     id int auto_increment primary key,
-    cvss_temporal_vector varchar(255) null,
-    risk_factor varchar(255) null,
-    cvss_base_score varchar(255) null,
-    cvss_vector varchar(255) null,
-    cvss_temporal_score varchar(255) null,
-    cvss3_base_score varchar(255) null,
-    cvss3_temporal_vector varchar(255) null,
-    cvss3_temporal_score varchar(255) null,
-    cvss3_vector varchar(255) null,
+    risk_factor_id int null,
+    cvss_base_score_id int null,
+    cvss_vector_id int null,
+    cvss_temporal_score_id int null,
+    cvss_temporal_vector_id int null,
+    cvss3_base_score_id int null,
+    cvss3_vector_id int null,
+    cvss3_temporal_score_id int null,
+    cvss3_temporal_vector_id int null,
     _extra_json int null,
     _hash varbinary (64) not null unique,
+    constraint foreign key (risk_factor_id) references plugin_risk_factor (id),
+    constraint foreign key (cvss_base_score_id) references vulnerability_score (id),
+    constraint foreign key (cvss_vector_id) references cvss_vector (id),
+    constraint foreign key (cvss_temporal_score_id) references vulnerability_score (id),
+    constraint foreign key (cvss_temporal_vector_id) references cvss_temporal_vector (id),
+    constraint foreign key (cvss3_base_score_id) references vulnerability_score (id),
+    constraint foreign key (cvss3_vector_id) references cvss_vector (id),
+    constraint foreign key (cvss3_temporal_score_id) references vulnerability_score (id),
+    constraint foreign key (cvss3_temporal_vector_id) references cvss_temporal_vector (id),
     constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
@@ -367,9 +406,10 @@ create table plugin_attributes (
 create table plugin_ref_information (
     id int auto_increment primary key,
     name varchar(255) null,
-    url varchar(255) null,
+    url_id int null,
     _extra_json int null,
     _hash varbinary (64) not null unique,
+    constraint foreign key (url_id) references url (id) on update cascade,
     constraint foreign key (_extra_json) references extra_json(id) on update cascade
 );
 
@@ -658,26 +698,39 @@ create table scan_host_info (
     id int primary key,
     operating_system_id int null,
     host_ip_id int null,
+    host_fqdn_id int null,
+    netbios_name_id int null,
     host_start varchar(255) null,
     host_end varchar(255) null,
     _extra_json int null,
     constraint foreign key (id) references scan_host_response (id),
-    constraint foreign key (operating_system_id) references operating_system(id) on update cascade,
-    constraint foreign key (host_ip_id) references host_ip(id) on update cascade,
-    constraint foreign key (_extra_json) references extra_json(id) on update cascade
+    constraint foreign key (operating_system_id) references operating_system (id) on update cascade,
+    constraint foreign key (host_fqdn_id) references operating_system (id) on update cascade,
+    constraint foreign key (netbios_name_id) references host_netbios_name (id) on update cascade,
+    constraint foreign key (host_ip_id) references host_ip (id) on update cascade,
+    constraint foreign key (_extra_json) references extra_json (id) on update cascade
 );
 
-create table splunk_output (
+create table host_output (
+    id int primary key,
+    scan_timestamp timestamp null,
+    output_timestamp timestamp null,
+    constraint foreign key (id) references scan_host_response (id)
+);
+
+create table host_vulnerability_output (
     id int primary key auto_increment,
-    timestamp timestamp not null,
+    scan_timestamp timestamp null,
     host_id int not null,
     vulnerability_id int not null,
     scan_plugin_id int null,
     plugin_best_guess_id int null,
-    constraint foreign key (host_id) references scan_host_response (id),
+    __order_for_host_vulnerability_output int null,
+    constraint foreign key (host_id) references host_output (id),
     constraint foreign key (vulnerability_id) references vulnerability (id),
     constraint foreign key (scan_plugin_id) references scan_plugin (id),
-    constraint foreign key (plugin_best_guess_id) references plugin (id)
+    constraint foreign key (plugin_best_guess_id) references plugin (id),
+    constraint unique (host_id, vulnerability_id)
 );
 
 

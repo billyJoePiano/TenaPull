@@ -8,7 +8,6 @@ import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.splunk.*;
-import nessusTools.data.persistence.*;
 import org.hibernate.*;
 import org.junit.*;
 
@@ -85,62 +84,83 @@ public class TestSplunkOutput {
 
             List<Vulnerability> vulns = response.getVulnerabilities();
             Hibernate.initialize(vulns);
-            if (vulns == null) continue;
 
-            for (Vulnerability vuln : vulns) {
-                if (vuln != null) {
-                    params.add(new Object[]{
-                            response,
-                            vuln
-                    });
-                }
-            }
+            params.add(new Object[]{
+                    response.getOrFetchScanResponse(),
+                    host,
+                    response,
+                    vulns
+                });
+
         }
 
         return params;
     }
 
-    private static List<ObjectNode> results = new LinkedList<>();
+    private static List<JsonNode> results = new LinkedList<>();
 
+    private final ScanResponse scanResponse;
+    private final ScanHost host;
     private final ScanHostResponse response;
-    private final Vulnerability vuln;
+    private final List<Vulnerability> vulns;
 
-    public TestSplunkOutput(ScanHostResponse response, Vulnerability vuln) {
+    public TestSplunkOutput(ScanResponse scanResponse, ScanHost host, ScanHostResponse response, List<Vulnerability> vulns) {
+        this.scanResponse = scanResponse;
+        this.host = host;
         this.response = response;
-        this.vuln = vuln;
+        this.vulns = vulns;
     }
 
     @Test
     public void run() {
-        logger.info ("Creating SplunkOutput for response id " + this.response.getId()
-                + ", vulnerability id " + this.vuln.getId());
+        logger.info ("Creating HostOutput for response id " + this.response.getId());
 
-        SplunkOutput output = new SplunkOutput(this.response, this.vuln);
+        int id = this.response.getId();
 
-        int id = SplunkOutput.dao.insert(output);
+        HostOutput output = new HostOutput();
+        output.setId(this.response.getId());
+        output.setScanHostResponse(this.response);
 
-        assertNotEquals(id, -1);
+        if (HostOutput.dao.getById(output.getId()) == null) {
+            int insertId = HostOutput.dao.insert(output);
+            assertEquals(id, output.getId());
+            assertEquals(id, insertId);
+        }
+
+        List<HostVulnerabilityOutput> list = new ArrayList<>(this.vulns.size());
+
+        for (Vulnerability vuln : vulns) {
+            list.add(new HostVulnerabilityOutput(this.scanResponse, this.host, this.response, vuln));
+        }
+
+        output.setVulnerabilities(list);
+        output.setOutputTimestamp(Timestamp.valueOf(LocalDateTime.now()));
+        output.useTimestampFrom(this.scanResponse);
+
+        HostOutput.dao.saveOrUpdate(output);
+
         assertEquals(id, output.getId());
 
-        ObjectNode node = SplunkOutputMapper.mapper.valueToTree(output);
+        JsonNode node = output.toJsonNode();
 
         assertNotNull(node);
         logger.info("\n" + node);
 
         results.add(node);
 
-        SplunkOutput persisted = null;
-        SplunkOutput.dao.holdSession();
+        HostOutput persisted = null;
+        HostOutput.dao.holdSession();
         try {
-            persisted = SplunkOutput.dao.getById(output.getId());
+            persisted = HostOutput.dao.getById(output.getId());
 
-            Timestamp orig = output.getTimestamp();
-            Timestamp pers = persisted.getTimestamp();
+            Timestamp orig = output.getScanTimestamp();
+            Timestamp pers = persisted.getScanTimestamp();
             if (orig.getTime() != pers.getTime()
                     && ((long) Math.round((double) orig.getTime() / 1000) * 1000)
                     == pers.getTime()) {
 
-                output.setTimestamp(pers);
+                output.setScanTimestamp(pers);
+                output.setVulnerabilityTimestamps();
             }
 
             assertEquals(output, persisted);
@@ -149,7 +169,7 @@ public class TestSplunkOutput {
             throw e;
 
         } finally {
-            SplunkOutput.dao.releaseSession();
+            HostOutput.dao.releaseSession();
         }
 
     }

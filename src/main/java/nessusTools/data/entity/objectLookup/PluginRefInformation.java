@@ -40,8 +40,10 @@ public class PluginRefInformation extends HashLookupTemplate<PluginRefInformatio
     @JsonProperty("values")
     RefValues valuesJson;
 
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name="url_id")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    String url;
+    Url url;
 
     @Transient
     @JsonIgnore
@@ -111,11 +113,11 @@ public class PluginRefInformation extends HashLookupTemplate<PluginRefInformatio
         if (values != null) values.putFieldsIntoParent(this);
     }
 
-    public String getUrl() {
+    public Url getUrl() {
         return url;
     }
 
-    public void setUrl(String url) {
+    public void setUrl(Url url) {
         this.url = url;
     }
 

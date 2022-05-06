@@ -120,6 +120,16 @@ public class Plugin extends GeneratedIdPojo
                 && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (o == this) return true;
+        if (!Objects.equals(this.getClass(), o.getClass())) {
+            return false;
+        }
+
+        return this._match((Plugin) o);
+    }
+
     @Override
     public Map<String, Object> _getSearchMap() {
         return MakeMap.of(new Object[] {

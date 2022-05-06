@@ -20,7 +20,10 @@ public class Main {
     private Main() { } //never instantiated ... static only
 
     public static void main(String[] args) {
-        new Thread(Main::checkHashes).start();
+        //new Thread(Main::checkHashes).start();
+
+        StackTracePrinter.startThread(20 * 60 * 1000);
+        StackTracePrinter.startThread(60 * 60 * 1000);
 
         Var<JobFactory.Init> init = new Var();
         JobFactory.init(init);

@@ -44,6 +44,11 @@
         <mapping class="nessusTools.data.entity.lookup.ScanOwner" />
         <mapping class="nessusTools.data.entity.lookup.VulnerabilityScore" />
         <mapping class="nessusTools.data.entity.lookup.Remediation" />
+        <mapping class="nessusTools.data.entity.lookup.HostNetbiosName" />
+        <mapping class="nessusTools.data.entity.lookup.Url" />
+        <mapping class="nessusTools.data.entity.lookup.PluginRiskFactor" />
+        <mapping class="nessusTools.data.entity.lookup.CvssVector" />
+        <mapping class="nessusTools.data.entity.lookup.CvssTemporalVector" />
 
         <mapping class="nessusTools.data.entity.objectLookup.Acl" />
         <mapping class="nessusTools.data.entity.objectLookup.PluginAttributes" />
@@ -78,7 +83,8 @@
         <mapping class="nessusTools.data.entity.response.IndexResponse" />
         <mapping class="nessusTools.data.entity.response.ScanResponse" />
         <mapping class="nessusTools.data.entity.response.ScanHostResponse" />
-        <mapping class="nessusTools.data.entity.splunk.SplunkOutput" />
+        <mapping class="nessusTools.data.entity.splunk.HostOutput" />
+        <mapping class="nessusTools.data.entity.splunk.HostVulnerabilityOutput" />
 
     </session-factory>
 

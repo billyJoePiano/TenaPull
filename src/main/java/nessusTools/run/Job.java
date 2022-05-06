@@ -1,7 +1,6 @@
 package nessusTools.run;
 
 import org.apache.logging.log4j.*;
-import org.hibernate.annotations.*;
 
 import java.util.*;
 
@@ -63,8 +62,8 @@ public abstract class Job {
     }
 
 
-    protected final Stage getStage() {
-        checkForRunThread();
+    public final Stage getStage() {
+        //checkForRunThread();
         return this.stage;
     }
 
@@ -110,7 +109,8 @@ public abstract class Job {
             synchronized (accessor) {
                 this.runThread = null;
             }
-            JobFactory.notifyOfJobEnd(this);
+            this.notifyOfExit();
+            JobFactory.notifyOfJobExit(this);
         }
     }
 
@@ -162,6 +162,11 @@ public abstract class Job {
             }
             this.notifyAll();
         }
+    }
+
+    //To be overridden by subclasses
+    protected void notifyOfExit() {
+
     }
 
     private static abstract class JobException extends RuntimeException { }

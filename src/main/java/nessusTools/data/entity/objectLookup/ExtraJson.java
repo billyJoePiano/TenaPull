@@ -80,7 +80,7 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
 
         ExtraJson other = (ExtraJson)o;
 
-        return Objects.equals(this.value, other.value);
+        return Objects.equals(this.value.map, other.value.map);
     }
 
     @Transient

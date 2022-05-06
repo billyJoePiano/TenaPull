@@ -27,6 +27,18 @@ public class ScanHostInfo
     @JsonProperty("host-ip")
     private HostIp hostIp;
 
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "host_fqdn_id")
+    @JsonProperty("host-fqdn")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private HostFqdn hostFqdn;
+
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @JoinColumn(name = "netbios_name_id")
+    @JsonProperty("netbios-name")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private HostNetbiosName netbiosName;
+
     @Column(name = "host_start")
     @JsonProperty("host_start")
     private String hostStart;
@@ -56,6 +68,22 @@ public class ScanHostInfo
 
     public void setHostIp(HostIp hostIp) {
         this.hostIp = hostIp;
+    }
+
+    public HostFqdn getHostFqdn() {
+        return hostFqdn;
+    }
+
+    public void setHostFqdn(HostFqdn hostFqdn) {
+        this.hostFqdn = hostFqdn;
+    }
+
+    public HostNetbiosName getNetbiosName() {
+        return netbiosName;
+    }
+
+    public void setNetbiosName(HostNetbiosName hostNetbiosName) {
+        this.netbiosName = hostNetbiosName;
     }
 
     public String getHostStart() {

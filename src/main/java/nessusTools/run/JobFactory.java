@@ -8,7 +8,7 @@ import java.util.*;
 
 public class JobFactory {
     public static final long MAX_NEW_JOB_PROCESSING_TIME_MS = 1000;
-    public static final int NUM_WORKER_THREADS = 1;
+    public static final int NUM_WORKER_THREADS = 9;
     public static final long MAX_MAIN_WAIT_TIME = 300000;
 
 
@@ -111,7 +111,7 @@ public class JobFactory {
 
     private static Map<WorkerThread, JobFactory> workerThreads = new LinkedHashMap<>();
 
-    public static void notifyOfJobEnd(Job source) {
+    public static void notifyOfJobExit(Job source) {
         synchronized (newJobProviders) {
             newJobProviders.notifyAll();
         }

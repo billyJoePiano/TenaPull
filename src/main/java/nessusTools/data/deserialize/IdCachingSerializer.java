@@ -84,7 +84,7 @@ public class IdCachingSerializer<POJO extends IdCachingSerializer.NodeCacher<POJ
         MainCachedNode mainCache = value.getCachedNode();
         if (mainCache == null) {
             if (value.getId() == 0) {
-                jg.writeObject(value);
+                this.defaultSerializer.serialize(value, jg, sp);
                 return;
             }
             mainCache = getOrCreateNodeCache(value);
@@ -126,8 +126,10 @@ public class IdCachingSerializer<POJO extends IdCachingSerializer.NodeCacher<POJ
     }
 
     protected void doneConstructingNode(POJO forValue) {
-        POJO type = this.constructing.remove(this.constructing.size() - 1);
-        assert Objects.equals(type, forValue);
+        if (this.constructing.size() > 0) {
+            POJO type = this.constructing.remove(this.constructing.size() - 1);
+            assert Objects.equals(type, forValue);
+        }
     }
 
     public static class Reset<POJO extends IdCachingSerializer.NodeCacher<POJO>>

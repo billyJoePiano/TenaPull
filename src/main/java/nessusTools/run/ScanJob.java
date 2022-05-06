@@ -2,10 +2,10 @@ package nessusTools.run;
 
 import com.fasterxml.jackson.core.*;
 import nessusTools.client.*;
-import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
+import nessusTools.data.entity.splunk.*;
 import org.apache.logging.log4j.*;
 
 import java.sql.*;
@@ -15,6 +15,8 @@ public class ScanJob extends DbManagerJob.Child {
     private static Logger logger = LogManager.getLogger(ScanJob.class);
     private static final ScanStatus COMPLETED = ScanStatus.dao.getOrCreate("completed");
     private static final ScanStatus CANCELED = ScanStatus.dao.getOrCreate("canceled");
+    private static final ScanStatus RUNNING = ScanStatus.dao.getOrCreate("running");
+    private static final long CHECK_BACK_FOR_COMPLETION = 5 * 60 * 1000; // 5 minutes in ms
     private static final long MAX_WAIT_FOR_COMPLETION = 2 * 60 * 60 * 1000; //2 hours in ms
 
     private final Scan scan;
@@ -28,18 +30,38 @@ public class ScanJob extends DbManagerJob.Child {
 
     @Override
     protected boolean isReady() {
-        if (!Objects.equals(COMPLETED, scan.getStatus())) {
-            if (Objects.equals(CANCELED, scan.getStatus())) {
-                this.failed();
-
-            } else if (this.startWait == null) {
-                this.startWait = System.currentTimeMillis();
-
-            } else if (System.currentTimeMillis() - this.startWait > MAX_WAIT_FOR_COMPLETION) {
-                logger.error("Timed out waiting for scan id " + scan.getId() + " to complete\n" + scan);
-                this.failed();
-            }
+        ScanStatus status = scan.getStatus();
+        if (Objects.equals(CANCELED, status)) {
+            this.failed();
             return false;
+
+        } else if (Objects.equals(RUNNING, status)) {
+            if (this.startWait == null) {
+                this.startWait = System.currentTimeMillis();
+                return false;
+
+            }
+
+            boolean done = false;
+            try {
+                response = client.fetchJson(ScanResponse.getUrlPath(this.scan.getId()), ScanResponse.class);
+                ScanInfo info = response.getInfo();
+                if (info != null) {
+                    done = !Objects.equals(RUNNING, info.getStatus());
+                }
+
+            } catch(Exception e) { }
+
+            if (!done) {
+                if (System.currentTimeMillis() - this.startWait > MAX_WAIT_FOR_COMPLETION) {
+                    logger.error("Timed out waiting for scan id " + scan.getId() + " to complete\n" + scan);
+                    this.failed();
+
+                } else {
+                    this.tryAgainIn(CHECK_BACK_FOR_COMPLETION);
+                }
+                return false;
+            }
         }
 
         ScanResponse old = ScanResponse.dao.getById(scan.getId());
@@ -60,11 +82,46 @@ public class ScanJob extends DbManagerJob.Child {
         long diff = newTs.getTime() - oldTs.getTime();
 
         if (diff > 1000) return true; //have to account for DB rounding to the second
-        else if (diff < 1000) {
+        else if (diff < -1000) {
             logger.error("Unexpected timestamp difference between old and new scan response in scan id "
                     + scan.getId()
                     + "\nold: " + oldTs
                     + "\nnew: " + newTs);
+        }
+
+
+
+        // should be up-to-date, but confirm with SplunkOutputs, in case there were any output failures last time
+
+        for (ScanHost host : old.getHosts()) {
+            if (host == null) continue;
+            HostOutput so = HostOutput.dao.getById(host.getId());
+            if (so != null) {
+                oldTs = so.getScanTimestamp();
+
+            } else {
+                oldTs = null;
+            }
+
+            if (oldTs == null) {
+                this.addToNextDbJobs(new ScanHostJob(old, host));
+                continue;
+            }
+
+            diff = newTs.getTime() - oldTs.getTime();
+
+            if (diff <= 1000) {
+                if (diff < -1000) {
+                    logger.error("Unexpected timestamp difference between scan response and splunk output in scan id "
+                            + scan.getId() + " , host id " + host.getHostId() + " (mysql host id " + host.getId() + ")"
+                            + "\nold: " + oldTs
+                            + "\nnew: " + newTs);
+                } else {
+                    continue;
+                }
+            }
+
+            this.addToNextDbJobs(new ScanHostJob(old, host));
         }
         this.failed();
         return false;
@@ -72,21 +129,29 @@ public class ScanJob extends DbManagerJob.Child {
 
     @Override
     protected void fetch() throws JsonProcessingException {
-        response = client.fetchJson(ScanResponse.getUrlPath(this.scan.getId()), ScanResponse.class);
+        if (this.response == null) {
+            this.response = client.fetchJson(ScanResponse.getUrlPath(this.scan.getId()), ScanResponse.class);
+        }
     }
 
     @Override
     protected void process() {
-        response.setId(this.scan.getId());
-        ScanResponse.dao.saveOrUpdate(response);
+        this.response.setId(this.scan.getId());
+        //CachingMapper.resetCaches.valueToTree(this.scan);
     }
 
     @Override
     protected void output() {
-        CachingMapper.resetCaches.valueToTree(this.scan);
-        for (ScanHost host : response.getHosts()) {
+        this.addDbTask(this::runDbInsert);
+    }
+
+    private void runDbInsert() {
+        ScanResponse.dao.saveOrUpdate(response);
+        List<ScanHost> hosts = this.response.getHosts();
+        if (hosts == null) return;
+        for (ScanHost host : this.response.getHosts()) {
             if (host == null) continue;
-            this.addJob(new ScanHostJob(host));
+            this.addToNextDbJobs(new ScanHostJob(this.response, host));
         }
     }
 
@@ -114,7 +179,7 @@ public class ScanJob extends DbManagerJob.Child {
         return false;
     }
 
-    private boolean dbErredOnce;
+    private boolean dbErredOnce = false;
 
     @Override
     protected boolean dbExceptionHandler(Exception e) {

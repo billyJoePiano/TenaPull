@@ -1,24 +1,19 @@
 package nessusTools.data.entity.response;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.*;
 import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.host.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.scan.*;
-import nessusTools.data.entity.splunk.*;
-import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import org.apache.logging.log4j.*;
 import org.hibernate.*;
 import org.hibernate.annotations.*;
 import org.hibernate.proxy.*;
 
-import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.*;
 import java.util.*;
@@ -29,16 +24,16 @@ public class ScanHostResponse extends NessusResponseGenerateTimestamp {
     public static final Logger logger = LogManager.getLogger(ScanHostResponse.class);
     public static final Dao<ScanHostResponse> dao = new Dao(ScanHostResponse.class);
 
-    public static String getUrlPath(int scanId, int scanHostId) throws IllegalArgumentException {
-        if (scanId == 0 || scanHostId == 0) {
+    public static String getUrlPath(int scanId, int hostId) throws IllegalArgumentException {
+        if (scanId == 0 || hostId == 0) {
             throw new IllegalArgumentException("ScanHostResponse must have a non-zero id "
                     + "for scan and scanHost to construct the URL");
         }
-        return "/scans/" + scanId + "/hosts/" + scanHostId;
+        return "/scans/" + scanId + "/hosts/" + hostId;
     }
 
     public static String getUrlPath(ScanHost host) throws NullPointerException {
-        return getUrlPath(host.getResponse().getId(), host.getId());
+        return getUrlPath(host.getResponse().getId(), host.getHostId());
     }
 
     @Transient
@@ -70,7 +65,7 @@ public class ScanHostResponse extends NessusResponseGenerateTimestamp {
 
     @Transient
     @JsonIgnore
-    ScanResponse scanResponse; //for transient use by SplunkOutput
+    ScanResponse scanResponse; //for transient use by HostVulnerabilityOutput
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id")
@@ -104,8 +99,10 @@ public class ScanHostResponse extends NessusResponseGenerateTimestamp {
         }
     }
 
-    //Transient.  For use by SplunkOutput
-    public ScanResponse getScanResponse() {
+    //Transient.  For use by HostVulnerabilityOutput
+    @Transient
+    @JsonIgnore
+    public ScanResponse getOrFetchScanResponse() {
         if (this.host instanceof HibernateProxy) {
             this.host = ScanHost.dao.unproxy(this.host);
         }

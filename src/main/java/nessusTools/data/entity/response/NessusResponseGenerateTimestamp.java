@@ -11,6 +11,7 @@ import org.hibernate.annotations.*;
 
 import javax.persistence.*;
 import java.sql.*;
+import java.time.*;
 
 @MappedSuperclass
 @JsonIgnoreProperties(allowSetters = true, value = {"id"})
@@ -21,9 +22,8 @@ public abstract class NessusResponseGenerateTimestamp<RES extends NessusResponse
     @JsonIgnore
     public abstract String getUrlPath();
 
-    @UpdateTimestamp
     @JsonIgnore
-    private Timestamp timestamp;
+    private Timestamp timestamp = Timestamp.from(Instant.now());
 
     @Override
     public Timestamp getTimestamp() {

@@ -266,7 +266,9 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
                 && Objects.equals(this.threatRecency, o.threatRecency)
                 && Objects.equals(this.fname, o.fname)
                 && Objects.equals(this.cvssV3ImpactScore, o.cvssV3ImpactScore)
-                && Objects.equals(this.pluginInformation, o.pluginInformation)
+                && (this.pluginInformation != null
+                        ? this.pluginInformation._match(o.pluginInformation)
+                        : o.pluginInformation == null)
                 && Objects.equals(this.requiredPort, o.requiredPort)
                 && Objects.equals(this.dependency, o.dependency)
                 && Objects.equals(this.solution, o.solution)
