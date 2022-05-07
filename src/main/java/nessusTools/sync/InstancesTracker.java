@@ -1747,12 +1747,12 @@ public class InstancesTracker<K, I> {
             if (time >= timeoutAt) return true;
             long trackerTimeoutAt = (timeoutAt - time) / remainingTrackers + time;
 
-            logger.debug("Finalizing create locks <K, I> : " + tracker.type);
+            //logger.debug("Finalizing create locks <K, I> : " + tracker.type);
             FinalizeResult result = tracker.finalizeCreateLocks(trackerTimeoutAt);
-            logger.debug("Finalized for " + tracker.type + "\n"
-                    + result.count + " finalized\t"
-                    + tracker.comparable.notificationCount + " remaining\t"
-                    + result.instances + " instances");
+            /*logger.info(tracker.type + "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+                    + result.count + "finalized  \t "
+                    + tracker.comparable.notificationCount + " remaining  \t"
+                    + result.instances + " instances");*/
 
             remainingTrackers--;
 
