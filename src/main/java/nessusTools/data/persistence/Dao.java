@@ -242,24 +242,29 @@ public class Dao<POJO extends DbPojo> {
         }
 
         // only call from done() ... session users should only call done(this)
-        private void close(Dao closer) {
-            if (this.transaction != null) {
-                Transaction transaction = this.transaction;
-                this.transaction = null;
-                try {
-                    transaction.commit();
-
-                } catch (Exception e) {
-                    transaction.rollback();
-                    closer.logger.error("Error committing DB transaction", e);
-                }
-            }
-
+        private void close(Dao closer) throws DbException {
+            DbException commitException = null;
             try {
-                session.close();
+                if (this.transaction != null) {
+                    Transaction transaction = this.transaction;
+                    this.transaction = null;
+                    transaction.commit();
+                }
 
             } catch (Exception e) {
-                closer.logger.error("Error closing DB session", e);
+                transaction.rollback();
+                closer.logger.error("Error committing DB transaction", e);
+                commitException = new DbException(e, closer.pojoType);
+
+            } finally {
+                try {
+                    session.close();
+
+                } catch (Exception e) {
+                    closer.logger.error("Error closing DB session", e);
+                    if (commitException != null) throw commitException;
+                    else throw new DbException(e, closer.pojoType);
+                }
             }
         }
 

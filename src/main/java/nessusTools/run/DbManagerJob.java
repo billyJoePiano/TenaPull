@@ -11,8 +11,8 @@ public class DbManagerJob extends Job {
 
     private final String name;
     private String nameForNext;
-    private final List<Child> newChildJobs = new LinkedList<>();
-    private final List<Child> childJobs = new LinkedList<>();
+    private final Set<Child> newChildJobs = new TreeSet<>();
+    private final Set<Child> childJobs = new TreeSet<>();
     private final Map<Runnable, Child> dbTasks = new LinkedHashMap<>();
     private final List<Child> nextJobs = new LinkedList<>();
     private final List<Job> addAfterDone = new LinkedList<>();
@@ -32,6 +32,7 @@ public class DbManagerJob extends Job {
             if (job == null) continue;
             this.addCurrentChildSkipCheck(job);
         }
+
     }
 
     @Override
@@ -41,7 +42,7 @@ public class DbManagerJob extends Job {
 
     @Override
     protected void fetch() {
-        logger.info("DbManagerJob '" + this.name + "' starting");
+        logger.info("'" + this.name + "' starting");
         while (true) {
             synchronized (this.monitor) {
                 synchronized (this.newChildJobs) {
@@ -250,7 +251,7 @@ public class DbManagerJob extends Job {
         return true;
     }
 
-    public static abstract class Child extends Job {
+    public static abstract class Child extends Job implements Comparable<Child> {
         DbManagerJob dbManager;
 
         protected abstract boolean dbExceptionHandler(Exception e);

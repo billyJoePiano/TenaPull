@@ -9,15 +9,14 @@
     <url></url>
 
     <properties>
-        <!--maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target-->
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
 
-        <maven.compiler.release>11</maven.compiler.release>
+        <!--maven.compiler.release>11</maven.compiler.release-->
         <junit.version>4.12</junit.version>
         <junit-vintage-version>4.12.0</junit-vintage-version>
         <javax.version>7.0</javax.version>
 
-        <mariadb-version>3.0.3</mariadb-version>
         <mysql-version>8.0.16</mysql-version>
 
         <jstl-version>1.2</jstl-version>
@@ -177,10 +176,10 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven-compiler-plugin-version}</version>
-                    <!--configuration>
+                    <configuration>
                         <source>17</source>
                         <target>17</target>
-                    </configuration-->
+                    </configuration>
                 </plugin>
 
                 <plugin>

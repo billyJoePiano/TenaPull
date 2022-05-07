@@ -81,11 +81,12 @@ public class InstancesTracker<K, I> {
     private final KeySet keySet = new KeySet();
 
     private final boolean keysComparable;
+    private final boolean keysFinalizable;
     private final KeyValueType type;
 
     private InstancesTracker<K, I> replacedWith;
 
-    private boolean keyFinalizer;
+
 
     public InstancesTracker(Class<K> keyType,
                             Class<I> instancesType,
@@ -105,7 +106,7 @@ public class InstancesTracker<K, I> {
         this.construct = constructionLambda;
 
         this.keysComparable = Comparable.class.isAssignableFrom(this.keyType);
-        this.keyFinalizer = KeyFinalizer.class.isAssignableFrom(this.keyType);
+        this.keysFinalizable = KeyFinalizer.class.isAssignableFrom(this.keyType);
 
         this.type = new KeyValueType(keyType, instType);
 
@@ -1097,13 +1098,14 @@ public class InstancesTracker<K, I> {
                 });
             }
 
-            if (InstancesTracker.this.keyFinalizer) {
+            if (InstancesTracker.this.keysFinalizable) {
                 KeyFinalizer<?, I> kf = (KeyFinalizer<?, I>) this.key;
                 kf.finalizeKey(instance);
             }
 
             synchronized (InstancesTracker.this.comparable) {
-                InstancesTracker.this.comparable.notificationCount -= count;
+                if (underConstruction.size() == 0) InstancesTracker.this.comparable.notificationCount = 0;
+                else InstancesTracker.this.comparable.notificationCount -= count;
             }
             return true;
         }
@@ -1366,7 +1368,7 @@ public class InstancesTracker<K, I> {
             waitingThreads = ReadWriteLock.forMap(new WeakHashMap<>());
 
 
-    private static void setWaitingStatus(@Async.Execute InstancesTracker.CreateLock lock) {
+    private static void setWaitingStatus(InstancesTracker.CreateLock lock) {
         InstancesTracker.CreateLock displaced;
         Thread current = Thread.currentThread();
         displaced = waitingThreads.write(wt -> wt.put(current, lock));
@@ -1567,9 +1569,9 @@ public class InstancesTracker<K, I> {
     }
 
 
-    private final TrackerComparable comparable = new TrackerComparable(this);
+    private final TrackerNeedsFinalizing comparable = new TrackerNeedsFinalizing(this);
 
-    private static ReadWriteLock<Map<TrackerComparable, Object>, List<TrackerComparable>>
+    private final static ReadWriteLock<Map<TrackerNeedsFinalizing, Object>, List<TrackerNeedsFinalizing>>
             finalizerMonitor = ReadWriteLock.forMap(new WeakHashMap<>());
 
     private void notifyFinalizer() {
@@ -1599,15 +1601,16 @@ public class InstancesTracker<K, I> {
         }
     }
 
-    private static double BILLION = 1000000000; //for converting ns to seconds
-    private static int REPORT_ITERATIONS = 1;
-    private static int RESULT_SAMPLES = 1;
+    public static final double BILLION = 1000000000; //for converting ns to seconds
+    public static final long MILLION = 1000000; //for converting between ns and ms
+    //private static final int REPORT_ITERATIONS = 1;
+    //private static final int RESULT_SAMPLES = 1;
 
     private static final Thread finalizer = new Thread(() -> {
         int loops = 0;
         Thread finalizer = Thread.currentThread();
 
-        FinalizerReport[] reports = new FinalizerReport[REPORT_ITERATIONS];
+        //FinalizerReport[] reports = new FinalizerReport[REPORT_ITERATIONS];
         int index = 0;
         int totalCount = 0;
         long activeTime = 0;
@@ -1618,11 +1621,11 @@ public class InstancesTracker<K, I> {
                 loops++;
                 finalizer.setPriority(Thread.MIN_PRIORITY);
                 int size = 0;
-                while(true) {
+                while (true) {
                     synchronized (finalizerMonitor) {
                         size = finalizerMonitor.read(Integer.class, comparables -> {
                             int s = 0;
-                            for (TrackerComparable comparable : comparables.keySet()) {
+                            for (TrackerNeedsFinalizing comparable : comparables.keySet()) {
                                 s += (comparable.countChange = comparable.notificationCount);
                             }
                             return s;
@@ -1637,100 +1640,16 @@ public class InstancesTracker<K, I> {
                 long inactiveTime = System.nanoTime() - startTime;
                 // Time that will be allocated for finalizing should never exceed inactive time
                 if (inactiveTime > BILLION) { // Maximum of one second
-                    inactiveTime = (long)BILLION;
+                    inactiveTime = (long) BILLION;
 
                 } else if (inactiveTime < BILLION / 8) {
                     //EDIT: but with a minimum of 1/8 of a second;
-                    inactiveTime = (long)BILLION / 8;
+                    inactiveTime = (long) BILLION / 8;
                 }
 
                 Thread.sleep(500);
 
-                long loopStart = System.nanoTime();
-
-                List<TrackerComparable> needsFinalizing = finalizerMonitor.write(comparables -> {
-                    finalizer.setPriority(Thread.MAX_PRIORITY);
-                    List nf = new ArrayList(comparables.keySet()); //automatically sorts
-                    comparables.clear();
-                    return nf;
-                });
-                finalizer.setPriority(Thread.MIN_PRIORITY);
-
-                int changedSize = 0;
-                for (TrackerComparable comparable : needsFinalizing) {
-                    comparable.countChange = comparable.notificationCount - comparable.countChange;
-                    changedSize += comparable.countChange;
-                }
-
-                if (changedSize > 0) {
-                    long startSleep = System.nanoTime();
-                    Thread.sleep(changedSize);
-                    long endSleep = System.nanoTime();
-                    loopStart += endSleep - startSleep;
-                }
-
-                Collections.sort(needsFinalizing);
-
-                finalizer.setPriority(Thread.MAX_PRIORITY);
-
-                Iterator<TrackerComparable> iterator = needsFinalizing.iterator();
-
-                int finalizedCount = 0;
-                int remainingTrackers = needsFinalizing.size();
-                List<TrackerComparable> addBackToMonitor = new ArrayList(needsFinalizing.size());
-
-                long timeoutAt = System.nanoTime() + inactiveTime;
-
-                while(iterator.hasNext()) {
-                    TrackerComparable comparable = iterator.next();
-                    if (comparable == null) { //shouldn't happen, but just in case...
-                        continue;
-                    }
-                    InstancesTracker tracker = comparable.ref.get();
-                    if (tracker == null) {
-                        iterator.remove();
-                        continue;
-                    }
-
-                    long time = System.nanoTime();
-                    long trackerTimeoutAt = (timeoutAt - time) / remainingTrackers + time;
-
-                    logger.debug("Finalizing create locks <K, I> : " + tracker.type);
-                    FinalizeResult result = tracker.finalizeCreateLocks(trackerTimeoutAt);
-                    logger.debug("DONE Finalizing for <K, I> : " + tracker.type);
-                    remainingTrackers--;
-
-                    finalizedCount += result.count;
-                    if (!result.success) {
-                        addBackToMonitor.add(comparable);
-                    }
-                }
-
-                long endTime = System.nanoTime();
-
-                finalizerMonitor.write(comparables -> {
-                    for (TrackerComparable comparable : addBackToMonitor) {
-                        comparables.put(comparable, UNDER_CONSTRUCTION_PLACEHOLDER);
-                    }
-                    return null;
-                });
-
-
-                reports[index++]= new FinalizerReport(finalizedCount, endTime - loopStart);
-                totalCount += finalizedCount;
-                activeTime += (endTime - loopStart);
-
-                if (index >= REPORT_ITERATIONS) {
-                    logger.debug(getFinalizerReportString(
-                            reports, totalCount, startTime, activeTime, endTime));
-
-                    //reset
-                    index = 0;
-                    totalCount = 0;
-                    activeTime = 0;
-                    startTime = System.nanoTime();
-                }
-
+                runFinalizer(inactiveTime);
 
             } catch (Exception e) {
                 logger.error("Error in finalizer thread");
@@ -1742,6 +1661,174 @@ public class InstancesTracker<K, I> {
         }
     });
 
+    public static boolean runFinalizer(long maxTimeNs) {
+        List<TrackerNeedsFinalizing> needsFinalizing = getTrackersThatNeedFinalizing();
+
+        if (needsFinalizing.size() <= 0) return false;
+
+        //long loopStart = System.nanoTime();
+
+        Iterator<TrackerNeedsFinalizing> iterator = needsFinalizing.iterator();
+
+        int finalizedCount = 0;
+        int remainingTrackers = needsFinalizing.size();
+        List<TrackerNeedsFinalizing> addBackToMonitor = new ArrayList<>(needsFinalizing.size());
+
+        long timeoutAt = System.nanoTime() + maxTimeNs;
+        List<InstancesTracker> revisit = null;
+
+        while (true) {
+            InstancesTracker tracker = null;
+            if (iterator.hasNext()) {
+                TrackerNeedsFinalizing comparable = iterator.next();
+                if (comparable == null //shouldn't happen, but just in case...
+                        || (tracker = comparable.ref.get()) == null
+                        || tracker.replacedWith != null) {
+
+                    remainingTrackers--;
+                    iterator.remove();
+                    continue;
+                }
+
+                boolean finalizeUnderway = tracker.finalizeUnderway;
+
+                if (!finalizeUnderway) {
+                    synchronized (tracker.returnedLocks) {
+                        if (!(finalizeUnderway = tracker.finalizeUnderway)) {
+                            tracker.finalizeUnderway = true;
+                        }
+                    }
+                }
+
+                if (finalizeUnderway) {
+                    if (revisit == null) revisit = new LinkedList<>();
+                    revisit.add(tracker);
+                    continue;
+                }
+
+            } else  {
+                if (revisit == null || revisit.size() <= 0) break;
+
+                for (Iterator<InstancesTracker> revisitIterator = revisit.iterator();
+                            revisitIterator.hasNext();) {
+
+                    tracker = revisitIterator.next();
+                    if (tracker.finalizeUnderway) {
+                        tracker = null;
+                        continue;
+                    }
+                    synchronized (tracker.returnedLocks) {
+                        if (tracker.finalizeUnderway) {
+                            tracker = null;
+                            continue;
+                        }
+                        tracker.finalizeUnderway = true;
+                    }
+                    revisitIterator.remove();
+                    break;
+                }
+                if (tracker == null) {
+                    if (System.nanoTime() >= timeoutAt) return true;
+                    synchronized (finalizerMonitor) {
+                        long waitMs = (timeoutAt - System.nanoTime()) / 2 / MILLION;
+                        if (waitMs < 2) return true;
+
+                        try {
+                            finalizerMonitor.wait(waitMs);
+
+                        } catch (InterruptedException e) { }
+                    }
+                    if (System.nanoTime() >= timeoutAt) return true;
+                    continue;
+                }
+            }
+
+            long time = System.nanoTime();
+            if (time >= timeoutAt) return true;
+            long trackerTimeoutAt = (timeoutAt - time) / remainingTrackers + time;
+
+            logger.debug("Finalizing create locks <K, I> : " + tracker.type);
+            FinalizeResult result = tracker.finalizeCreateLocks(trackerTimeoutAt);
+            logger.debug("Finalized for " + tracker.type + "\n"
+                    + result.count + " finalized\t"
+                    + tracker.comparable.notificationCount + " remaining\t"
+                    + result.instances + " instances");
+
+            remainingTrackers--;
+
+            finalizedCount += result.count;
+            if (!result.success) {
+                addBackToMonitor.add(tracker.comparable);
+            }
+        }
+
+        //long endTime = System.nanoTime();
+
+        finalizerMonitor.write(comparables -> {
+            for (TrackerNeedsFinalizing comparable : addBackToMonitor) {
+                comparables.put(comparable, UNDER_CONSTRUCTION_PLACEHOLDER);
+            }
+            return null;
+        });
+
+        return true;
+
+
+        /*
+        reports[index++] = new FinalizerReport(finalizedCount, endTime - loopStart);
+        totalCount += finalizedCount;
+        activeTime += (endTime - loopStart);
+
+        if (index >= REPORT_ITERATIONS) {
+            logger.debug(getFinalizerReportString(
+                    reports, totalCount, startTime, activeTime, endTime));
+
+            //reset
+            index = 0;
+            totalCount = 0;
+            activeTime = 0;
+            startTime = System.nanoTime();
+        }
+         */
+    }
+
+    private static List<TrackerNeedsFinalizing> getTrackersThatNeedFinalizing() {
+        List<TrackerNeedsFinalizing> needsFinalizing = finalizerMonitor.write(comparables -> {
+            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+            List nf = new ArrayList(comparables.keySet());
+            comparables.clear();
+            return nf;
+        });
+
+        if (!Objects.equals(Thread.currentThread(), finalizer)) {
+            return needsFinalizing;
+        }
+
+        int changedSize = 0;
+        for (TrackerNeedsFinalizing comparable : needsFinalizing) {
+            comparable.countChange = comparable.notificationCount - comparable.countChange;
+            changedSize += comparable.countChange;
+        }
+
+        long addToLoopStart = 0;
+
+        if (changedSize > 0) {
+            long startSleep = System.nanoTime();
+            try {
+                Thread.sleep(changedSize);
+            } catch (InterruptedException e) { }
+
+            long endSleep = System.nanoTime();
+            addToLoopStart = endSleep - startSleep;
+        }
+
+        Collections.sort(needsFinalizing);
+
+        return needsFinalizing;
+    }
+
+
+    /*
     private static String getFinalizerReportString(FinalizerReport[] reports,
                                                    int totalCount,
                                                    long startTime,
@@ -1773,6 +1860,7 @@ public class InstancesTracker<K, I> {
                 + "\n   Total Time \t total: " + totalTime + " \t avg: " + avgTotal
                 + "\n\n" + str;
     }
+     */
 
     static {
         finalizer.setName("InstancesTracker.finalizer");
@@ -1784,88 +1872,103 @@ public class InstancesTracker<K, I> {
     private static class FinalizeResult {
         final boolean success;
         final int count;
-        FinalizeResult(boolean success, int count) {
+        final int instances;
+        FinalizeResult(boolean success, int count, int instances) {
             this.success = success;
             this.count = count;
+            this.instances = instances;
         }
     }
 
-    private Var<List<CreateLock>> returnedLocks = new Var();
-    private Var.Int rlIndex = new Var.Int();
+    private boolean finalizeUnderway = false;
+    private final Var<List<CreateLock>> returnedLocks = new Var();
+    private final Var.Int rlIndex = new Var.Int();
 
     private FinalizeResult finalizeCreateLocks(long timeoutAt) {
-        Var.Int count = new Var.Int();
+        synchronized (returnedLocks) {
+            this.finalizeUnderway = true;
+            Var.Int finalizedCount = new Var.Int();
+            Var.Int instancesSize = new Var.Int();
 
-        try {
-            boolean newList = returnedLocks.value == null;
+            try {
+                boolean newList = returnedLocks.value == null;
 
-            while(true) {
-                if (newList) {
-                    List<CreateLock> allLocks = underConstruction.read(List.class, uc -> new ArrayList(uc.values()));
-                    returnedLocks.value = new ArrayList(allLocks.size());
+                while (true) {
+                    if (newList) {
+                        List<CreateLock> allLocks = underConstruction.read(List.class, uc -> new ArrayList(uc.values()));
+                        returnedLocks.value = new ArrayList(allLocks.size());
 
-                    for (CreateLock lock : allLocks) {
-                        if (lock.stage.ordinal() >= Stage.RETURNED.ordinal()) {
-                            returnedLocks.value.add(lock);
-                        }
-                    }
-                    rlIndex.value = 0;
-
-                    if (System.nanoTime() >= timeoutAt) {
-                        return new FinalizeResult(true, count.value);
-                    }
-                }
-
-                boolean completedList = this.instances.write(Boolean.class, instances ->
-                    this.underConstruction.write(Boolean.class, underConstruction -> {
-                        for (; rlIndex.value < returnedLocks.value.size();
-                                rlIndex.value++) {
-
-                            CreateLock lock = returnedLocks.value.get(rlIndex.value);
-
-                            if (lock.finalizeConstruction(instances, underConstruction)) {
-                                count.value++;
+                        for (CreateLock lock : allLocks) {
+                            if (lock.stage.ordinal() >= Stage.RETURNED.ordinal()) {
+                                returnedLocks.value.add(lock);
                             }
-                            if (System.nanoTime() >= timeoutAt) return false;
                         }
-                        return true;
-                    }));
+                        rlIndex.value = 0;
+                    }
 
-                if (completedList) {
-                    returnedLocks.value = null;
+
+                    boolean completedList = this.instances.write(Boolean.class, instances -> {
+                        try {
+                            return this.underConstruction.write(Boolean.class, underConstruction -> {
+                                for (; rlIndex.value < returnedLocks.value.size();
+                                     rlIndex.value++) {
+
+                                    CreateLock lock = returnedLocks.value.get(rlIndex.value);
+
+                                    if (lock.finalizeConstruction(instances, underConstruction)) {
+                                        finalizedCount.value++;
+                                    }
+                                    if (System.nanoTime() >= timeoutAt) return false;
+                                }
+                                return true;
+                            });
+
+                        } finally {
+                            instancesSize.value = instances.size();
+                        }
+                    });
+
+                    if (completedList) {
+                        returnedLocks.value = null;
+                    }
+
+                    if (completedList && !newList) {
+                        newList = true;
+
+                    } else {
+                        return new FinalizeResult(true, finalizedCount.value, instancesSize.value);
+                    }
                 }
 
-                if (completedList  && !newList) {
-                    newList = true;
+            } catch (Exception e) {
+                logger.error("Error in finalizeCreateLocks for InstancesTracker<"
+                        + this.keyType.getSimpleName() + ", " + this.instType.getSimpleName() + ">", e);
 
-                } else {
-                    return new FinalizeResult(true, count.value);
+                return new FinalizeResult(false, finalizedCount.value, instancesSize.value);
+
+            } finally {
+                this.finalizeUnderway = false;
+                synchronized (finalizerMonitor) {
+                    finalizerMonitor.notify();
                 }
             }
-        } catch (Exception e) {
-            logger.error("Error in finalizeCreateLocks for InstancesTracker<"
-                    + this.keyType + ", " + this.instType + ">");
-            logger.error(e);
-
-            return new FinalizeResult(false, count.value);
         }
-
     }
 
 
 
     private static int counter = 0;
-    private static class TrackerComparable implements Comparable<TrackerComparable> {
+    private static class TrackerNeedsFinalizing implements Comparable<TrackerNeedsFinalizing> {
         private final int id = counter++;
         private int notificationCount = 0;
         private int countChange = 0;
         private final WeakReference<InstancesTracker> ref;
 
-        private TrackerComparable(InstancesTracker tracker) {
+        private TrackerNeedsFinalizing(InstancesTracker tracker) {
             this.ref = new WeakReference<>(tracker);
         }
 
-        public int compareTo(TrackerComparable other) {
+        public int compareTo(TrackerNeedsFinalizing other) {
             if (this.countChange == other.countChange) {
                 return this.id < other.id ? -1 : 1;
 

@@ -32,8 +32,9 @@ public class JobFactory {
     public synchronized Job getNextJob() {
         checkThread();
         Job job = null;
-        synchronized (readyJobs) {
-            while (true) {
+        boolean runInstancesTrackerFinalizer = true;
+        while (true) {
+            synchronized (readyJobs) {
                 for (Iterator<Job> iterator = readyJobs.iterator();
                      iterator.hasNext(); ) {
 
@@ -48,15 +49,20 @@ public class JobFactory {
                 }
                 if (job != null) break;
 
-                try {
-                    readyJobs.wait();
+                if (!runInstancesTrackerFinalizer) {
+                    try {
+                        readyJobs.wait();
 
-                } catch (InterruptedException e) {
-                    if (kill) {
-                        throw new ThreadDeath();
+                    } catch (InterruptedException e) {
+                        if (kill) {
+                            throw new ThreadDeath();
+                        }
                     }
+                    runInstancesTrackerFinalizer = true;
+                    continue;
                 }
             }
+            runInstancesTrackerFinalizer = InstancesTracker.runFinalizer(5 * (long)InstancesTracker.BILLION);
         }
 
         Job j = job;

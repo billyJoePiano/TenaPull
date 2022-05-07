@@ -2,3 +2,13 @@ mysql secure install script
 
 sudo yum install java-17-openjdk-devel
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.3.0.6-2.el8_5.x86_64
+
+/usr/sbin/alternatives --config java
+https://access.redhat.com/documentation/en-us/jboss_enterprise_application_platform/6/html/administration_and_configuration_guide/configure_the_default_jdk_on_red_hat_enterprise_linux
+
+mysql timezone script
+
+mvn clean install
+(...with "-X" switch for debugging)
+
+

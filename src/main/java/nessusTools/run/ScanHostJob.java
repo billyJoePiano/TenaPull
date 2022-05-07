@@ -8,6 +8,7 @@ import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.splunk.*;
 import org.apache.logging.log4j.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.sql.*;
@@ -28,10 +29,21 @@ public class ScanHostJob extends DbManagerJob.Child {
     private List<Vulnerability> vulns;
     private ScanHostResponse response;
     private final HostOutput output = new HostOutput();
+    private final Timestamp scanTimestamp;
 
     public ScanHostJob(ScanResponse scanResponse, ScanHost host) {
         this.scanResponse = scanResponse;
         this.host = host;
+        ScanInfo info = scanResponse.getInfo();
+        if (info != null) {
+            Timestamp scanTimestamp = info.getTimestamp();
+            if (scanTimestamp == null) scanTimestamp = info.getScanEnd();
+            if (scanTimestamp == null) scanTimestamp = info.getScannerEnd();
+            this.scanTimestamp = scanTimestamp;
+
+        } else {
+            this.scanTimestamp = null;
+        }
     }
 
     @Override
@@ -80,14 +92,6 @@ public class ScanHostJob extends DbManagerJob.Child {
             list.add(new HostVulnerabilityOutput(this.scanResponse, this.host, this.response, vuln, this.output));
         }
 
-        ScanInfo info = scanResponse.getInfo();
-        Timestamp scanTimestamp = null;
-        if (info != null) {
-            scanTimestamp = info.getTimestamp();
-            if (scanTimestamp == null) scanTimestamp = info.getScanEnd();
-            if (scanTimestamp == null) scanTimestamp = info.getScannerEnd();
-        }
-
         this.output.setScanTimestamp(scanTimestamp);
         this.output.setVulnerabilities(list);
         this.output.setVulnerabilityTimestamps();
@@ -96,9 +100,15 @@ public class ScanHostJob extends DbManagerJob.Child {
 
     @Override
     protected void output() throws FileNotFoundException, IOException {
-        LocalDateTime now = LocalDateTime.now();
-        String dateStr = formatter.format(now);
+        LocalDateTime useForFilename;
+        if (this.scanTimestamp != null) {
+            useForFilename = this.scanTimestamp.toLocalDateTime();
 
+        } else {
+            useForFilename = LocalDateTime.now();
+        }
+
+        String dateStr = formatter.format(useForFilename);
         Integer hostId = this.host.getHostId();
 
         String filename = OUTPUT_DIR + dateStr + "." + scanResponse.getId()
@@ -108,10 +118,11 @@ public class ScanHostJob extends DbManagerJob.Child {
 
         logger.info("Writing " +  output.size() + " results to " + filename);
 
+        LocalDateTime outputTime = LocalDateTime.now();
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(filename));
         SplunkOutputMapper.get().writeValue(writer, output);
 
-        this.output.setOutputTimestamp(Timestamp.valueOf(now));
+        this.output.setOutputTimestamp(Timestamp.valueOf(outputTime));
 
         this.addDbTask(this::runDbInsert);
     }
@@ -152,5 +163,32 @@ public class ScanHostJob extends DbManagerJob.Child {
         logger.error("Db error", e);
         if (dbErredOnce) return false;
         return dbErredOnce = true;
+    }
+
+    @Override
+    public int compareTo(@NotNull DbManagerJob.Child o) {
+        if (o == this) return 0;
+        if (!(o instanceof ScanHostJob)) return 1;
+        ScanHostJob other = (ScanHostJob)o;
+        if (this.scanTimestamp == null) {
+            if (other.scanTimestamp != null) return 1;
+
+            int myId = this.scanResponse.getId();
+            int theirId = other.scanResponse.getId();
+            if (myId == theirId) return this.hashCode() - other.hashCode();
+            return myId - theirId;
+
+        } else if (other.scanTimestamp == null) {
+            return -1;
+        }
+        long mine = this.scanTimestamp.getTime();
+        long theirs = other.scanTimestamp.getTime();
+        if (mine != theirs) {
+            return mine < theirs ? -1 : 1;
+        }
+        int myId = this.host.getId();
+        int theirId = this.host.getId();
+        if (myId == theirId) return this.hashCode() - other.hashCode();
+        return myId - theirId;
     }
 }

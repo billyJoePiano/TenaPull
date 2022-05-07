@@ -7,6 +7,7 @@ import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.splunk.*;
 import org.apache.logging.log4j.*;
+import org.jetbrains.annotations.*;
 
 import java.sql.*;
 import java.util.*;
@@ -22,10 +23,12 @@ public class ScanJob extends DbManagerJob.Child {
     private final Scan scan;
     private final NessusClient client = new NessusClient();
     private ScanResponse response;
+    private Timestamp scanTimestamp;
     //private Long startWait;
 
     public ScanJob(Scan scan) {
         this.scan = scan;
+        this.scanTimestamp = scan.getLastModificationDate();
     }
 
     @Override
@@ -130,9 +133,10 @@ public class ScanJob extends DbManagerJob.Child {
 
     @Override
     protected void fetch() throws JsonProcessingException {
-        if (this.response == null) {
+        //if (this.response == null) {
+            logger.info("Fetching details for Scan Id " + this.scan.getId());
             this.response = client.fetchJson(ScanResponse.getUrlPath(this.scan.getId()), ScanResponse.class);
-        }
+        //}
     }
 
     @Override
@@ -146,6 +150,7 @@ public class ScanJob extends DbManagerJob.Child {
     }
 
     private void runDbInsert() {
+        logger.info("Saving response details for Scan Id " + this.scan.getId());
         ScanResponse.dao.saveOrUpdate(response);
         List<ScanHost> hosts = this.response.getHosts();
         if (hosts == null) return;
@@ -186,5 +191,32 @@ public class ScanJob extends DbManagerJob.Child {
         logger.error("Db error", e);
         if (dbErredOnce) return false;
         return dbErredOnce = true;
+    }
+
+    @Override
+    public int compareTo(@NotNull DbManagerJob.Child o) {
+        if (o == this) return 0;
+        if (!(o instanceof ScanJob)) return -1;
+        ScanJob other = (ScanJob)o;
+        if (this.scanTimestamp == null) {
+            if (other.scanTimestamp != null) return 1;
+
+            int myId = this.scan.getId();
+            int theirId = other.scan.getId();
+            if (myId == theirId) return this.hashCode() - other.hashCode();
+            return myId - theirId;
+
+        } else if (other.scanTimestamp == null) {
+            return -1;
+        }
+        long mine = this.scanTimestamp.getTime();
+        long theirs = other.scanTimestamp.getTime();
+        if (mine != theirs) {
+            return mine < theirs ? -1 : 1;
+        }
+        int myId = this.scan.getId();
+        int theirId = this.scan.getId();
+        if (myId == theirId) return this.hashCode() - other.hashCode();
+        return myId - theirId;
     }
 }

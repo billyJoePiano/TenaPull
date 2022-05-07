@@ -218,7 +218,8 @@ create table cpe (
 
 create table operating_system (
     id    int auto_increment primary key,
-    value varchar(255) not null unique
+    value longtext not null,
+    _hash varbinary(64) not null unique
 );
 
 create table host_ip (
