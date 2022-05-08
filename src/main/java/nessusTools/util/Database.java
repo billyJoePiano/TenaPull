@@ -101,6 +101,7 @@ public class Database {
 
         } catch (Exception e) {
             logger.error(e);
+            throw new RuntimeException(e);
 
         } finally {
             disconnect();
