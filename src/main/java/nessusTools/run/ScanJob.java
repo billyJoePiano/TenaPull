@@ -7,7 +7,6 @@ import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.splunk.*;
 import org.apache.logging.log4j.*;
-import org.jetbrains.annotations.*;
 
 import java.sql.*;
 import java.util.*;
@@ -201,7 +200,7 @@ public class ScanJob extends DbManagerJob.Child {
     }
 
     @Override
-    public int compareTo(@NotNull DbManagerJob.Child o) {
+    public int compareTo(DbManagerJob.Child o) {
         if (o == this) return 0;
         if (!(o instanceof ScanJob)) return -1;
         ScanJob other = (ScanJob)o;
