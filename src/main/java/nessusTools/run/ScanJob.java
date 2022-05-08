@@ -107,7 +107,7 @@ public class ScanJob extends DbManagerJob.Child {
             }
 
             if (oldTs == null) {
-                this.addToNextDbJobs(new ScanHostJob(old, host));
+                this.addToNextDbJobs(new HostVulnsJob(old, host));
                 continue;
             }
 
@@ -124,7 +124,7 @@ public class ScanJob extends DbManagerJob.Child {
                 }
             }
 
-            this.addToNextDbJobs(new ScanHostJob(old, host));
+            this.addToNextDbJobs(new HostVulnsJob(old, host));
         }
         this.failed();
         return false;
@@ -155,7 +155,7 @@ public class ScanJob extends DbManagerJob.Child {
         if (hosts == null) return;
         for (ScanHost host : this.response.getHosts()) {
             if (host == null) continue;
-            this.addToNextDbJobs(new ScanHostJob(this.response, host));
+            this.addToNextDbJobs(new HostVulnsJob(this.response, host));
         }
     }
 

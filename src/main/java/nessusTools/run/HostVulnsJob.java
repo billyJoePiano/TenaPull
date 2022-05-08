@@ -15,11 +15,11 @@ import java.time.*;
 import java.time.format.*;
 import java.util.*;
 
-public class ScanHostJob extends DbManagerJob.Child {
+public class HostVulnsJob extends DbManagerJob.Child {
     public static final String OUTPUT_DIR = Main.getConfig().getProperty("output.dir");
 
-    private static final Logger logger = LogManager.getLogger(ScanHostJob.class);
-    private static final DateTimeFormatter filenameFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd_HH.M.s")
+    private static final Logger logger = LogManager.getLogger(HostVulnsJob.class);
+    private static final DateTimeFormatter filenameFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd_HH.mm.ss")
             .withZone(TimeZone.getDefault().toZoneId());
 
     private final ScanResponse scanResponse;
@@ -30,7 +30,7 @@ public class ScanHostJob extends DbManagerJob.Child {
     private final HostOutput output = new HostOutput();
     private final Timestamp scanTimestamp;
 
-    public ScanHostJob(ScanResponse scanResponse, ScanHost host) {
+    public HostVulnsJob(ScanResponse scanResponse, ScanHost host) {
         this.scanResponse = scanResponse;
         this.host = host;
         ScanInfo info = scanResponse.getInfo();
@@ -173,8 +173,8 @@ public class ScanHostJob extends DbManagerJob.Child {
     @Override
     public int compareTo(DbManagerJob.Child o) {
         if (o == this) return 0;
-        if (!(o instanceof ScanHostJob)) return 1;
-        ScanHostJob other = (ScanHostJob)o;
+        if (!(o instanceof HostVulnsJob)) return 1;
+        HostVulnsJob other = (HostVulnsJob)o;
         if (this.scanTimestamp == null) {
             if (other.scanTimestamp != null) return 1;
 
