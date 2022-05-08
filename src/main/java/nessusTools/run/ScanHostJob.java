@@ -16,9 +16,9 @@ import java.time.format.*;
 import java.util.*;
 
 public class ScanHostJob extends DbManagerJob.Child {
-    public static final String OUTPUT_DIR = "splunk-output/";
+    public static final String OUTPUT_DIR = Main.getConfig().getProperty("output.dir");
 
-    private static Logger logger = LogManager.getLogger(ScanHostJob.class);
+    private static final Logger logger = LogManager.getLogger(ScanHostJob.class);
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd")
             .withZone(TimeZone.getDefault().toZoneId());
 
