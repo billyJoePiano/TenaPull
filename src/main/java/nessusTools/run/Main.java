@@ -144,6 +144,8 @@ public class Main {
             }
         }
 
+        config.put("db.url", buildDbUrl(config));
+
         if (args.length == 1) {
             return new IndexJob();
         }
@@ -158,5 +160,13 @@ public class Main {
             error = true;
             return null;
         }
+    }
+
+    public static String buildDbUrl(Properties config) {
+        String url = config.getProperty("db.url.protocol") + "://" + config.getProperty("db.url.host");
+        if (config.containsKey("db.url.port")) {
+            url += ":" + config.getProperty("db.url.port");
+        }
+        return url + "/" + config.getProperty("db.url.name");
     }
 }

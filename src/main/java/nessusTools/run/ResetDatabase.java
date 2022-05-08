@@ -13,7 +13,8 @@ public class ResetDatabase extends Job {
 
     public ResetDatabase() {
         System.err.println("WARNING: THIS WILL COMPLETELY RESET THE DATABASE AT ADDRESS '"
-                + Main.getConfig().getProperty("db.url") + "'  TYPE 'YES' TO PROCEED");
+                + Main.getConfig().getProperty("db.url") + "'   ALL DATA WILL BE LOST");
+        System.err.println("TYPE 'YES' TO PROCEED (case-sensitive)");
 
         String in;
         try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {

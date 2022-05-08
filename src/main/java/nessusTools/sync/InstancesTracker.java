@@ -1606,7 +1606,21 @@ public class InstancesTracker<K, I> {
     //private static final int REPORT_ITERATIONS = 1;
     //private static final int RESULT_SAMPLES = 1;
 
-    private static final Thread finalizer = new Thread(() -> {
+    private static final Thread finalizer = new Thread(InstancesTracker::runFinalizerLoop);
+
+    static {
+        finalizer.setName("InstancesTracker.finalizer");
+        finalizer.setDaemon(true);
+        ReadWriteLock.registerAsDisruptable(finalizer);
+        finalizer.start();
+    }
+
+    private static void runFinalizerLoop() {
+        try {
+            Thread.sleep(60000);
+        } catch (InterruptedException e) { }
+
+
         int loops = 0;
         Thread finalizer = Thread.currentThread();
 
@@ -1659,7 +1673,7 @@ public class InstancesTracker<K, I> {
                 logger.warn("Non-exception Throwable Error", e);
             }
         }
-    });
+    }
 
     public static boolean runFinalizer(long maxTimeNs) {
         List<TrackerNeedsFinalizing> needsFinalizing = getTrackersThatNeedFinalizing();
@@ -1863,13 +1877,6 @@ public class InstancesTracker<K, I> {
                 + "\n\n" + str;
     }
      */
-
-    static {
-        finalizer.setName("InstancesTracker.finalizer");
-        finalizer.setDaemon(true);
-        ReadWriteLock.registerAsDisruptable(finalizer);
-        finalizer.start();
-    }
 
     private static class FinalizeResult {
         final boolean success;

@@ -277,57 +277,59 @@ public class JobFactory {
 
     private static void processUnderwayJobs() {
         long start = System.currentTimeMillis();
-        accessors.read(accessors -> {
-            Set<Job> copy;
-            synchronized (underwayJobs) {
-                copy = new LinkedHashSet<>(underwayJobs);
-            }
+        Set<Job> copy;
+        synchronized (underwayJobs) {
+            copy = new LinkedHashSet<>(underwayJobs);
+        }
 
-            for (Iterator<Job> iterator = copy.iterator();
-                 iterator.hasNext(); ) {
+        for (Iterator<Job> iterator = copy.iterator();
+             iterator.hasNext(); ) {
 
-                Job job = iterator.next();
-                boolean remove = false;
-                if (job != null) {
-                    Job.Accessor accessor = accessors.get(job);
-                    if (accessor != null) {
+            Job job = iterator.next();
+            boolean remove = false;
+            boolean removeAccessor = false;
+            if (job != null) {
+                Job.Accessor accessor = accessors.read(a -> a.get(job));
+                if (accessor != null) {
 
-                        if (accessor.getStage() == Job.Stage.DONE) {
-                            remove = true;
-
-                        } else if (accessor.hasException()) {
-                            remove = true;
-                            long tryAtTime = accessor.getTryAtTime();
-                            while (delayedJobs.containsKey(tryAtTime)) {
-                                tryAtTime++;
-                            }
-                            delayedJobs.put(tryAtTime, job);
-                            haveDelayedJobs = true;
-                        }
-
-                    } else {
-                        logger.error("Null accessor for running job!? " + job + " discarding, unable to execute");
+                    if (accessor.getStage() == Job.Stage.DONE) {
                         remove = true;
+                        removeAccessor = true;
+
+                    } else if (accessor.hasException()) {
+                        remove = true;
+                        long tryAtTime = accessor.getTryAtTime();
+                        while (delayedJobs.containsKey(tryAtTime)) {
+                            tryAtTime++;
+                        }
+                        delayedJobs.put(tryAtTime, job);
+                        haveDelayedJobs = true;
                     }
+
                 } else {
-                    logger.error("Null running job!?");
+                    logger.error("Null accessor for running job!? " + job + " discarding, unable to execute");
                     remove = true;
                 }
+            } else {
+                logger.error("Null running job!?");
+                remove = true;
+            }
 
 
-                if (remove) {
-                    synchronized (underwayJobs) {
-                        underwayJobs.remove(job);
-                    }
+            if (remove) {
+                synchronized (underwayJobs) {
+                    underwayJobs.remove(job);
                 }
-
-                if (System.currentTimeMillis() - start
-                        > MAX_NEW_JOB_PROCESSING_TIME_MS) {
-                    break;
+                if (removeAccessor) {
+                    accessors.write(a -> a.remove(job));
                 }
             }
-            return null;
-        });
+
+            if (System.currentTimeMillis() - start
+                    > MAX_NEW_JOB_PROCESSING_TIME_MS) {
+                break;
+            }
+        }
 
 
         synchronized (readyJobs) {

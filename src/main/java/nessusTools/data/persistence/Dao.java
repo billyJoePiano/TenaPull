@@ -8,7 +8,6 @@ import org.hibernate.*;
 import org.hibernate.boot.*;
 import org.hibernate.boot.registry.*;
 
-import org.hibernate.cfg.*;
 import org.hibernate.metamodel.model.domain.spi.EntityTypeDescriptor;
 import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.persister.entity.SingleTableEntityPersister;
@@ -30,9 +29,7 @@ import java.util.*;
 public class Dao<POJO extends DbPojo> {
     private static final Logger staticLogger = LogManager.getLogger(Dao.class);
     private static final Map<Class<DbPojo>, Dao<DbPojo>> classMap = new HashMap();
-
-    private static final SessionFactoryBuilder sessionFactoryBuilder = makeSessionFactoryBuilder();
-    private static final SessionFactory sessionFactory = makeSessionFactory();
+    private static final SessionFactory SESSION_FACTORY;
 
     public static <P extends DbPojo, D extends Dao<P>> D get(Class<P> pojoType) {
         synchronized (Dao.class) {
@@ -40,24 +37,14 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
-    private static SessionFactoryBuilder makeSessionFactoryBuilder() {
+    static {
         Properties config = Main.getConfig();
 
         String username = config.getProperty("db.username");
         String password = config.getProperty("db.password");
         String driver = config.getProperty("db.driver");
         String dialect = config.getProperty("db.dialect");
-
-        String url = config.getProperty("db.url.protocol") + "://" + config.getProperty("db.url.host");
-        if (config.containsKey("db.url.port")) {
-            url += ":" + config.getProperty("db.url.port");
-        }
-        url += "/" + config.getProperty("db.url.name");
-
-        /*Configuration conf = new Configuration();
-        conf.setProperty("hibernate.connection.url", url);
-        conf.setProperty("hibernate.connection.username", username);
-        conf.setProperty("hibernate.connection.password", password);*/
+        String url = config.getProperty("db.url");
 
         try {
             StandardServiceRegistryBuilder ssrb = new StandardServiceRegistryBuilder();
@@ -73,20 +60,10 @@ public class Dao<POJO extends DbPojo> {
             MetadataBuilder mdb = mds.getMetadataBuilder();
             Metadata md = mdb.build();
 
-            return md.getSessionFactoryBuilder();
+            SESSION_FACTORY = md.getSessionFactoryBuilder().build();
 
         } catch (Exception e) {
-            staticLogger.error("Error initializing sessionFactoryBuilder", e);
-            throw new DbException(e, null);
-        }
-    }
-
-    private static SessionFactory makeSessionFactory() {
-        try {
-            return sessionFactoryBuilder.build();
-
-        } catch (Exception e) {
-            staticLogger.error(e);
+            staticLogger.error("Error initializing Hibernate's SessionFactory", e);
             throw new DbException(e, null);
         }
     }
@@ -241,7 +218,7 @@ public class Dao<POJO extends DbPojo> {
     }
 
     protected static class SessionTracker {
-        protected final Session session = sessionFactory.openSession();
+        protected final Session session = SESSION_FACTORY.openSession();
         protected final Thread thread = Thread.currentThread();
         private Transaction transaction;
         protected List<Dao> sharers = new ArrayList();
@@ -694,7 +671,7 @@ public class Dao<POJO extends DbPojo> {
     }
 
     private void makeAccessorMaps() {
-        MetamodelImplementor metamodel = (MetamodelImplementor)  sessionFactory.getMetamodel();
+        MetamodelImplementor metamodel = (MetamodelImplementor)  SESSION_FACTORY.getMetamodel();
         EntityTypeDescriptor<POJO> entity = metamodel.entity(this.getPojoType());
         SingleTableEntityPersister metadata = (SingleTableEntityPersister) metamodel.entityPersister(this.getPojoType());
 
