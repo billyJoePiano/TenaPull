@@ -43,4 +43,9 @@ public abstract class GeneratedIdPojo extends ExtensibleJsonPojo
         //this.setId(o.getId());
         this.setExtraJson(o.getExtraJson());
     }
+
+    @Override
+    public int hashCode() {
+        return this.getClass().hashCode() ^ this.getId();
+    }
 }

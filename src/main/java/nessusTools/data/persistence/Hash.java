@@ -151,19 +151,29 @@ public class Hash implements Comparable<Hash> {
     @Override
     public int hashCode() {
         if (javaHashCode != null) return javaHashCode;
+        else return this.javaHashCode = hashCode(this.bytes);
+    }
+
+    public static int hashCode(String str) {
+        if (str == null) return 0;
+        return hashCode(str.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static int hashCode(byte[] bytes) {
+        if (bytes == null) return 0;
         int result = 0;
-        for (int i = 0; i < this.bytes.length; i += 4) {
+        for (int i = 0; i < bytes.length; i += 4) {
             int mask = 0;
-            int endIndex = Math.min(this.bytes.length - i, 4);
+            int endIndex = Math.min(bytes.length - i, 4);
             for (int j = 0; j < endIndex; j++) {
-                int b = 0xFF & this.bytes[j + i];
+                int b = 0xFF & bytes[j + i];
                 b <<= j * 8;
                 mask |= b;
             }
 
             result ^= mask;
         }
-        return this.javaHashCode = result;
+        return result;
     }
 
     public static boolean equals(byte[] mine, byte[] theirs) {

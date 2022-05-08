@@ -208,4 +208,9 @@ public class ScanRemediation implements MapLookupPojo<ScanRemediation>,
     public void setVulns(Integer vulns) {
         this.vulns = vulns;
     }
+
+    @Override
+    public int hashCode() {
+        return ScanRemediation.class.hashCode() ^ this.id;
+    }
 }

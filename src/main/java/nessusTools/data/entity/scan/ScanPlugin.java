@@ -218,4 +218,8 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
         this.hosts = o.hosts;
     }
 
+    @Override
+    public int hashCode() {
+        return ScanPlugin.class.hashCode() ^ this.id;
+    }
 }

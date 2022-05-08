@@ -1749,9 +1749,11 @@ public class InstancesTracker<K, I> {
 
             //logger.debug("Finalizing create locks <K, I> : " + tracker.type);
             FinalizeResult result = tracker.finalizeCreateLocks(trackerTimeoutAt);
-            /*logger.info(tracker.type + "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
-                    + result.count + "finalized  \t "
-                    + tracker.comparable.notificationCount + " remaining  \t"
+
+            /*String trackerType = tracker.type.toString();
+            trackerType += " ".repeat(Math.max(0, 45 - trackerType.length()));
+            logger.debug(trackerType + " " + result.count + " finalized\t "
+                    + tracker.comparable.notificationCount + " remaining\t"
                     + result.instances + " instances");*/
 
             remainingTrackers--;

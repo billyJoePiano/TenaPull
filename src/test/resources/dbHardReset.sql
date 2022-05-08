@@ -627,7 +627,7 @@ create table scan_plugin (
     plugin_id int null,
     host_count int null,
     -- extra json goes into the plugin lookup
-    __order_for_scan_plugin int null,
+    __order_for_scan_plugin int not null default 0,
     constraint unique (scan_id, plugin_id),
     constraint foreign key (scan_id) references scan_response(id), -- effectively, also scan_response(id) and scan_prioritization(id)
     constraint foreign key (plugin_id) references plugin(id) on update cascade
@@ -650,7 +650,7 @@ create table scan_remediation (
     remediation_id int not null,
     hosts int null,
     vulns int null,
-    __order_for_scan_remediation int null,
+    __order_for_scan_remediation int not null default 0,
     constraint foreign key (scan_id) references scan_response (id) on update cascade,
     constraint foreign key (remediation_id) references remediation_details (id) on update cascade
 );

@@ -1,5 +1,6 @@
 package nessusTools.util;
 
+import nessusTools.run.*;
 import org.apache.ibatis.jdbc.*;
 import org.apache.logging.log4j.*;
 
@@ -22,10 +23,8 @@ public class Database {
 
     private static final Logger logger = LogManager.getLogger(Database.class);
 
-    private static Properties properties = loadProperties();
+    private static Properties config = Main.getConfig();
     private static Connection connection;
-
-    private static final String DATABASE_PROPERTIES_FILE = "/database.properties";
 
     /**
      * Never used
@@ -37,20 +36,6 @@ public class Database {
     /**
      * Load up properties for connection info
      */
-
-    private static Properties loadProperties() {
-        properties = new Properties();
-        try {
-            properties.load (Database.class.getResourceAsStream(DATABASE_PROPERTIES_FILE));
-
-        } catch (IOException ioe) {
-            logger.error("Database.loadProperties()...Cannot load the properties file", ioe);
-        } catch (Exception e) {
-            logger.error("Database.loadProperties()...", e);
-        }
-
-        return properties;
-    }
 
     /**
      * Gets connection.
@@ -71,13 +56,13 @@ public class Database {
             return;
 
         try {
-            Class.forName(properties.getProperty("driver"));
+            Class.forName(config.getProperty("db.driver"));
         } catch (ClassNotFoundException e) {
             throw new Exception("Database.connect()... Error: MySQL Driver not found");
         }
 
-        String url = properties.getProperty("url");
-        connection = DriverManager.getConnection(url, properties.getProperty("username"),  properties.getProperty("password"));
+        String url = config.getProperty("db.url");
+        connection = DriverManager.getConnection(url, config.getProperty("db.username"),  config.getProperty("db.password"));
     }
 
     /**
@@ -107,7 +92,7 @@ public class Database {
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
 
-            Class.forName(properties.getProperty("driver"));
+            Class.forName(config.getProperty("db.driver"));
             connect();
 
             ScriptRunner runner = new ScriptRunner(getConnection());

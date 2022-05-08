@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import com.fasterxml.jackson.databind.node.*;
+import nessusTools.data.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.NaturalId;
 
@@ -80,7 +81,7 @@ public abstract class SimpleStringLookupPojo<POJO extends SimpleStringLookupPojo
 
     @Override
     public int hashCode() {
-        return this.value != null ? this.value.hashCode() : 0;
+        return Hash.hashCode(this.value);
     }
 
     public int compareTo(POJO other) {

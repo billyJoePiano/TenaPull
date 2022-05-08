@@ -63,3 +63,4 @@ hibernate.cfg.xml
 /src/test/resources/logs/*
 ScanInfo.json
 database.properties
+*.properties

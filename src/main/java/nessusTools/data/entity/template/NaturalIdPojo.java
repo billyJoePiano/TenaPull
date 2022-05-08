@@ -40,4 +40,9 @@ public abstract class NaturalIdPojo extends ExtensibleJsonPojo
         this.setId(o.getId());
         this.setExtraJson(o.getExtraJson());
     }
+
+    @Override
+    public int hashCode() {
+        return this.getClass().hashCode() ^ this.getId();
+    }
 }

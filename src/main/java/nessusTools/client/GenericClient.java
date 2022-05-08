@@ -18,25 +18,6 @@ public abstract class GenericClient {
 
     private String response;
 
-    /**
-     * Loads a properties file into a Properties instance and returns it.
-     *
-     * @param propertiesFilePath a path to a file on the java classpath list
-     * @return a populated Properties instance or an empty Properties instance if
-     * the file path was not found.
-     */
-    public static Properties loadProperties(String propertiesFilePath) {
-        Properties properties = new Properties();
-        try {
-            properties.load(new FileReader(propertiesFilePath));
-
-        } catch (Exception e) {
-            logger.error("Cannot load the properties file " + propertiesFilePath, e);
-        }
-
-        return properties;
-    }
-
     public GenericClient(boolean acceptAnySSL) {
         if (acceptAnySSL) {
             this.client = AcceptAnySSL.makeClient();

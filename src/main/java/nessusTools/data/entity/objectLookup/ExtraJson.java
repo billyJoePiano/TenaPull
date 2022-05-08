@@ -71,6 +71,10 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         this.value = new JsonMap(jsonStr);
     }
 
+    public int hashCode() {
+        return this.get_hash().hashCode();
+    }
+
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;

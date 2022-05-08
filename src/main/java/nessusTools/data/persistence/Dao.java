@@ -2,11 +2,13 @@ package nessusTools.data.persistence;
 
 import com.sun.istack.*;
 import nessusTools.data.entity.template.DbPojo;
+import nessusTools.run.*;
 import org.apache.logging.log4j.*;
 import org.hibernate.*;
 import org.hibernate.boot.*;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.boot.registry.*;
 
+import org.hibernate.cfg.*;
 import org.hibernate.metamodel.model.domain.spi.EntityTypeDescriptor;
 import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.persister.entity.SingleTableEntityPersister;
@@ -28,6 +30,7 @@ import java.util.*;
 public class Dao<POJO extends DbPojo> {
     private static final Logger staticLogger = LogManager.getLogger(Dao.class);
     private static final Map<Class<DbPojo>, Dao<DbPojo>> classMap = new HashMap();
+
     private static final SessionFactoryBuilder sessionFactoryBuilder = makeSessionFactoryBuilder();
     private static final SessionFactory sessionFactory = makeSessionFactory();
 
@@ -38,13 +41,38 @@ public class Dao<POJO extends DbPojo> {
     }
 
     private static SessionFactoryBuilder makeSessionFactoryBuilder() {
+        Properties config = Main.getConfig();
+
+        String driver = config.getProperty("db.driver");
+        String dialect = config.getProperty("db.dialect");
+        String url = config.getProperty("db.url");
+        String username = config.getProperty("db.username");
+        String password = config.getProperty("db.password");
+
+        /*Configuration conf = new Configuration();
+        conf.setProperty("hibernate.connection.url", url);
+        conf.setProperty("hibernate.connection.username", username);
+        conf.setProperty("hibernate.connection.password", password);*/
+
         try {
-            return (new MetadataSources(new StandardServiceRegistryBuilder().configure().build()))
-                    .getMetadataBuilder().build().getSessionFactoryBuilder();
+            StandardServiceRegistryBuilder ssrb = new StandardServiceRegistryBuilder();
+            ssrb.applySetting("hibernate.connection.driver_class", driver);
+            ssrb.applySetting("hibernate.dialect", dialect);
+            ssrb.applySetting("hibernate.connection.url", url);
+            ssrb.applySetting("hibernate.connection.username", username);
+            ssrb.applySetting("hibernate.connection.password", password);
+
+            ssrb = ssrb.configure();
+            StandardServiceRegistry ssr = ssrb.build();
+            MetadataSources mds = new MetadataSources(ssr);
+            MetadataBuilder mdb = mds.getMetadataBuilder();
+            Metadata md = mdb.build();
+
+            return md.getSessionFactoryBuilder();
 
         } catch (Exception e) {
-            staticLogger.error(e);
-            throw new IllegalStateException(e);
+            staticLogger.error("Error initializing sessionFactoryBuilder", e);
+            throw new DbException(e, null);
         }
     }
 
@@ -54,7 +82,7 @@ public class Dao<POJO extends DbPojo> {
 
         } catch (Exception e) {
             staticLogger.error(e);
-            throw new IllegalStateException(e);
+            throw new DbException(e, null);
         }
     }
 
@@ -276,22 +304,22 @@ public class Dao<POJO extends DbPojo> {
             return this.transaction;
         }
 
-        protected void failed(Throwable e, Dao dao) throws LookupException {
-            if (this.sharers != null && this.sharers.size() > 1) {
-                throw new LookupException(e, dao.pojoType);
-            }
+        protected void failed(Throwable e, Dao dao) throws DbException {
+            if (this.transaction != null
+                    && (this.sharers == null || this.sharers.size() <= 1)) {
 
-            if (this.transaction != null) {
                 try {
                     Transaction transaction = this.transaction;
                     this.transaction = null;
                     transaction.rollback();
 
                 } catch (Exception e2) {
-                    staticLogger.error(e2);
+                    dao.logger.error(e2);
                 }
             }
+            throw new DbException(e, dao.pojoType);
         }
+
     }
 
 

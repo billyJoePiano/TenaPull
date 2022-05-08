@@ -63,4 +63,8 @@ public abstract class HashLookupTemplate<POJO extends HashLookupTemplate<POJO>>
         super.__prepare();
         if (this._hash == null) this.get_hash();
     }
+
+    public int hashCode() {
+        return this.get_hash().hashCode();
+    }
 }

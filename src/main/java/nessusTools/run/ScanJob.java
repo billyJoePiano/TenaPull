@@ -160,6 +160,8 @@ public class ScanJob extends DbManagerJob.Child {
         }
     }
 
+    private int fetchCount = 0;
+
     @Override
     protected boolean exceptionHandler(Exception e, Stage stage) {
         switch (stage) {
@@ -168,6 +170,11 @@ public class ScanJob extends DbManagerJob.Child {
             case FETCH:
                 logger.error("Error processing fetching scan response id "
                         + scan.getId() + "\n" + client.getResponse(), e);
+
+                if (fetchCount++ <= 2) {
+                    this.tryAgainIn(120000);
+                    return true;
+                }
                 break;
 
             case PROCESS:

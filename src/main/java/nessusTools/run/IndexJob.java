@@ -23,6 +23,7 @@ public class IndexJob extends Job {
 
     @Override
     protected void fetch() throws JsonProcessingException {
+        logger.info("Fetching scan index");
         response = client.fetchJson(IndexResponse.pathFor(), IndexResponse.class);
     }
 

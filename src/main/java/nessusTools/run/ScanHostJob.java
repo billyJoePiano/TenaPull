@@ -132,6 +132,8 @@ public class ScanHostJob extends DbManagerJob.Child {
         HostOutput.dao.saveOrUpdate(this.output);
     }
 
+    private int fetchCount = 0;
+
     @Override
     protected boolean exceptionHandler(Exception e, Stage stage) {
         switch (stage) {
@@ -140,6 +142,10 @@ public class ScanHostJob extends DbManagerJob.Child {
             case FETCH:
                 logger.error("Error fetching scan host response id "
                         + host.getId() + "\n" + client.getResponse(), e);
+                if (fetchCount++ <= 2) {
+                    this.tryAgainIn(120000);
+                    return true;
+                }
                 break;
 
             case PROCESS:
@@ -186,9 +192,11 @@ public class ScanHostJob extends DbManagerJob.Child {
         if (mine != theirs) {
             return mine < theirs ? -1 : 1;
         }
+
         int myId = this.host.getId();
-        int theirId = this.host.getId();
-        if (myId == theirId) return this.hashCode() - other.hashCode();
-        return myId - theirId;
+        int theirId = other.host.getId();
+
+        if (myId != theirId) return myId - theirId;
+        return this.hashCode() - other.hashCode();
     }
 }

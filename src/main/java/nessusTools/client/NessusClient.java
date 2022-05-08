@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
+import nessusTools.run.*;
 import org.apache.logging.log4j.*;
 
 import java.io.*;
@@ -11,10 +12,9 @@ import java.util.*;
 
 
 public class NessusClient extends GenericClient {
-    public static final String PROPERTIES_FILE = "nessus-api.properties";
     private static final Logger logger = LogManager.getLogger(NessusClient.class);
 
-    private static final Properties properties = loadProperties();
+    private static final Properties properties = Main.getConfig();
 
     public static final String API_PROTOCOL = properties.getProperty("api.url.protocol", "https");
     public static final String API_HOST = properties.getProperty("api.url.host", "localhost");
@@ -30,20 +30,6 @@ public class NessusClient extends GenericClient {
     private static final String API_KEY_HEADER_KEY = "X-ApiKeys";
 
     private static final Map<String, String> API_HEADERS = Map.of(API_KEY_HEADER_KEY, API_FULL_KEY);
-
-    private static Properties loadProperties() {
-        Properties properties = new Properties();
-        try {
-            properties.load(new FileReader(PROPERTIES_FILE));
-
-        } catch (IOException ioe) {
-            logger.error("NessusClient.loadProperties()...Cannot load the properties file", ioe);
-        } catch (Exception e) {
-            logger.error("NessusClient.loadProperties()...", e);
-        }
-
-        return properties;
-    }
 
 
     public NessusClient() {

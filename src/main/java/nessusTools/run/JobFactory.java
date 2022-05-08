@@ -277,7 +277,7 @@ public class JobFactory {
 
     private static void processUnderwayJobs() {
         long start = System.currentTimeMillis();
-        accessors.read(accessors ->{
+        accessors.read(accessors -> {
             Set<Job> copy;
             synchronized (underwayJobs) {
                 copy = new LinkedHashSet<>(underwayJobs);

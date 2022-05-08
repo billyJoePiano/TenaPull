@@ -2,6 +2,7 @@ package nessusTools.run;
 
 import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.objectLookup.*;
+import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.data.persistence.*;
 import nessusTools.sync.*;
@@ -16,18 +17,25 @@ public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
     private static final Thread main = Thread.currentThread();
 
+    private static boolean error = false;
+
+    private static final Properties config = new Properties();
+
+    private static final List<String> EXPECTED_CONFIGS = List.of("output.dir", "api.url.protocol", "api.url.host",
+            "api.key.access", "api.key.secret", "db.url", "db.username", "db.password", "db.driver", "db.dialect");
+
+    private static final Map<String, Class<? extends Job>> ACTION_ARGS = Map.of("resetDb", ResetDatabase.class);
 
     private Main() { } //never instantiated ... static only
 
     public static void main(String[] args) {
-        //new Thread(Main::checkHashes).start();
-
-        StackTracePrinter.startThread(20 * 60 * 1000);
-        StackTracePrinter.startThread(60 * 60 * 1000);
-
-        Var<JobFactory.Init> init = new Var();
-        JobFactory.init(init);
-        init.value.runJobsLoop(new IndexJob());
+        Job seed = loadConfig(args);
+        if (seed != null) {
+            Var<JobFactory.Init> init = new Var();
+            JobFactory.init(init);
+            init.value.runJobsLoop(seed);
+        }
+        System.exit(error ? -1 : 0);
     }
 
     public static boolean isMain() {
@@ -38,49 +46,115 @@ public class Main {
         return Objects.equals(main, thread);
     }
 
-    private static void checkHashes() {
+    public static void markErrorStatus() {
+        error = true;
+    }
+
+    public static boolean getErrorStatus() {
+        return error;
+    }
+
+    public static Properties getConfig() {
+        return (Properties) config.clone();
+    }
+
+    private static Job loadConfig(String[] args) {
+        if (args == null || args.length < 1 || args[0] == null || args[0].length() < 1) {
+            logger.error("No configuration file specified on command line argument");
+            error = true;
+            return null;
+        }
+
+        if (args.length > 1 && !ACTION_ARGS.containsKey(args[1])) {
+            logger.error("Unrecognized action argument: '" + args[1] + "'");
+            error = true;
+            return null;
+        }
+
+        if (args[0].length() <= 11
+                || !Objects.equals(args[0].substring(args[0].length() - 11), ".properties")) {
+
+            args[0] += ".properties";
+        }
+
+        ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+        InputStream inputStream = classloader.getResourceAsStream(args[0]);
+        if (inputStream == null) {
+            logger.error("Could not find configuration file: '" + args[0] + "'");
+            error = true;
+            return null;
+        }
+
         try {
-            Thread.sleep(20 * 60 * 1000);
-        } catch (InterruptedException e) { }
+            config.load(inputStream);
 
-        List<Class<? extends HashLookupPojo>> hashTypes = List.of(ExtraJson.class, PluginRefInformation.class, PluginDescription.class, PluginSolution.class);
-        for (Class<? extends HashLookupPojo> type : hashTypes) {
-            List<HashLookupPojo> list;
-            StringHashLookupDao strDao = (StringHashLookupDao) StringHashLookupDao.get(type);
+        } catch (Exception e) {
+            logger.error("Error loading configurations from file " + args[0], e);
+            error = true;
+            return null;
+        }
 
-            if (strDao != null) {
-                list = strDao.getAll();
-            } else {
-                HashLookupDao dao = (HashLookupDao) HashLookupDao.get(type);
-                list = dao.getAll();
+        List<String> missing = new ArrayList();
+        for (String key : EXPECTED_CONFIGS) {
+            if (!config.containsKey(key)) {
+                missing.add(key);
             }
-
-            System.out.println();
-            System.out.println("############################################################");
-            System.out.println(type);
-            System.out.println("############################################################");
-            System.out.println();
-
-            checkHashes(list);
         }
 
-    }
+        if (missing.size() > 0) {
+            String missingProps = missing.toString();
+            missingProps = missingProps.substring(1, missingProps.length() - 1); //remove square brackets
 
-    private static void checkHashes(List<HashLookupPojo> list) {
-        for (HashLookupPojo ej : list) {
-            String str = ej.toString();
-            Hash hash = ej.get_hash();
-            Hash hash2 = new Hash(str);
-            PrintStream stream = Objects.equals(hash, hash2) ? System.out : System.err;
-
-            stream.println(ej.getId() + "\t'" + str + "'  (" + str.length() + ")");
-            stream.println(hash);
-            stream.println(hash2);
-            stream.println();
+            logger.error("Your configuration file '" + args[0]
+                    + "' is missing the following required propert"
+                    + (missing.size() > 1 ? "ies: " : "y: ")
+                    + missing.stream().reduce("",
+                            (str, str2) -> str + ", '" + str2 + "'")
+                            .substring(2));
+            error = true;
+            return null;
         }
-        System.out.println();
-        System.out.println();
-        System.out.println();
-    }
 
+        String dir = config.getProperty("output.dir");
+
+        int length;
+        if (dir == null || (length = dir.length()) <= 0) {
+            logger.error("Configuration key 'output.dir' cannot be empty");
+            error = true;
+            return null;
+
+        } else if (!Objects.equals(dir.substring(length - 1, length), "/")) {
+            config.put("output.dir", dir += "/");
+        }
+
+        File directory = new File(dir);
+        if (!directory.exists()) {
+            try {
+                directory.mkdir();
+
+            } catch (Exception e) {
+                logger.error("Error while trying to make directory '" + dir + "'", e);
+                error = true;
+                return null;
+            }
+        }
+
+        logger.info("Checking database connection...");
+        Timezone.dao.getById(1); //force DB to initialize right away, using smallest table that likely has a value
+
+        if (args.length == 1) {
+            return new IndexJob();
+        }
+
+        Class<? extends Job> jobType = ACTION_ARGS.get(args[1]);
+
+        try {
+            return jobType.getDeclaredConstructor().newInstance();
+
+        } catch (Exception e) {
+            logger.error("Error while trying to construct job of type " + jobType, e);
+            error = true;
+            return null;
+        }
+    }
 }
