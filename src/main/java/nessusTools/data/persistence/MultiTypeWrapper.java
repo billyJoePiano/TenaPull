@@ -415,6 +415,14 @@ public final class MultiTypeWrapper {
         return this.object;
     }
 
+    private Integer javaHashCode = null;
+
+    @Override
+    public int hashCode() {
+        if (javaHashCode != null) return javaHashCode;
+        else return javaHashCode = Hash.hashCode(this.dbString);
+    }
+
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;

@@ -41,13 +41,6 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
     @Convert(converter = ExtraJson.Converter.class)
     private JsonMap value;
 
-    @NaturalId
-    @Access(AccessType.PROPERTY)
-    @Column(name = "_hash")
-    @Convert(converter = Hash.Converter.class)
-    @JsonIgnore
-    private Hash _hash;
-
     public ExtraJson() {
         this.value = new JsonMap();
     }
@@ -71,8 +64,24 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         this.value = new JsonMap(jsonStr);
     }
 
+    @NaturalId
+    @Access(AccessType.PROPERTY)
+    @Column(name = "_hash")
+    @Convert(converter = Hash.Converter.class)
+    @JsonIgnore
+    public Hash get_hash() {
+        return this.value.get_hash();
+    }
+
+    @JsonIgnore
+    @Override
+    public void set_hash(Hash _hash) {
+        this.value.set_hash(_hash);
+    }
+
+
     public int hashCode() {
-        return this.get_hash().hashCode();
+        return this.value.hashCode();
     }
 
     public boolean equals(Object o) {
@@ -125,33 +134,36 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
 
     public void setValue(JsonMap map) throws NullPointerException {
         if (map == null) throw new NullPointerException();
+        if (this.value == map) return;
+        if (this.value._hash != null) {
+            if (map._hash != null) {
+                if (!Objects.equals(this.value._hash, map._hash)) {
+                    this.value._hash = null;
+                    map._hash = null;
+                }
+
+            } else if (this.value.map.isEmpty() || Objects.equals(this.value.map, map.map)) {
+                // isEmpty suggests that this is a brand new instance, and the '_hash' field
+                // was set by Hibernate before the 'value' field was
+                map._hash = this.value._hash;
+
+            } else {
+                this.value._hash = null;
+                map._hash = null;
+            }
+        } else if (map._hash != null) {
+            map._hash = null;
+        }
+
         this.value = map;
     }
 
-    @JsonIgnore
-    @Override
-    public Hash get_hash() {
-        if (this._hash == null) {
-            this._hash = new Hash(this.toString());
-        }
-        return this._hash;
-    }
-
-    @JsonIgnore
-    @Override
-    public void set_hash(Hash hash) throws IllegalStateException {
-        if (this._hash != null && !Objects.equals(this._hash, hash)) {
-            throw new IllegalStateException("Cannot alter the hash of a HashLookup (" +
-                    this.getClass() +") after it has been set!");
-        }
-        this._hash = hash;
-    }
 
     @Transient
     @JsonIgnore
     @Override
     public boolean _isHashCalculated() {
-        return this._hash != null;
+        return this.value._hash != null;
     }
 
     @Transient
@@ -247,6 +259,38 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
                         + escapeString(e.toString())
                         + ",\n}";
             }
+        }
+
+        public boolean equals(Object o) {
+            if (o == null) return false;
+            if (o == this) return true;
+            if (!Objects.equals(this.getClass(), o.getClass())) {
+                return false;
+            }
+
+            JsonMap other = (JsonMap) o;
+            return Objects.equals(this.map, other.map);
+        }
+
+        private Hash _hash;
+
+        public Hash get_hash() {
+            if (this._hash == null) {
+                this._hash = new Hash(this.toString());
+            }
+            return this._hash;
+        }
+
+        public void set_hash(Hash hash) throws IllegalStateException {
+            if (this._hash != null && !Objects.equals(this._hash, hash)) {
+                throw new IllegalStateException("Cannot alter the hash of a HashLookup (" +
+                        this.getClass() +") after it has been set!");
+            }
+            this._hash = hash;
+        }
+
+        public int hashCode() {
+            return this.get_hash().hashCode();
         }
     }
 
