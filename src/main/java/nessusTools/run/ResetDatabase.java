@@ -65,6 +65,7 @@ public class ResetDatabase extends Job {
     @Override
     protected boolean exceptionHandler(Exception e, Stage stage) {
         e.printStackTrace();
+        this.failed();
         return false;
     }
 }
