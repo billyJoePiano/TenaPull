@@ -43,11 +43,16 @@ public class Dao<POJO extends DbPojo> {
     private static SessionFactoryBuilder makeSessionFactoryBuilder() {
         Properties config = Main.getConfig();
 
-        String driver = config.getProperty("db.driver");
-        String dialect = config.getProperty("db.dialect");
-        String url = config.getProperty("db.url");
         String username = config.getProperty("db.username");
         String password = config.getProperty("db.password");
+        String driver = config.getProperty("db.driver");
+        String dialect = config.getProperty("db.dialect");
+
+        String url = config.getProperty("db.url.protocol") + "://" + config.getProperty("db.url.host");
+        if (config.containsKey("db.url.port")) {
+            url += ":" + config.getProperty("db.url.port");
+        }
+        url += "/" + config.getProperty("db.url.name");
 
         /*Configuration conf = new Configuration();
         conf.setProperty("hibernate.connection.url", url);

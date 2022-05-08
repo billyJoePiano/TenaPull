@@ -21,8 +21,10 @@ public class Main {
 
     private static final Properties config = new Properties();
 
-    private static final List<String> EXPECTED_CONFIGS = List.of("output.dir", "api.url.protocol", "api.url.host",
-            "api.key.access", "api.key.secret", "db.url", "db.username", "db.password", "db.driver", "db.dialect");
+    private static final List<String> EXPECTED_CONFIGS = List.of("output.dir",
+            "api.url.protocol", "api.url.host", "api.key.access", "api.key.secret",
+            "db.url.protocol", "db.url.host", "db.url.name", "db.driver", "db.dialect",
+            "db.username", "db.password");
 
     private static final Map<String, Class<? extends Job>> ACTION_ARGS =
             Map.of("resetDb", ResetDatabase.class,
