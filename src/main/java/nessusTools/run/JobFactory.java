@@ -109,7 +109,7 @@ public class JobFactory {
     private static final Set<Job> newJobs = new LinkedHashSet<>();
 
     private static final ReadWriteLock<Map<Job, Job.Accessor>, Job.Accessor>
-            accessors = ReadWriteLock.forMap(new WeakHashMap<>());
+            accessors = ReadWriteLock.forMap(new TreeMap<>());
 
     private static final Map<Long, Job> delayedJobs = new TreeMap<>();
     private static final Set<Job> readyJobs = new LinkedHashSet<>();
