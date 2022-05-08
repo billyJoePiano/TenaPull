@@ -6,8 +6,10 @@ import java.util.*;
 
 public class DbManagerJob extends Job {
     private static final Logger logger = LogManager.getLogger(DbManagerJob.class);
-    public static int NUM_HELPERS = 1;
-    public static int MAX_JOBS_TASKS = 64;
+    public static final int NUM_HELPERS = 1;
+    public static final int MAX_JOBS_TASKS = 64;
+    public static final int MAX_EXCEPTIONS = 32;
+    public static final long WAIT_FOR_CHILD_JOB_TIMEOUT_MS = 1800000; //30 minutes in ms
 
     private final String name;
     private String nameForNext;
@@ -43,10 +45,20 @@ public class DbManagerJob extends Job {
     @Override
     protected void fetch() {
         logger.info("'" + this.name + "' starting");
+        long start = System.currentTimeMillis();
         while (true) {
             synchronized (this.monitor) {
                 synchronized (this.newChildJobs) {
                     if (this.newChildJobs.size() > 0) return;
+
+                    if (System.currentTimeMillis() - start
+                            >= WAIT_FOR_CHILD_JOB_TIMEOUT_MS) {
+
+                        logger.error(this.name + " timed out waiting for child jobs ... exiting");
+
+                        this.failed();
+                        return;
+                    }
                 }
 
                 try {
@@ -54,8 +66,6 @@ public class DbManagerJob extends Job {
                 } catch (InterruptedException e) { }
             }
         }
-
-
     }
 
     @Override
@@ -65,22 +75,25 @@ public class DbManagerJob extends Job {
 
         } while (this.processLoop(this));
 
+
+        //Wait for helper(s) to finish
+        waitForHelpersToExit();
+
         this.done = true;
     }
 
     protected boolean processLoop(Job runningJob) throws Exception {
         boolean dbTask;
         if (runningJob != this) {
-            dbTask = this.processNextDbTask();
-            if (dbTask) return true;
-        } else {
-            dbTask = false;
+            if (this.processNextDbTask()) return true;
         }
 
         synchronized (this.monitor) {
+            if (this.exceptionCount > MAX_EXCEPTIONS) return false;
+
             this.processNewChildJobs(runningJob);
             boolean childrenRunning = this.checkStatusOfChildren();
-            if (dbTask) return true;
+
             synchronized (this.dbTasks) {
                 if (this.dbTasks.size() > 0) return true;
             }
@@ -98,6 +111,12 @@ public class DbManagerJob extends Job {
     }
 
     private void checkHelperJobs() {
+        synchronized (this.monitor) {
+            if (this.exceptionCount > MAX_EXCEPTIONS) {
+                this.failed();
+                return;
+            }
+        }
         for (ListIterator<Helper> iterator = this.helpers.listIterator();
                 iterator.hasNext();) {
 
@@ -112,7 +131,30 @@ public class DbManagerJob extends Job {
             }
         }
         while (this.helpers.size() < NUM_HELPERS) {
-            this.helpers.add(new Helper());
+            synchronized (this.dbTasks) {
+                if (this.dbTasks.size() <= 0) break;
+                this.helpers.add(new Helper());
+            }
+        }
+    }
+
+    private void waitForHelpersToExit() {
+        synchronized (this.monitor) {
+            while (true) {
+                checkHelperJobs();
+                if (this.helpers.size() <= 0) break;
+
+                Helper helper = helpers.get(0);
+                if (helper == null || helper.getStage() == Stage.DONE) {
+                    this.helpers.remove(0);
+                    continue;
+                }
+
+                try {
+                    this.monitor.wait(JobFactory.MAX_MAIN_WAIT_TIME);
+
+                } catch (InterruptedException e) { }
+            }
         }
     }
 
@@ -189,6 +231,15 @@ public class DbManagerJob extends Job {
             task.run();
 
         } catch (Exception e) {
+            synchronized (this.monitor) {
+                if (++this.exceptionCount > MAX_EXCEPTIONS) {
+                    synchronized (this.dbTasks) {
+                        this.dbTasks.clear();
+                    }
+                    return false;
+                }
+            }
+
             if (child != null && child.dbExceptionHandler(e)) {
                 this.addDbTask(task, child);
             }
@@ -214,15 +265,19 @@ public class DbManagerJob extends Job {
         @Override
         protected void process() throws Exception {
             while (DbManagerJob.this.processLoop(this)) { }
-            this.done = true;
         }
 
         @Override
-        protected void output() throws Exception { }
+        protected void output() throws Exception {
+            synchronized (DbManagerJob.this.monitor) {
+                this.done = true;
+                DbManagerJob.this.monitor.notifyAll();
+            }
+        }
 
         @Override
         protected boolean exceptionHandler(Exception e, Stage stage) {
-            return DbManagerJob.this.exceptionHandler(e, stage);
+            return DbManagerJob.this.exceptionHandler(e, stage, this);
         }
     }
 
@@ -244,9 +299,26 @@ public class DbManagerJob extends Job {
         return stillRunning;
     }
 
+    private int exceptionCount = 0;
+
     @Override
-    protected boolean exceptionHandler(Exception e, Stage stage) {
+    protected boolean exceptionHandler (Exception e, Stage stage) {
+        return exceptionHandler(e, stage, this);
+    }
+
+    protected boolean exceptionHandler(Exception e, Stage stage, Job runningJob) {
         logger.error("Exception in DbManagerJob", e);
+        synchronized (this.monitor) {
+            if (++this.exceptionCount > MAX_EXCEPTIONS) {
+                logger.fatal("EXCESSIVE NUMBER OF EXCEPTIONS, GIVING UP");
+                synchronized (this.dbTasks) {
+                    this.dbTasks.clear();
+                }
+                runningJob.failed();
+                return false;
+            }
+        }
+
         this.tryAgainIn(0);
         return true;
     }

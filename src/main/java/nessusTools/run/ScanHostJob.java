@@ -19,7 +19,7 @@ public class ScanHostJob extends DbManagerJob.Child {
     public static final String OUTPUT_DIR = Main.getConfig().getProperty("output.dir");
 
     private static final Logger logger = LogManager.getLogger(ScanHostJob.class);
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd")
+    private static final DateTimeFormatter filenameFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd_HH.M.s")
             .withZone(TimeZone.getDefault().toZoneId());
 
     private final ScanResponse scanResponse;
@@ -107,11 +107,11 @@ public class ScanHostJob extends DbManagerJob.Child {
             useForFilename = LocalDateTime.now();
         }
 
-        String dateStr = formatter.format(useForFilename);
+        String timestampStr = filenameFormatter.format(useForFilename);
         Integer hostId = this.host.getHostId();
 
-        String filename = OUTPUT_DIR + dateStr + "." + scanResponse.getId()
-                + "." + hostId + ".json";
+        String filename = OUTPUT_DIR + timestampStr + "_" + scanResponse.getId()
+                + "_" + hostId + ".json";
 
         this.output.setFilename(filename);
 

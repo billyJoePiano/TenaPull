@@ -9,7 +9,7 @@ import java.util.*;
 public class JobFactory {
     public static final long MAX_NEW_JOB_PROCESSING_TIME_MS = 1000;
     public static final int NUM_WORKER_THREADS = 10;
-    public static final long MAX_MAIN_WAIT_TIME = 300000;
+    public static final long MAX_MAIN_WAIT_TIME = 60000; // 1 minute in ms
 
 
     private final WorkerThread thread;
