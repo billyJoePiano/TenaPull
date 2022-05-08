@@ -24,7 +24,10 @@ public class Main {
     private static final List<String> EXPECTED_CONFIGS = List.of("output.dir", "api.url.protocol", "api.url.host",
             "api.key.access", "api.key.secret", "db.url", "db.username", "db.password", "db.driver", "db.dialect");
 
-    private static final Map<String, Class<? extends Job>> ACTION_ARGS = Map.of("resetDb", ResetDatabase.class);
+    private static final Map<String, Class<? extends Job>> ACTION_ARGS =
+            Map.of("resetDb", ResetDatabase.class,
+                    "dbReset", ResetDatabase.class,
+                    "reset", ResetDatabase.class);
 
     private Main() { } //never instantiated ... static only
 
@@ -138,9 +141,6 @@ public class Main {
                 return null;
             }
         }
-
-        logger.info("Checking database connection...");
-        Timezone.dao.getById(1); //force DB to initialize right away, using smallest table that likely has a value
 
         if (args.length == 1) {
             return new IndexJob();

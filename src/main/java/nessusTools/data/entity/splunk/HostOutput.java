@@ -174,6 +174,11 @@ public class HostOutput implements DbPojo {
 
     }
 
+    @Override
+    public int hashCode() {
+        return HostOutput.class.hashCode() ^ this.id;
+    }
+
     public String toString() {
         try {
             return this.toJsonString();

@@ -2,6 +2,7 @@ package nessusTools.run;
 
 import com.fasterxml.jackson.core.*;
 import nessusTools.client.*;
+import nessusTools.data.entity.lookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import org.apache.logging.log4j.*;
@@ -15,6 +16,11 @@ public class IndexJob extends Job {
 
     private final NessusClient client = new NessusClient();
     private IndexResponse response;
+
+    public IndexJob() {
+        logger.info("Checking database connection...");
+        Timezone.dao.getById(1); //force DB to initialize right away, using smallest table that likely has a value
+    }
 
     @Override
     protected boolean isReady() {
