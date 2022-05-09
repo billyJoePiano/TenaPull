@@ -14,6 +14,7 @@ echo "$JAVA_HOME"
 echo "If there are problems building the application, you may need to change this variable to the directory which contains a recent JDK version"
 
 function restoreTtyAndExit() {
+  echo
   echo "build.sh : Interrupted... exiting"
   stty echo
   exit 1
