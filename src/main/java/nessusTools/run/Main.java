@@ -34,8 +34,10 @@ public class Main {
     private Main() { } //never instantiated ... static only
 
     public static void main(String[] args) {
-        Job seed = loadConfig(args);
-        if (seed != null) {
+        Var<Job> seed = new Var<>(loadConfig(args));
+        //Var is used so that JobFactory init can remove the strong reference to the job after adding it to the
+        // list of jobs, therefore allowing it to be GC'd after completion
+        if (seed.value != null) {
             Var<JobFactory.Init> init = new Var();
             JobFactory.init(init);
             init.value.runJobsLoop(seed);

@@ -93,11 +93,17 @@ public class JobFactory {
     private static Init init;
 
     static class Init {
-        public void runJobsLoop(Job seed) {
+        public void runJobsLoop(Var<Job> seed) {
             if (!Main.isMain()) {
                 throw new IllegalStateException("Only the main thread can use JobFactory.Init");
             }
-            newJobs.add(seed);
+
+
+            // Var is used so that we can remove the strong reference to the job after adding it to the
+            // list of jobs, therefore allowing it to be GC'd after completion
+
+            newJobs.add(seed.value);
+            seed.value = null;
             haveNewJobsToProcess = true;
             JobFactory.runJobsLoop();
         }
@@ -109,7 +115,7 @@ public class JobFactory {
     private static final Set<Job> newJobs = new LinkedHashSet<>();
 
     private static final ReadWriteLock<Map<Job, Job.Accessor>, Job.Accessor>
-            accessors = ReadWriteLock.forMap(new TreeMap<>());
+            accessors = ReadWriteLock.forMap(new LinkedHashMap<>());
 
     private static final Map<Long, Job> delayedJobs = new TreeMap<>();
     private static final Set<Job> readyJobs = new LinkedHashSet<>();
