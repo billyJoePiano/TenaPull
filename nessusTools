@@ -10,10 +10,5 @@ else
 fi
 echo "$JAVA_HOME"
 echo "If there are problems building the application, you may need to change this variable to the directory which contains a recent JDK version"
-echo "Press enter to continue..."
-readline
 
-echo "Starting build with Maven"
-sleep 1
-
-mvn clean install -X
+mvn exec:java -Dexec.mainClass=nessusTools.run.Main -Dexec.args="$1"
