@@ -15,10 +15,11 @@ echo "If there are problems building the application, you may need to change thi
 
 function restoreTtyAndExit() {
   stty echo
+  echo "Interrupted... exiting"
   exit 1
 }
 
-if trap 'restoreTtyAndExit' SIGINT SIGKILL SIGTERM SIGHUP SIGSTOP
+if trap restoreTtyAndExit SIGINT SIGKILL SIGTERM SIGHUP SIGSTOP
 then
   echo "Press any key to continue..."
   stty -echo
