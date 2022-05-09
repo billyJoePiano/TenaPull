@@ -10,10 +10,28 @@ else
 fi
 echo "$JAVA_HOME"
 echo "If there are problems building the application, you may need to change this variable to the directory which contains a recent JDK version"
-echo "Press enter to continue..."
-readline
 
-echo "Starting build with Maven"
+function restoreTtyAndExit() {
+  stty echo
+  exit 1
+}
+
+if trap 'restoreTtyAndExit' SIGINT SIGKILL SIGTERM SIGHUP SIGSTOP
+then
+  echo "Press any key to continue..."
+  stty -echo
+  read -n 1 -s -r # -n 1 = 1 character.  -s = silent.  -r = raw (don't escape backslashes, etc.)
+  read -t 0.1     # near-immediate timeout, but consumes excess characters (e.g. for arrow or ctrl keys)
+  stty echo
+fi
+
+echo -n "Starting build with Maven in 3..."
 sleep 1
+echo -n "2... "
+sleep 1
+echo -n "1... "
+sleep 1
+echo
 
 mvn clean install -X
+
