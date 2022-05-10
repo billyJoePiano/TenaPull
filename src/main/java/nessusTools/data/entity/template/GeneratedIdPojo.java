@@ -7,7 +7,9 @@ import org.hibernate.annotations.*;
 import javax.persistence.*;
 import java.util.*;
 
-
+/**
+ * Represents POJOs with extensible JSON and a generated surrogate primary key id
+ */
 @MappedSuperclass
 public abstract class GeneratedIdPojo extends ExtensibleJsonPojo
         implements DbPojo {
@@ -37,13 +39,30 @@ public abstract class GeneratedIdPojo extends ExtensibleJsonPojo
 
     }
 
+    /**
+     * Convenience method for any subclasses which wish to implement one of
+     * the lookup interfaces (MapLookup or HashLookup).  This can be invoked
+     * to synchronize the ExtraJson between two pojos representing the same DB record.
+     * Unlike the NaturalIdPojo, __set here does NOT set the id, because it is a surrogate
+     * key and not a natural part of the Nessus API response
+     *
+     * @param o the other pojo which also represents the same DB record, to synchronize
+     *          this pojo's extraJson with
+     */
     @Transient
     @JsonIgnore
     protected void __set(GeneratedIdPojo o) {
-        //this.setId(o.getId());
         this.setExtraJson(o.getExtraJson());
     }
 
+    /**
+     * Default implementation of the java hashCode() method used by HashMap and HashSet.
+     * Performs a bitwise XOR on the hashCode of the implementing type's .class object,
+     * and the id of the pojo.
+     *
+     * @return a java hash code to uniquely identify and match this pojo with other pojos
+     * representing the same DB record
+     */
     @Override
     public int hashCode() {
         return this.getClass().hashCode() ^ this.getId();

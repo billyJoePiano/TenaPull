@@ -187,13 +187,6 @@ public abstract class StringHashLookupPojo<POJO extends StringHashLookupPojo<POJ
         this._hash = hash;
     }
 
-    /**
-     * Shortcut for the StringHashLookupDao to determine what approach to most efficiently use
-     * to find a matching value for this lookup.  If the hash is already calculated, it is
-     * most efficient to use the hash.  If it is not, it may be more efficient to use the _match method
-     *
-     * @return true is the hash has already been calculated, false if not
-     */
     @Transient
     @JsonIgnore
     @Override
@@ -201,23 +194,12 @@ public abstract class StringHashLookupPojo<POJO extends StringHashLookupPojo<POJ
         return this._hash != null;
     }
 
-    /**
-     * Set the values in this POJO to be identical to another POJO representing the same record
-     *
-     * @param other
-     */
     @Override
     public void _set(POJO other) {
         this.set_hash(other.get_hash());
         this.setValue(other.getValue());
     }
 
-    /**
-     * Determine if this pojo represents the same DB record as another POJO of the same type
-     *
-     * @param o the POJO type implementing StringHashLookupPojo
-     * @return true if the two pojos represent the same DB record, false if not
-     */
     public boolean _match(POJO o) {
         if (this._hash != null && o._isHashCalculated()) {
             return Objects.equals(this._hash, o.get_hash());

@@ -16,6 +16,13 @@ import javax.persistence.AccessType;
 import java.io.*;
 import java.util.*;
 
+/**
+ * The standard implementation of the HashLookupPojo interface.  This is used
+ * by the majority of HashLookupPojos, although a handful do not use it because
+ * it inherits extra json functionality from ExtensibleJsonPojo
+ *
+ * @param <POJO> the POJO type implementing HashLookupTemplate and HashLookupPojo
+ */
 @MappedSuperclass
 public abstract class HashLookupTemplate<POJO extends HashLookupTemplate<POJO>>
         extends GeneratedIdPojo implements HashLookupPojo<POJO> {

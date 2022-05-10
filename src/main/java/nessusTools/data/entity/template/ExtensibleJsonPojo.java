@@ -9,11 +9,11 @@ import nessusTools.data.entity.objectLookup.*;
 import javax.persistence.*;
 import java.util.*;
 
-// Abstract base class that implements extraJson behavior for all non-lookup pojos
-// Note that 'implements DbPojo' interface is delayed until NaturalIdPojo and GeneratedIdPojo
-// This was done so that NessusResponse can inherit the extraJson behaviors without needing to
-// implement the DbPojo interface
-
+/**
+ * Abstract base class that implements ExtraJson behavior for most pojos other than string lookups.
+ * Note that 'implements DbPojo' interface is delayed until NaturalIdPojo and GeneratedIdPojo,
+ * because they have different requirement for how to implement id.
+ */
 @MappedSuperclass
 public abstract class ExtensibleJsonPojo {
 
@@ -23,17 +23,32 @@ public abstract class ExtensibleJsonPojo {
     @JsonIgnore // Jackson will use the wrapped map from getExtraJsonMap() and the put() method for setting
     private ExtraJson extraJson;
 
+    /**
+     * Gets extra json.
+     *
+     * @return the extra json
+     */
     @JsonIgnore
     public ExtraJson getExtraJson() {
         return this.extraJson;
     }
 
 
+    /**
+     * Sets entire extra json value.
+     *
+     * @param extraJson the extra json
+     */
     @JsonIgnore
     public void setExtraJson(ExtraJson extraJson) {
         this.extraJson = extraJson;
     }
 
+    /**
+     * Gets extra json map for serialization
+     *
+     * @return the extra json map
+     */
     @Transient
     @JsonAnyGetter
     public Map<String, JsonNode> getExtraJsonMap() {
@@ -45,6 +60,12 @@ public abstract class ExtensibleJsonPojo {
         }
     }
 
+    /**
+     * Puts extra json during deserialization
+     *
+     * @param key   the key
+     * @param value the value
+     */
     @Transient
     @JsonAnySetter
     public void putExtraJson(String key, Object value) {
@@ -65,6 +86,12 @@ public abstract class ExtensibleJsonPojo {
         this.extraJson.put(key, node);
     }
 
+    /**
+     * Gets extra json for a specific key
+     *
+     * @param key the key
+     * @return the extra json
+     */
     @Transient
     @JsonIgnore
     public JsonNode getExtraJson(String key) {
@@ -72,18 +99,40 @@ public abstract class ExtensibleJsonPojo {
         return this.extraJson.get(key);
     }
 
+    /**
+     * Convienence method for subclass implementations to invoke from their
+     * _prepare() method (note the difference in number of underscores), which
+     * performs DB preparations on the ExtraJson
+     */
     protected void __prepare() {
         this.extraJson = ExtraJson.dao.getOrCreate(this.extraJson);
     }
 
+    /**
+     * Converts the pojo into a serialized JSON ObjectNode
+     *
+     * @return the object node
+     */
     public ObjectNode toJsonNode() {
         return new ObjectMapper().valueToTree (this);
     }
 
+    /**
+     * Serializes the pojo into a JSON string
+     *
+     * @return the JSON string
+     * @throws JsonProcessingException if there is json processing exception
+     */
     public String toJsonString() throws JsonProcessingException {
         return this.toJsonNode().toString();
     }
 
+    /**
+     * Uses the toJsonString() method to convert to a JSON string, except
+     * catches any JsonProcessingException and returns an error message instead
+     *
+     * @return the serialized JSON string, or an error message if serialization failed
+     */
     public String toString() {
         try {
             return this.toJsonString();

@@ -8,11 +8,18 @@ import nessusTools.data.persistence.*;
 import javax.persistence.*;
 import java.util.*;
 
+/**
+ * Represents a reusable "object lookup", for an acl object returned from the
+ * Nessus API at /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "Acl")
 @Table(name = "acl")
 public class Acl extends HashLookupTemplate<Acl> {
 
-	public static final HashLookupDao<Acl> dao
+    /**
+     * The dao for Acl
+     */
+    public static final HashLookupDao<Acl> dao
 			= new HashLookupDao<Acl>(Acl.class);
 
 
@@ -32,51 +39,111 @@ public class Acl extends HashLookupTemplate<Acl> {
 
 	private String type;
 
+    /**
+     * Gets nessus id.
+     *
+     * @return the nessus id
+     */
     public Integer getNessusId() {
         return nessusId;
     }
 
+    /**
+     * Sets nessus id.
+     *
+     * @param nessusId the nessus id
+     */
     public void setNessusId(Integer nessusId) {
         this.nessusId = nessusId;
     }
 
+    /**
+     * Gets owner.
+     *
+     * @return the owner
+     */
     public Integer getOwner() {
 		return owner;
 	}
 
-	public void setOwner(Integer owner) {
+    /**
+     * Sets owner.
+     *
+     * @param owner the owner
+     */
+    public void setOwner(Integer owner) {
 		this.owner = owner;
 	}
 
-	public int getPermissions() {
+    /**
+     * Gets permissions.
+     *
+     * @return the permissions
+     */
+    public int getPermissions() {
 		return permissions;
 	}
 
-	public void setPermissions(int permissions) {
+    /**
+     * Sets permissions.
+     *
+     * @param permissions the permissions
+     */
+    public void setPermissions(int permissions) {
 		this.permissions = permissions;
 	}
 
-	public String getName() {
+    /**
+     * Gets name.
+     *
+     * @return the name
+     */
+    public String getName() {
 		return name;
 	}
 
-	public void setName(String name) {
+    /**
+     * Sets name.
+     *
+     * @param name the name
+     */
+    public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getDisplayName() {
+    /**
+     * Gets display name.
+     *
+     * @return the display name
+     */
+    public String getDisplayName() {
 		return displayName;
 	}
 
-	public void setDisplayName(String displayName) {
+    /**
+     * Sets display name.
+     *
+     * @param displayName the display name
+     */
+    public void setDisplayName(String displayName) {
 		this.displayName = displayName;
 	}
 
-	public String getType() {
+    /**
+     * Gets type.
+     *
+     * @return the type
+     */
+    public String getType() {
 		return type;
 	}
 
-	public void setType(String type) {
+    /**
+     * Sets type.
+     *
+     * @param type the type
+     */
+    public void setType(String type) {
 		this.type = type;
 	}
 
