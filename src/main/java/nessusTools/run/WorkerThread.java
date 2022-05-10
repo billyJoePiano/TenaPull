@@ -1,10 +1,12 @@
 package nessusTools.run;
 
+import nessusTools.client.*;
 import org.apache.logging.log4j.*;
 
 public class WorkerThread extends Thread {
     private static long idCounter = 1;
     private final JobFactory jobFactory;
+    private final NessusClient client = new NessusClient();
 
     private static Logger logger = LogManager.getLogger(WorkerThread.class);
 
@@ -19,7 +21,7 @@ public class WorkerThread extends Thread {
         Job job;
         while ((job = jobFactory.getNextJob()) != null) {
             try {
-                job.start(this);
+                job.start(this, client);
 
             } catch (Throwable e) {
                 logger.error("Fatal error on thread " + this.getName(), e);

@@ -1,14 +1,7 @@
 package nessusTools.run;
 
-import nessusTools.data.entity.lookup.*;
-import nessusTools.data.entity.objectLookup.*;
-import nessusTools.data.entity.response.*;
-import nessusTools.data.entity.template.*;
-import nessusTools.data.persistence.*;
-import nessusTools.sync.*;
 import nessusTools.util.*;
 import org.apache.logging.log4j.*;
-import org.hibernate.jdbc.*;
 
 import java.io.*;
 import java.util.*;
@@ -109,9 +102,6 @@ public class Main {
         }
 
         if (missing.size() > 0) {
-            String missingProps = missing.toString();
-            missingProps = missingProps.substring(1, missingProps.length() - 1); //remove square brackets
-
             logger.error("Your configuration file '" + args[0]
                     + "' is missing the following required propert"
                     + (missing.size() > 1 ? "ies: " : "y: ")
@@ -120,6 +110,16 @@ public class Main {
                             .substring(2));
             error = true;
             return null;
+        }
+
+        config.put("db.url", buildUrl(config, "db") + "/" + config.getProperty("db.url.name"));
+        config.put("api.url", buildUrl(config, "api"));
+
+        if (config.containsKey("output.scanner.omit")) {
+            config.put("output.scanner", null);
+
+        } else if (!config.containsKey("output.scanner")) {
+            config.put("output.scanner", config.get("api.url"));
         }
 
         String dir = config.getProperty("output.dir");
@@ -134,19 +134,6 @@ public class Main {
             config.put("output.dir", dir += "/");
         }
 
-        File directory = new File(dir);
-        if (!directory.exists()) {
-            try {
-                directory.mkdir();
-
-            } catch (Exception e) {
-                logger.error("Error while trying to make directory '" + dir + "'", e);
-                error = true;
-                return null;
-            }
-        }
-
-        config.put("db.url", buildDbUrl(config));
 
         if (args.length == 1) {
             return new IndexJob();
@@ -164,11 +151,13 @@ public class Main {
         }
     }
 
-    public static String buildDbUrl(Properties config) {
-        String url = config.getProperty("db.url.protocol") + "://" + config.getProperty("db.url.host");
-        if (config.containsKey("db.url.port")) {
-            url += ":" + config.getProperty("db.url.port");
+    public static String buildUrl(Properties config, String prefix) {
+        String url = config.getProperty(prefix + ".url.protocol") + "://"
+                        + config.getProperty(prefix + ".url.host");
+
+        if (config.containsKey(prefix + ".url.port")) {
+            url += ":" + config.getProperty(prefix + ".url.port");
         }
-        return url + "/" + config.getProperty("db.url.name");
+        return url;
     }
 }

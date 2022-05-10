@@ -1,5 +1,6 @@
 package nessusTools.run;
 
+import nessusTools.client.*;
 import org.apache.logging.log4j.*;
 
 import java.util.*;
@@ -43,7 +44,7 @@ public class DbManagerJob extends Job {
     }
 
     @Override
-    protected void fetch() {
+    protected void fetch(NessusClient client) {
         logger.info("'" + this.name + "' starting");
         long start = System.currentTimeMillis();
         while (true) {
@@ -260,7 +261,7 @@ public class DbManagerJob extends Job {
         }
 
         @Override
-        protected void fetch() { }
+        protected void fetch(NessusClient client) { }
 
         @Override
         protected void process() throws Exception {

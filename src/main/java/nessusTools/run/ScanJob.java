@@ -20,7 +20,6 @@ public class ScanJob extends DbManagerJob.Child {
     //private static final long MAX_WAIT_FOR_COMPLETION = 2 * 60 * 60 * 1000; //2 hours in ms
 
     private final Scan scan;
-    private final NessusClient client = new NessusClient();
     private ScanResponse response;
     private Timestamp scanTimestamp;
     //private Long startWait;
@@ -130,11 +129,15 @@ public class ScanJob extends DbManagerJob.Child {
         return false;
     }
 
+    private NessusClient client;
+
     @Override
-    protected void fetch() throws JsonProcessingException {
+    protected void fetch(NessusClient client) throws JsonProcessingException {
         //if (this.response == null) {
+            this.client = client;
             logger.info("Fetching details for Scan Id " + this.scan.getId());
             this.response = client.fetchJson(ScanResponse.getUrlPath(this.scan.getId()), ScanResponse.class);
+            this.client = null;
         //}
     }
 
@@ -149,7 +152,7 @@ public class ScanJob extends DbManagerJob.Child {
     }
 
     private void runDbInsert() {
-        logger.info("Saving response details for Scan Id " + this.scan.getId());
+        logger.info("Saving scan details for Scan Id " + this.scan.getId());
         ScanResponse.dao.saveOrUpdate(response);
         List<ScanHost> hosts = this.response.getHosts();
         if (hosts == null) return;
@@ -167,8 +170,10 @@ public class ScanJob extends DbManagerJob.Child {
             case IDLE: break;
 
             case FETCH:
-                logger.error("Error processing fetching scan response id "
-                        + scan.getId() + "\n" + client.getResponse(), e);
+                String responseStr = this.client != null ? this.client.getResponse() : "";
+                this.client = null;
+                logger.error("Error processing or fetching scan response\n"
+                        + responseStr, e);
 
                 if (fetchCount++ <= 2) {
                     this.tryAgainIn(120000);

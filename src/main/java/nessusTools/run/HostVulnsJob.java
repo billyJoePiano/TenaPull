@@ -24,7 +24,6 @@ public class HostVulnsJob extends DbManagerJob.Child {
 
     private final ScanResponse scanResponse;
     private final ScanHost host;
-    private final NessusClient client = new NessusClient();
     private List<Vulnerability> vulns;
     private ScanHostResponse response;
     private final HostOutput output = new HostOutput();
@@ -64,15 +63,19 @@ public class HostVulnsJob extends DbManagerJob.Child {
         return true;
     }
 
+    private NessusClient client = null;
+
     @Override
-    protected void fetch() throws JsonProcessingException {
+    protected void fetch(NessusClient client) throws JsonProcessingException {
+        this.client = client;
         this.response = client.fetchJson(ScanHostResponse.getUrlPath(this.host), ScanHostResponse.class);
-        this.vulns = response.getVulnerabilities();
-        this.response._prepare();
+        this.client = null;
     }
 
     @Override
     protected void process() {
+        this.vulns = response.getVulnerabilities();
+        this.response._prepare();
         this.response.setId(this.host.getId());
         if (this.scanResponse != null) {
             this.response.setScanResponse(this.scanResponse);
@@ -139,8 +142,11 @@ public class HostVulnsJob extends DbManagerJob.Child {
             case IDLE: break;
 
             case FETCH:
+                String responseStr = this.client != null ? this.client.getResponse() : "";
+                this.client = null;
+
                 logger.error("Error fetching scan host response id "
-                        + host.getId() + "\n" + client.getResponse(), e);
+                        + host.getId() + "\n" + responseStr, e);
                 if (fetchCount++ <= 2) {
                     this.tryAgainIn(120000);
                     return true;

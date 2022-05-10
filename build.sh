@@ -16,15 +16,22 @@ echo "If there are problems building the application, you may need to change thi
 function restoreTtyAndExit() {
   echo
   echo "build.sh : Interrupted... exiting"
-  stty echo
+
+  ( # backgrounded subshell waits until after read has exited and restored the "-echo" state from when it started
+    sleep 1
+    stty echo
+  ) &
+
   exit 1
 }
 
 if trap restoreTtyAndExit SIGINT SIGKILL SIGTERM SIGHUP SIGSTOP
 then
   echo "Press any key to continue..."
+  stty -echo
   read -n 1 -s -r # -n 1 = 1 character.  -s = silent.  -r = raw (don't escape backslashes, etc.)
   read -t 0.1     # near-immediate timeout, but consumes excess characters (e.g. for arrow or ctrl keys)
+  stty echo
 fi
 
 echo -n "Starting build with Maven in 3..."

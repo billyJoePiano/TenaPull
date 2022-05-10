@@ -7,30 +7,64 @@ import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import org.apache.logging.log4j.*;
 
-import java.sql.*;
-import java.time.*;
+import java.io.*;
 import java.util.*;
 
 public class IndexJob extends Job {
     private static Logger logger = LogManager.getLogger(IndexJob.class);
 
-    private final NessusClient client = new NessusClient();
     private IndexResponse response;
+    private final boolean markFailed;
 
     public IndexJob() {
-        logger.info("Checking database connection...");
-        Timezone.dao.getById(1); //force DB to initialize right away, using smallest table that likely has a value
+        boolean markFailed = false;
+
+        Properties config = Main.getConfig();
+        String dir = config.getProperty("output.dir");
+
+        logger.info("Checking output directory: " + dir);
+        try {
+            File directory = new File(dir);
+            if (!directory.exists()) {
+                directory.mkdir();
+            }
+
+        } catch (Exception e) {
+            markFailed = true;
+            logger.error("Error while trying to make directory '" + dir + "'", e);
+        }
+
+        if (!markFailed) {
+            //force DB to initialize right away, using smallest table that likely has a value
+            logger.info("Checking database connection: " + config.getProperty("db.url"));
+            try {
+                Timezone.dao.getById(1);
+
+            } catch (Exception e) {
+                markFailed = true;
+                logger.error("Error while trying to initialize DB connection", e);
+            }
+        }
+
+        this.markFailed = markFailed;
     }
 
     @Override
     protected boolean isReady() {
-        return true;
+        if (this.markFailed) {
+            Main.markErrorStatus();
+            this.failed();
+        }
+        return !this.markFailed;
     }
 
+    private NessusClient client;
     @Override
-    protected void fetch() throws JsonProcessingException {
+    protected void fetch(NessusClient client) throws JsonProcessingException {
+        this.client = client;
         logger.info("Fetching scan index");
         response = client.fetchJson(IndexResponse.pathFor(), IndexResponse.class);
+        this.client = null;
     }
 
     @Override
@@ -54,8 +88,10 @@ public class IndexJob extends Job {
     protected boolean exceptionHandler(Exception e, Stage stage) {
         switch (stage) {
             case FETCH:
-                logger.error("Error processing fetching index response:\n"
-                        + client.getResponse(), e);
+                String responseStr = this.client != null ? this.client.getResponse() : "";
+                this.client = null;
+                logger.error("Error processing or fetching index response\n"
+                        + responseStr, e);
                 break;
 
             case PROCESS:

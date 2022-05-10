@@ -3,6 +3,7 @@ package nessusTools.run;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import nessusTools.client.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.persistence.*;
 import nessusTools.util.*;
@@ -51,7 +52,7 @@ public class GetFileInputJob<R extends NessusResponse> extends Job {
     }
 
     @Override
-    protected void fetch() {
+    protected void fetch(NessusClient client) {
         logger.info("Fetching JSON: " + jsonFile);
         long start = System.nanoTime();
         this.fetchJson();

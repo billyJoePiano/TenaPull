@@ -85,10 +85,14 @@ public class Database {
      *
      * @param sqlFile the sql file to be read and executed line by line
      */
-    public static void runSQL(String sqlFile) {
+    public static void runSQL(String sqlFile) throws FileNotFoundException {
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
         InputStream inputStream = classloader.getResourceAsStream(sqlFile);
+
+        if (inputStream == null) {
+            throw new FileNotFoundException("Could not find dbHardReset.sql script");
+        }
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
 
@@ -109,17 +113,17 @@ public class Database {
 
     }
 
-    public static void reset() {
+    public static void reset() throws FileNotFoundException {
         softReset();
     }
 
-    public static void softReset() {
+    public static void softReset() throws FileNotFoundException {
         logger.info("RUNNING SOFT RESET ON DATABASE");
         runSQL(DB_SOFT_RESET);
         logger.info("FINISHED SOFT RESET ON DATABASE");
     }
 
-    public static void hardReset() {
+    public static void hardReset() throws FileNotFoundException {
         logger.info("RUNNING HARD RESET ON DATABASE");
         runSQL(DB_HARD_RESET);
         logger.info("FINISHED HARD RESET ON DATABASE");

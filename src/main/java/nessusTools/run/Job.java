@@ -1,5 +1,6 @@
 package nessusTools.run;
 
+import nessusTools.client.*;
 import org.apache.logging.log4j.*;
 
 import java.util.*;
@@ -34,7 +35,7 @@ public abstract class Job {
 
     abstract protected boolean isReady();
 
-    abstract protected void fetch() throws Exception;
+    abstract protected void fetch(NessusClient client) throws Exception;
 
     abstract protected void process() throws Exception;
 
@@ -80,7 +81,7 @@ public abstract class Job {
         JobFactory.notifyOfJobProvider(this);
     }
 
-    public final void start(WorkerThread runThread) {
+    public final void start(WorkerThread runThread, NessusClient client) {
         synchronized (accessor) {
             if (this.failed) {
                 throw new IllegalStateException("Cannot call start() on a job which was marked as failed");
@@ -102,7 +103,7 @@ public abstract class Job {
         }
 
         try {
-            this.runStages();
+            this.runStages(client);
 
         } finally {
             synchronized (accessor) {
@@ -113,7 +114,7 @@ public abstract class Job {
         }
     }
 
-    private final synchronized void runStages() {
+    private final synchronized void runStages(NessusClient client) {
         long tryTime = this.tryAtTime;
         try {
             while (this.stage.ordinal() < Stage.DONE.ordinal()) {
@@ -128,7 +129,7 @@ public abstract class Job {
                             break;
 
                         case FETCH:
-                            this.fetch();
+                            this.fetch(client);
                             this.stage = Stage.PROCESS;
                             break;
 

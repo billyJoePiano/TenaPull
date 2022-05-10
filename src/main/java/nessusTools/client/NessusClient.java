@@ -14,18 +14,22 @@ import java.util.*;
 public class NessusClient extends GenericClient {
     private static final Logger logger = LogManager.getLogger(NessusClient.class);
 
-    private static final Properties properties = Main.getConfig();
+    public static final String API_URL;
 
-    public static final String API_PROTOCOL = properties.getProperty("api.url.protocol", "https");
-    public static final String API_HOST = properties.getProperty("api.url.host", "localhost");
-    public static final String API_PORT = properties.getProperty("api.url.port", "");
-    public static final String API_URL = API_PROTOCOL + "://" + API_HOST
-            + (API_PORT.length() > 0 ? ":" + API_PORT : "");
+    public static final boolean ACCEPT_ANY_SSL;
 
-    public static final boolean ACCEPT_ANY_SSL = properties.containsKey("client.acceptAnySSL");
+    private static final String API_ACCESS_KEY;
+    private static final String API_SECRET_KEY;
 
-    private static final String API_ACCESS_KEY = properties.getProperty("api.key.access");
-    private static final String API_SECRET_KEY = properties.getProperty("api.key.secret");
+    static {
+        Properties properties = Main.getConfig();
+        API_URL = properties.getProperty("api.url");
+        ACCEPT_ANY_SSL = properties.containsKey("client.acceptAnySSL");
+        API_ACCESS_KEY = properties.getProperty("api.key.access");
+        API_SECRET_KEY = properties.getProperty("api.key.secret");
+    }
+
+
     private static final String API_FULL_KEY = "accessKey=" + API_ACCESS_KEY +"; secretKey=" + API_SECRET_KEY;
     private static final String API_KEY_HEADER_KEY = "X-ApiKeys";
 

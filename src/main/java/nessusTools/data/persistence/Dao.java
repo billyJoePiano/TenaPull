@@ -258,13 +258,16 @@ public class Dao<POJO extends DbPojo> {
                 if (this.transaction != null) {
                     Transaction transaction = this.transaction;
                     this.transaction = null;
-                    transaction.commit();
-                }
 
-            } catch (Exception e) {
-                transaction.rollback();
-                closer.logger.error("Error committing DB transaction", e);
-                commitException = new DbException(e, closer.pojoType);
+                    try {
+                        transaction.commit();
+
+                    } catch (Exception e) {
+                        transaction.rollback();
+                        closer.logger.error("Error committing DB transaction", e);
+                        commitException = new DbException(e, closer.pojoType);
+                    }
+                }
 
             } finally {
                 try {
