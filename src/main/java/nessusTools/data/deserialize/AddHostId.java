@@ -21,11 +21,6 @@ import java.util.*;
 public class AddHostId extends JsonSerializer<List<Vulnerability>> {
 
     /**
-     * Default constructor for AddHostId
-     */
-    public AddHostId() { }
-
-    /**
      * Serializes a List&lt;Vulnerability&gt;, including the host_id within each vulnerability
      * object, as taken from the parent ScanHostResponse.
      *

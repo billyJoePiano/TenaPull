@@ -5,6 +5,9 @@ import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
 
+/**
+ * Represents a simple string/varchar lookup from the hostname table
+ */
 @Entity(name = "Hostname")
 @Table(name = "hostname")
 public class Hostname extends SimpleStringLookupPojo<Hostname> {

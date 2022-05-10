@@ -33,11 +33,6 @@ public abstract class NestedJsonArray
     public static final String EXTRA_JSON_KEY_IN_PARENT = "__nestedArrayContainer_extraJsonFor_";
 
     /**
-     * Default constructor
-     */
-    public NestedJsonArray() { }
-
-    /**
      * The parent POJO object of the ORM, which owns the Child list and stores any additional values
      * embedded within this wrapper
      */

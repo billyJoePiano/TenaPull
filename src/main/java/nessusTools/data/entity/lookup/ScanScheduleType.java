@@ -5,6 +5,9 @@ import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
 
+/**
+ * Represents a simple string/varchar lookup from the scan_schedule_type table
+ */
 @Entity(name = "ScanScheduleType")
 @Table(name = "scan_schedule_type")
 public class ScanScheduleType extends SimpleStringLookupPojo<ScanScheduleType> {

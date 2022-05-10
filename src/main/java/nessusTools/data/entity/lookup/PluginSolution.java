@@ -5,6 +5,10 @@ import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
 
+/**
+ * Represents a MySQL longtext field from the plugin_solution lookup table,
+ * that is indexed by a SHA-512 hash
+ */
 @Entity(name = "PluginSolution")
 @Table(name = "plugin_solution")
 public class PluginSolution extends StringHashLookupPojo<PluginSolution> {

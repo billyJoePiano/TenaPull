@@ -5,6 +5,10 @@ import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
 
+/**
+ * Represents a MySQL longtext field from the remediation lookup table,
+ * that is indexed by a SHA-512 hash
+ */
 @Entity(name = "Remediation")
 @Table(name = "remediation")
 public class Remediation extends StringHashLookupPojo<Remediation> {

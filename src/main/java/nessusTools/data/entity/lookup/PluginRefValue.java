@@ -5,6 +5,9 @@ import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
 
+/**
+ * Represents a simple string/varchar lookup from the plugin_ref_value table
+ */
 @Entity(name = "PluginRefValue")
 @Table(name = "plugin_ref_value")
 public class PluginRefValue extends SimpleStringLookupPojo<PluginRefValue> {

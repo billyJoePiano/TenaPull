@@ -5,6 +5,9 @@ import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
 
+/**
+ * Represents a simple string/varchar lookup from the host_fqdn table
+ */
 @Entity(name = "HostFqdn")
 @Table(name = "host_fqdn")
 public class HostFqdn extends SimpleStringLookupPojo<HostFqdn> {

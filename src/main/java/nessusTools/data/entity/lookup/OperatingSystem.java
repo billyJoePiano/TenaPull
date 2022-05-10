@@ -5,6 +5,10 @@ import nessusTools.data.persistence.*;
 
 import javax.persistence.*;
 
+/**
+ * Represents a MySQL longtext field from the operating_system lookup table,
+ * that is indexed by a SHA-512 hash
+ */
 @Entity(name = "OperatingSystem")
 @Table(name = "operating_system")
 public class OperatingSystem extends StringHashLookupPojo<OperatingSystem> {
