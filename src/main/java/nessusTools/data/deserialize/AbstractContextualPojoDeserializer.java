@@ -5,20 +5,41 @@ import nessusTools.data.entity.template.DbPojo;
 import nessusTools.data.persistence.Dao;
 import org.apache.logging.log4j.Logger;
 
+
+/**
+ * Further implementation of AbstractContextualDeserializer that is specific to POJOs,
+ * and which also obtains the appropriate Dao for the pojo type provided
+ *
+ * @param <POJO> the type parameter
+ * @param <DAO>  the type parameter
+ */
 public abstract class AbstractContextualPojoDeserializer<POJO extends DbPojo, DAO extends Dao<POJO>>
         extends AbstractContextualDeserializer<POJO> {
 
+    /**
+     * The Pojo type.  This mirrors the type property in the parent superclass AbstractContextualDeserializer,
+     * but is protected instead of private so that subclass implementations may access it directly.
+     */
     protected Class<POJO> pojoType = null;
+    /**
+     * The Dao for the target pojo type
+     */
     protected DAO dao = null;
 
-    protected abstract Logger getLogger();
-
+    /**
+     * First invokes the super's setType, then also sets its own pojoType and finds the appropriate Dao for the type
+     * @param pojoType
+     */
     public void setType(Class<POJO> pojoType) {
         super.setType(pojoType);
         fetchDao();
-
     }
 
+    /**
+     * Sets its own pojoType based on super.getType(), and finds the appropriate Dao for that type
+     *
+     * @return whether there was an error that should be logged by the invoker
+     */
     private boolean fetchDao() {
         //return false if the deserializationContext and beanProperty should be logged, when available
         this.pojoType = this.getType();
@@ -40,7 +61,15 @@ public abstract class AbstractContextualPojoDeserializer<POJO extends DbPojo, DA
     }
 
 
-    // https://stackoverflow.com/questions/47348029/get-the-detected-generic-type-inside-jacksons-jsondeserializer
+    /**
+     * First invokes super.createContextual, which obtains the target deserialization type.  Then
+     * obtains the type's Dao through calling the fetchDao() method
+     *
+     * @param deserializationContext
+     * @param beanProperty
+     * @return this, since it serves a dual-purpose as both the contextual parser and the deserializer
+     * @throws JsonMappingException
+     */
     @Override
     public JsonDeserializer<POJO> createContextual(
                                         DeserializationContext deserializationContext,

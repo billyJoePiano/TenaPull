@@ -12,8 +12,24 @@ import java.math.*;
 import static nessusTools.data.persistence.MultiTypeWrapper.wrap;
 import static nessusTools.data.persistence.MultiTypeWrapper.getPrimaryType;
 
+/**
+ * Includes two inner classes for serializing and deserializing the MultiTypeWrapper, which is
+ * capable of representing more than one primitive type (e.g. string, integer) in both JSON
+ * and through the Hibernate ORM
+ */
 public class MultiType {
+    /**
+     * Deserializes a JSON value of an unknown primitive type into a MultiTypeWrapper
+     */
     public static class Deserializer extends JsonDeserializer<MultiTypeWrapper> {
+        /**
+         * Deserializes a JSON value of an unknown primitive type into a MultiTypeWrapper
+         *
+         * @param jp
+         * @param ctxt
+         * @return
+         * @throws IOException
+         */
         @Override
         public MultiTypeWrapper deserialize(JsonParser jp,
                                             DeserializationContext ctxt)
@@ -67,7 +83,17 @@ public class MultiType {
     public static class Serializer extends JsonSerializer<MultiTypeWrapper> {
         Logger logger = LogManager.getLogger(Serializer.class);
 
-        // https://stackoverflow.com/questions/33519354/how-to-get-property-or-field-name-in-a-custom-json-serializer
+        /**
+         * Serialies a MultiTypeWrapper into the appropriate JSON primitive, delegating to
+         * the static writeValueNotNull method for all non-null and non-string values.
+         * If writeValueNotNull returns false, meaning no value was written, then this
+         * method will default to writing the value as a string
+         *
+         * @param wrapper
+         * @param jsonGenerator
+         * @param serializerProvider
+         * @throws IOException
+         */
         @Override
         public void serialize(MultiTypeWrapper wrapper,
                               JsonGenerator jsonGenerator,
@@ -97,8 +123,16 @@ public class MultiType {
 
         }
 
-        // returns true if jsonGenerator wrote a value
-        // returns false if a matching type could not be found for object, and therefore no value was written
+        /**
+         * Serializes an Object representing any primitive JSON type, delegating to writeValueNotNull
+         * for all non-null and non-string objects.
+         *
+         * @param object
+         * @param jsonGenerator
+         * @return true when the jsonGenerator wrote a value, false if no matching type could be found
+         * and therefore no value was written.
+         * @throws IOException
+         */
         public static boolean writeValue(Object object, JsonGenerator jsonGenerator)
                 throws IOException {
 
@@ -122,6 +156,18 @@ public class MultiType {
 
         }
 
+        /**
+         * Writes any non-null and non-string value as the appropriate JSON primitive type, based
+         * upon MultiTypeWrapper's "primary type" provided (e.g. AtomicInteger falls under the Integer
+         * primary type)
+         *
+         * @param object
+         * @param primaryType The primaryType as specified in MultiTypeWrapper
+         * @param jsonGenerator
+         * @return true when the jsonGenerator wrote a value, false if no matching type could be found
+         * and therefore no value was written.
+         * @throws IOException
+         */
         private static boolean writeValueNotNull(Object object, Class primaryType, JsonGenerator jsonGenerator)
                 throws IOException {
 

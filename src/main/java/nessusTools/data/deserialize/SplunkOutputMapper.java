@@ -3,7 +3,6 @@ package nessusTools.data.deserialize;
 import com.fasterxml.jackson.databind.*;
 import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.scan.*;
-import nessusTools.data.entity.splunk.*;
 
 import java.util.*;
 
@@ -32,11 +31,11 @@ public class SplunkOutputMapper extends ObjectMapper {
     }
 
     private void addMixins() {
-        this.addMixIn(Scan.class, SplunkMixIns.Scan.class);
-        this.addMixIn(ScanInfo.class, SplunkMixIns.ScanInfo.class);
-        this.addMixIn(ScanHost.class, SplunkMixIns.ScanHost.class);
-        this.addMixIn(ScanHistory.class, SplunkMixIns.ScanHistory.class);
-        this.addMixIn(ScanPlugin.class, SplunkMixIns.ScanPlugin.class);
-        this.addMixIn(PluginHost.class, SplunkMixIns.PluginHost.class);
+        this.addMixIn(Scan.class, OutputMixIns.Scan.class);
+        this.addMixIn(ScanInfo.class, OutputMixIns.ScanInfo.class);
+        this.addMixIn(ScanHost.class, OutputMixIns.ScanHost.class);
+        this.addMixIn(ScanHistory.class, OutputMixIns.ScanHistory.class);
+        this.addMixIn(ScanPlugin.class, OutputMixIns.ScanPlugin.class);
+        this.addMixIn(PluginHost.class, OutputMixIns.PluginHost.class);
     }
 }

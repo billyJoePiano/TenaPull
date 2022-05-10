@@ -13,10 +13,27 @@ import javax.json.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Used by ScanHostResponse in its list of Vulnerabilities, to include the Nessus host_id
+ * within each Vulnerability, in order to imitate the Nessus API.  Needed only for testing
+ * purposes, since ScanHostResponse is never re-serialized during normal production runs.
+ */
 public class AddHostId extends JsonSerializer<List<Vulnerability>> {
 
+    /**
+     * Default constructor for AddHostId
+     */
     public AddHostId() { }
 
+    /**
+     * Serializes a List&gt;Vulnerability&lt;, including the host_id within each vulnerability
+     * object, as taken from the parent ScanHostResponse.
+     *
+     * @param vulns
+     * @param jg
+     * @param sp
+     * @throws IOException
+     */
     @Override
     public void serialize(List<Vulnerability> vulns,
                           JsonGenerator jg,

@@ -11,9 +11,23 @@ import javax.ws.rs.core.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Serializer for simplifying the list of SeverityLevelCount beans into a series of single text values,
+ * used for serializing the output.
+ */
 public class SeverityCountsReducer extends JsonSerializer<SeverityCount> {
 
 
+    /**
+     * Converts a SeverityCount's list of SeverityLevelCounts into a series of text fields,
+     * with a key of "level_#" (where # represents the level value of the SeverityLevelCount)
+     * and a value taken from the "count" field representing the SeverityLevelCount
+     *
+     * @param sc the SeverityCount wrapper which contains the list of SeverityLevelCounts
+     * @param jg
+     * @param sp
+     * @throws IOException
+     */
     @Override
     public void serialize(SeverityCount sc,
                           JsonGenerator jg,

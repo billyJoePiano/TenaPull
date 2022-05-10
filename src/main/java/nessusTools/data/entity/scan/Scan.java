@@ -32,15 +32,6 @@ public class Scan extends NaturalIdPojo {
     @JoinColumn(name="uuid_id")
     private ScanUuid uuid;
 
-    /*
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="folder_id")
-    @JsonProperty("folder_id")
-    @JsonDeserialize(using = IdReference.Deserializer.class)
-    @JsonSerialize(using = IdReference.EmptyToNullSerializer.class)
-    private Folder folder;
-     */
-
     @Column(name = "folder_id")
     @JsonProperty("folder_id")
     private Integer folderId;

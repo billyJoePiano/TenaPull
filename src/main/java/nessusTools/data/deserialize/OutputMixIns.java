@@ -9,9 +9,18 @@ import nessusTools.data.entity.scan.*;
 import java.sql.*;
 import java.util.*;
 
-public class SplunkMixIns {
-    private SplunkMixIns() { }
+/**
+ * A non-instantiable class containing a series of inner classes (also non-instantiable
+ * by extension, since they are not *static* inner classes) to be used as ObjectMapper mix-ins
+ * when serializing the output.  Each inner class is named after the entity it will be used
+ * as a mix-in for
+ */
+public class OutputMixIns {
+    private OutputMixIns() { }
 
+    /**
+     * Output mixin for the Scan class
+     */
     public abstract class Scan {
         @JsonSerialize(using = FriendlyTimestamp.Sql.class)
         private Timestamp creationDate;
@@ -23,6 +32,9 @@ public class SplunkMixIns {
         private String startTime;
     }
 
+    /**
+     * Output mixin for the ScanInfo class
+     */
     public abstract class ScanInfo {
         @JsonSerialize(using = FriendlyTimestamp.Sql.class)
         private Timestamp scannerStart;
@@ -46,6 +58,9 @@ public class SplunkMixIns {
         private List<SeverityBase> severityBaseSelections;
     }
 
+    /**
+     * Output mixin for the ScanHost class
+     */
     public abstract class ScanHost {
         @JsonSerialize(using = SeverityCountsReducer.class)
         private SeverityCount severitycount;
@@ -57,6 +72,9 @@ public class SplunkMixIns {
         private Timestamp lastModificationDate;
     }
 
+    /**
+     * Output mixin for the ScanHistory class
+     */
     public abstract class ScanHistory {
         @JsonSerialize(using = FriendlyTimestamp.Sql.class)
         private Timestamp lastModificationDate;
@@ -65,11 +83,17 @@ public class SplunkMixIns {
         private Timestamp creationDate;
     }
 
+    /**
+     * Output mixin for the ScanPlugin class
+     */
     public abstract class ScanPlugin {
         @JsonIgnore
         private List<PluginHost> hosts; //renders the below unnecessary...
     }
 
+    /**
+     * Output mixin for the PluginHost class
+     */
     public abstract class PluginHost {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private HostFqdn hostFqdn;

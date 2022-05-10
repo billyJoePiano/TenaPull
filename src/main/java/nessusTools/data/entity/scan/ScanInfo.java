@@ -35,14 +35,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
 
     public static final Logger logger = LogManager.getLogger(ScanInfo.class);
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE,
-                            CascadeType.REFRESH, CascadeType.DETACH},
-                fetch = FetchType.LAZY)
-    @JoinColumn(name="folder_id")
-    @JsonProperty("folder_id")
-    @JsonDeserialize(using = IdReference.Deserializer.class)
-    @JsonSerialize(using = IdReference.Serializer.class)
-    private Folder folder;
+    private Integer folder;
 
     private String name;
 
@@ -72,15 +65,6 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<Acl> acls;
 
-
-    /*
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="scan_group_id")
-    @JsonProperty("scan_group")
-    @JsonDeserialize(using = IdReference.Deserializer.class)
-    @JsonSerialize(using = IdReference.Serializer.class)
-    private ScanGroup scanGroup;
-     */
 
     @Column(name = "scan_group")
     @JsonProperty("scan_group")
@@ -396,11 +380,11 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
      ******************************************/
 
 
-    public Folder getFolder() {
+    public Integer getFolder() {
         return folder;
     }
 
-    public void setFolder(Folder folder) {
+    public void setFolder(Integer folder) {
         this.folder = folder;
     }
 

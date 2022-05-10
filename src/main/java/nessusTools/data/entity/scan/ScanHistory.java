@@ -36,15 +36,6 @@ public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
     @JsonProperty("node_host")
     private String nodeHost;
 
-    /*
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name="scan_group_id")
-    @JsonProperty("scan_group")
-    @JsonDeserialize(using = IdReference.Deserializer.class)
-    @JsonSerialize(using = IdReference.Serializer.class)
-    private ScanGroup scanGroup;
-     */
-
     @Column(name = "scan_group")
     @JsonProperty("scan_group")
     Integer scanGroup;
@@ -82,13 +73,6 @@ public class ScanHistory extends ScanResponse.MultiChildLookup<ScanHistory>
     @JsonDeserialize(using = EpochTimestamp.Deserializer.class)
     @JsonSerialize(using = EpochTimestamp.Serializer.class)
     private Timestamp creationDate;
-
-    //@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    //@JoinColumn(name="owner_id")
-    //@JsonProperty("owner_id")
-    //@JsonDeserialize(using = IdReference.Deserializer.class) //TODO POSSIBLY CHANGE TO ObjectLookup.Deserializer ???
-    //@JsonSerialize(using = IdReference.EmptyToNullSerializer.class)
-    //private ScanOwnerNessusId ownerId;
 
     @Column(name = "owner_id")
     @JsonProperty("owner_id")

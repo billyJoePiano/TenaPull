@@ -11,14 +11,31 @@ import java.io.*;
 import java.util.*;
 
 
+/**
+ * The NessusClient for fetching response from a specific Nessus installation provided in the configurations
+ * first parsed by Main
+ */
 public class NessusClient extends GenericClient {
     private static final Logger logger = LogManager.getLogger(NessusClient.class);
 
+    /**
+     * Url of the Nessus installation's API which will be queried
+     */
     public static final String API_URL;
 
+    /**
+     * Whether to accept any SSL certificate
+     */
     public static final boolean ACCEPT_ANY_SSL;
 
+    /**
+     * The Nessus API access key provided in the configuration file
+     */
     private static final String API_ACCESS_KEY;
+
+    /**
+     * The Nessus API secret key provided in the configuration file
+     */
     private static final String API_SECRET_KEY;
 
     static {
@@ -29,87 +46,49 @@ public class NessusClient extends GenericClient {
         API_SECRET_KEY = properties.getProperty("api.key.secret");
     }
 
-
+    /**
+     * The access key and secret key concatonated, for the "value" side of the HTTP header
+     */
     private static final String API_FULL_KEY = "accessKey=" + API_ACCESS_KEY +"; secretKey=" + API_SECRET_KEY;
+
+    /**
+     * The "key" side of the HTTP header with the API access keys
+     */
     private static final String API_KEY_HEADER_KEY = "X-ApiKeys";
 
+    /**
+     * A map to be used for the HTTP headers for API access
+     */
     private static final Map<String, String> API_HEADERS = Map.of(API_KEY_HEADER_KEY, API_FULL_KEY);
 
 
+    /**
+     * Instantiates a new Nessus client using the ACCEPT_ANY_SSL parameter as provided
+     * in the configuration file
+     */
     public NessusClient() {
         super(ACCEPT_ANY_SSL);
     }
 
-    public void fetchAllScans() {
-        IndexResponse response = null;
-        try {
-            response = fetchJson(
-                    IndexResponse.pathFor(),
-                    IndexResponse.class);
 
-        } catch (JsonProcessingException e) {
-            logger.error(e);
-            return;
-        }
-
-        if (response == null) return;
-
-        List<Folder> folders = response.getFolders();
-        List<Scan> scans = response.getScans();
-
-        logger.info(response);
-
-        for (Folder folder : folders) {
-            Folder.dao.saveOrUpdate(folder);
-        }
-
-        for (Scan scan : scans) {
-            Scan.dao.saveOrUpdate(scan);
-        }
-
-        for (Scan scan: scans) {
-            ScanResponse infoResponse = fetchScanInfo(scan);
-            ScanResponse.logger.info(infoResponse);
-
-            if (infoResponse == null) {
-                continue;
-            }
-
-            ScanInfo info = infoResponse.getInfo();
-            if (info != null) {
-                ScanInfo.dao.saveOrUpdate(info);
-            }
-        }
-    }
-
-    public ScanResponse fetchScanInfo (Scan scan) {
-        if (scan != null) {
-            return fetchScanInfo(scan.getId());
-
-        } else {
-            return null;
-        }
-    }
-
-    public ScanResponse fetchScanInfo(int scanId) {
-        try {
-            ScanResponse response = fetchJson(
-                    ScanResponse.getUrlPath(scanId),
-                    ScanResponse.class);
-
-            if (response != null) {
-                response.setId(scanId);
-            }
-            return response;
-
-
-        } catch (JsonProcessingException e) {
-            logger.error(e);
-            return null;
-        }
-    }
-
-
+    /**
+     * A convenience method which automatically includes the API access keys in the HTTP header,
+     * and adds the full protocol, domain name, and port (if applicable) to the URL.  NOTE:  DO
+     * NOT INCLUDE THE PROTOCOL, DOMAIN NAME, AND PORT IN THE URL PASSED TO THIS METHOD.
+     * <br />
+     * Also note that due to the way overloaded fetchJson methods are invoked in the GenericClient,
+     * this method is the end-point method for all of the fetchJson methods inherited from
+     * GenericClient.
+     *
+     *
+     * @param pathOnly the path of the resource to be fetched.  Do not include protocol, domain, or port
+     * @param headers   Additional HTTP headers to include
+     * @param mapToType the type to convert the returned JSON into
+     * @param mapper    the Jackson ObjectMapper to use
+     * @param <R>
+     * @return
+     * @throws JsonProcessingException
+     */
     @Override
     public <R> R fetchJson(String pathOnly, // do not include the protocol, host, or port
                            Map<String, String> headers,
