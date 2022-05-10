@@ -95,7 +95,7 @@ public abstract class NestedJsonArray
     }
 
     /**
-     * Type reference for a Map&gt;String, JsonNode&lt;, used for converting
+     * Type reference for a Map&lt;String, JsonNode&gt;, used for converting
      * a single JsonNode from the parent's ExtraJson Map into an ExtraJson map
      * for the wrapper's JsonAnyGetter during serialization
      *

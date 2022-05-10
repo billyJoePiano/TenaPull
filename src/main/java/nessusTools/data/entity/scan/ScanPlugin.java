@@ -20,6 +20,9 @@ import javax.persistence.*;
 import java.util.*;
 import java.util.stream.*;
 
+/**
+ * Represents a scan object returned by the Nessus API in /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "ScanPlugin")
 @Table(name = "scan_plugin")
 public class ScanPlugin implements MapLookupPojo<ScanPlugin>,

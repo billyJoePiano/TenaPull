@@ -26,7 +26,7 @@ public class AddHostId extends JsonSerializer<List<Vulnerability>> {
     public AddHostId() { }
 
     /**
-     * Serializes a List&gt;Vulnerability&lt;, including the host_id within each vulnerability
+     * Serializes a List&lt;Vulnerability&gt;, including the host_id within each vulnerability
      * object, as taken from the parent ScanHostResponse.
      *
      * @param vulns

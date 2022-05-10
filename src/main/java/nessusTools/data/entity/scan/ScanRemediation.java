@@ -19,11 +19,17 @@ import javax.persistence.Table;
 import javax.persistence.*;
 import java.util.*;
 
+/**
+ * Represents an object from the remediations array returned by the Nessus API in /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "ScanRemediation")
 @Table(name = "scan_remediation")
 public class ScanRemediation implements MapLookupPojo<ScanRemediation>,
         ScanResponse.ScanResponseChild<ScanRemediation> {
 
+    /**
+     * The dao for ScanRemediation
+     */
     public static final MapLookupDao<ScanRemediation>
             dao = new MapLookupDao<ScanRemediation>(ScanRemediation.class);
 
@@ -41,11 +47,11 @@ public class ScanRemediation implements MapLookupPojo<ScanRemediation>,
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "remediation_id")
     @JsonUnwrapped
-    RemediationDetails details;
+    private RemediationDetails details;
 
-    Integer hosts;
+    private Integer hosts;
 
-    Integer vulns;
+    private Integer vulns;
 
     @Transient
     @JsonIgnore
@@ -185,30 +191,67 @@ public class ScanRemediation implements MapLookupPojo<ScanRemediation>,
         this.response = response;
     }
 
+    /**
+     * Gets details.
+     *
+     * @return the details
+     */
     public RemediationDetails getDetails() {
         return details;
     }
 
+    /**
+     * Sets details.
+     *
+     * @param details the details
+     */
     public void setDetails(RemediationDetails details) {
         this.details = details;
     }
 
+    /**
+     * Gets hosts.
+     *
+     * @return the hosts
+     */
     public Integer getHosts() {
         return hosts;
     }
 
+    /**
+     * Sets hosts.
+     *
+     * @param hosts the hosts
+     */
     public void setHosts(Integer hosts) {
         this.hosts = hosts;
     }
 
+    /**
+     * Gets vulns.
+     *
+     * @return the vulns
+     */
     public Integer getVulns() {
         return vulns;
     }
 
+    /**
+     * Sets vulns.
+     *
+     * @param vulns the vulns
+     */
     public void setVulns(Integer vulns) {
         this.vulns = vulns;
     }
 
+    /**
+     * Because this entity cannot have any extraJson (it will all be contained in the RemediationDetails
+     * object lookup entity) it must implement hashCode and equals on its own, so its works properly in
+     * a HashMap or HashSet.  The strategy used here is to bitwise XOR the id with the hashcode of ScanRemediation.class
+     *
+     * @return a hashcode to uniquely identify each ScanRemediation record
+     */
     @Override
     public int hashCode() {
         return ScanRemediation.class.hashCode() ^ this.id;

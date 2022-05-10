@@ -21,11 +21,17 @@ import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+/**
+ * Represents an object from the hosts array returned by the Nessus API in /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "ScanHost")
 @Table(name = "scan_host")
 public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
         implements MapLookupPojo<ScanHost> {
 
+    /**
+     * The dao for ScanHost
+     */
     public static final MapLookupDao<ScanHost>
             dao = new MapLookupDao<ScanHost>(ScanHost.class);
 
@@ -109,6 +115,11 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
     @JoinColumn(name = "hostname_id")
     private Hostname hostname;
 
+    /**
+     * Gets severitycount.
+     *
+     * @return the severitycount
+     */
     public SeverityCount getSeveritycount() {
         if (this.severitycount == null) {
             this.severitycount = new SeverityCount();
@@ -117,6 +128,11 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
         return this.severitycount;
     }
 
+    /**
+     * Sets severitycount.
+     *
+     * @param severitycount the severitycount
+     */
     public void setSeveritycount(SeverityCount severitycount) {
         if (this.severitycount != null && this.severitycount != severitycount) {
             this.severitycount.clearParent();
@@ -125,10 +141,20 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
         severitycount.putFieldsIntoParent(this);
     }
 
+    /**
+     * Gets severity counts.
+     *
+     * @return the severity counts
+     */
     public List<SeverityLevelCount> getSeverityCounts() {
         return this.severityCounts;
     }
 
+    /**
+     * Sets severity counts.
+     *
+     * @param severityCounts the severity counts
+     */
     public void setSeverityCounts(List<SeverityLevelCount> severityCounts) {
         if (this.severityCounts == severityCounts) return;
         this.severityCounts = severityCounts;
@@ -207,162 +233,362 @@ public class ScanHost extends ScanResponse.MultiChildLookup<ScanHost>
         if (this.severitycount != null) this.severitycount.checkExtraJsonPut(key, value);
     }
 
+    /**
+     * Gets host id.
+     *
+     * @return the host id
+     */
     public Integer getHostId() {
         return hostId;
     }
 
+    /**
+     * Sets host id.
+     *
+     * @param hostId the host id
+     */
     public void setHostId(Integer hostId) {
         this.hostId = hostId;
     }
 
+    /**
+     * Gets total checks considered.
+     *
+     * @return the total checks considered
+     */
     public Integer getTotalChecksConsidered() {
         return totalChecksConsidered;
     }
 
+    /**
+     * Sets total checks considered.
+     *
+     * @param totalChecksConsidered the total checks considered
+     */
     public void setTotalChecksConsidered(Integer totalChecksConsidered) {
         this.totalChecksConsidered = totalChecksConsidered;
     }
 
+    /**
+     * Gets num checks considered.
+     *
+     * @return the num checks considered
+     */
     public Integer getNumChecksConsidered() {
         return numChecksConsidered;
     }
 
+    /**
+     * Sets num checks considered.
+     *
+     * @param numChecksConsidered the num checks considered
+     */
     public void setNumChecksConsidered(Integer numChecksConsidered) {
         this.numChecksConsidered = numChecksConsidered;
     }
 
+    /**
+     * Gets scan progress total.
+     *
+     * @return the scan progress total
+     */
     public Integer getScanProgressTotal() {
         return scanProgressTotal;
     }
 
+    /**
+     * Sets scan progress total.
+     *
+     * @param scanProgressTotal the scan progress total
+     */
     public void setScanProgressTotal(Integer scanProgressTotal) {
         this.scanProgressTotal = scanProgressTotal;
     }
 
+    /**
+     * Gets scan progress current.
+     *
+     * @return the scan progress current
+     */
     public Integer getScanProgressCurrent() {
         return scanProgressCurrent;
     }
 
+    /**
+     * Sets scan progress current.
+     *
+     * @param scanProgressCurrent the scan progress current
+     */
     public void setScanProgressCurrent(Integer scanProgressCurrent) {
         this.scanProgressCurrent = scanProgressCurrent;
     }
 
+    /**
+     * Gets host index.
+     *
+     * @return the host index
+     */
     public Integer getHostIndex() {
         return hostIndex;
     }
 
+    /**
+     * Sets host index.
+     *
+     * @param hostIndex the host index
+     */
     public void setHostIndex(Integer hostIndex) {
         this.hostIndex = hostIndex;
     }
 
+    /**
+     * Gets score.
+     *
+     * @return the score
+     */
     public Integer getScore() {
         return score;
     }
 
+    /**
+     * Sets score.
+     *
+     * @param score the score
+     */
     public void setScore(Integer score) {
         this.score = score;
     }
 
+    /**
+     * Gets progress.
+     *
+     * @return the progress
+     */
     public String getProgress() {
         return progress;
     }
 
+    /**
+     * Sets progress.
+     *
+     * @param progress the progress
+     */
     public void setProgress(String progress) {
         this.progress = progress;
     }
 
+    /**
+     * Gets offline critical.
+     *
+     * @return the offline critical
+     */
     public Integer getOfflineCritical() {
         return offlineCritical;
     }
 
+    /**
+     * Sets offline critical.
+     *
+     * @param offlineCritical the offline critical
+     */
     public void setOfflineCritical(Integer offlineCritical) {
         this.offlineCritical = offlineCritical;
     }
 
+    /**
+     * Gets offline high.
+     *
+     * @return the offline high
+     */
     public Integer getOfflineHigh() {
         return offlineHigh;
     }
 
+    /**
+     * Sets offline high.
+     *
+     * @param offlineHigh the offline high
+     */
     public void setOfflineHigh(Integer offlineHigh) {
         this.offlineHigh = offlineHigh;
     }
 
+    /**
+     * Gets offline medium.
+     *
+     * @return the offline medium
+     */
     public Integer getOfflineMedium() {
         return offlineMedium;
     }
 
+    /**
+     * Sets offline medium.
+     *
+     * @param offlineMedium the offline medium
+     */
     public void setOfflineMedium(Integer offlineMedium) {
         this.offlineMedium = offlineMedium;
     }
 
+    /**
+     * Gets offline low.
+     *
+     * @return the offline low
+     */
     public Integer getOfflineLow() {
         return offlineLow;
     }
 
+    /**
+     * Sets offline low.
+     *
+     * @param offlineLow the offline low
+     */
     public void setOfflineLow(Integer offlineLow) {
         this.offlineLow = offlineLow;
     }
 
+    /**
+     * Gets offline info.
+     *
+     * @return the offline info
+     */
     public Integer getOfflineInfo() {
         return offlineInfo;
     }
 
+    /**
+     * Sets offline info.
+     *
+     * @param offlineInfo the offline info
+     */
     public void setOfflineInfo(Integer offlineInfo) {
         this.offlineInfo = offlineInfo;
     }
 
+    /**
+     * Gets critical.
+     *
+     * @return the critical
+     */
     public Integer getCritical() {
         return critical;
     }
 
+    /**
+     * Sets critical.
+     *
+     * @param critical the critical
+     */
     public void setCritical(Integer critical) {
         this.critical = critical;
     }
 
+    /**
+     * Gets high.
+     *
+     * @return the high
+     */
     public Integer getHigh() {
         return high;
     }
 
+    /**
+     * Sets high.
+     *
+     * @param high the high
+     */
     public void setHigh(Integer high) {
         this.high = high;
     }
 
+    /**
+     * Gets medium.
+     *
+     * @return the medium
+     */
     public Integer getMedium() {
         return medium;
     }
 
+    /**
+     * Sets medium.
+     *
+     * @param medium the medium
+     */
     public void setMedium(Integer medium) {
         this.medium = medium;
     }
 
+    /**
+     * Gets low.
+     *
+     * @return the low
+     */
     public Integer getLow() {
         return low;
     }
 
+    /**
+     * Sets low.
+     *
+     * @param low the low
+     */
     public void setLow(Integer low) {
         this.low = low;
     }
 
+    /**
+     * Gets info.
+     *
+     * @return the info
+     */
     public Integer getInfo() {
         return info;
     }
 
+    /**
+     * Sets info.
+     *
+     * @param info the info
+     */
     public void setInfo(Integer info) {
         this.info = info;
     }
 
+    /**
+     * Gets severity.
+     *
+     * @return the severity
+     */
     public Integer getSeverity() {
         return severity;
     }
 
+    /**
+     * Sets severity.
+     *
+     * @param severity the severity
+     */
     public void setSeverity(Integer severity) {
         this.severity = severity;
     }
 
+    /**
+     * Gets hostname.
+     *
+     * @return the hostname
+     */
     public Hostname getHostname() {
         return hostname;
     }
 
+    /**
+     * Sets hostname.
+     *
+     * @param hostname the hostname
+     */
     public void setHostname(Hostname hostname) {
         this.hostname = hostname;
     }

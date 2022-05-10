@@ -24,7 +24,9 @@ import javax.persistence.Table;
 import java.sql.Timestamp;
 import java.util.*;
 
-
+/**
+ *
+ */
 @Entity(name = "ScanInfo")
 @Table(name = "scan_info")
 @JsonIgnoreProperties({"id"})

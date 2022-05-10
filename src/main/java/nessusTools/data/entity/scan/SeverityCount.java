@@ -7,11 +7,16 @@ import nessusTools.data.entity.objectLookup.*;
 
 import java.util.*;
 
+/**
+ * JSON container for the array of SeverityLevelCounts in a ScanHost
+ */
 public class SeverityCount extends NestedJsonArray<ScanHost, SeverityLevelCount> {
 
+    /**
+     * The key for the array of SeverityLevelCounts, as needed by the
+     * NestedJsonArray abstract super class
+     */
     public static final String ARRAY_KEY = "item";
-
-    public SeverityCount() { }
 
     @Override
     @JsonIgnore
@@ -19,12 +24,22 @@ public class SeverityCount extends NestedJsonArray<ScanHost, SeverityLevelCount>
         return ARRAY_KEY;
     }
 
+    /**
+     * Gets item.
+     *
+     * @return the item
+     */
     @JsonGetter("item")
     @JsonSerialize(using = Lists.SortSerializer.class)
     public List<SeverityLevelCount> getItem() {
         return this.getList();
     }
 
+    /**
+     * Sets item.
+     *
+     * @param item the item
+     */
     @JsonSetter("item")
     public void setItem(List<SeverityLevelCount> item) {
         this.setList(item);
