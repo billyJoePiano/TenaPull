@@ -32,6 +32,7 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
      * The logger for ScanResponse
      */
     public static final Logger logger = LogManager.getLogger(ScanResponse.class);
+
     /**
      * The dao for ScanResponse
      */
@@ -42,10 +43,10 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
      *
      * @param scanId the scan id
      * @return the url path
-     * @throws IllegalArgumentException the illegal argument exception
+     * @throws IllegalArgumentException if the scanId is invalid
      */
     public static String getUrlPath(int scanId) throws IllegalArgumentException {
-        if (scanId == 0) {
+        if (scanId <= 0) {
             throw new IllegalArgumentException("ScanResponse must have a non-zero id to construct the URL");
         }
         return "/scans/" + scanId;
