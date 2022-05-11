@@ -19,10 +19,6 @@
       "id": 3
     }
   ],
-  "delete": [
-    { "id": 2 },
-    { "id": 3 }
-  ],
   "read": [
     {
       "searchMap": {

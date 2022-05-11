@@ -252,7 +252,7 @@ create table url (
 
 create table acl
 (
-    id           int          not null  primary key,
+    id           int          primary key auto_increment,
     nessus_id    int          null,
     owner        int          null,
     name         varchar(255) null,

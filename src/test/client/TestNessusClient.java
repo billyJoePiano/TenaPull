@@ -6,6 +6,8 @@ import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.*;
+import nessusTools.run.*;
+import nessusTools.util.*;
 import testUtils.*;
 
 import com.fasterxml.jackson.core.*;
@@ -14,6 +16,7 @@ import com.fasterxml.jackson.databind.node.*;
 
 import org.junit.*;
 
+import java.io.*;
 import java.sql.*;
 import java.util.*;
 
@@ -27,8 +30,12 @@ import org.apache.logging.log4j.*;
 public class TestNessusClient {
     public static final Logger logger = LogManager.getLogger(TestNessusClient.class);
 
+    static {
+        Main.loadTestConfig();
+    }
+
     @Before
-    public void resetDB() {
+    public void resetDB() throws FileNotFoundException {
         Database.hardReset();
     }
 
@@ -37,7 +44,17 @@ public class TestNessusClient {
             throws JsonProcessingException {
 
         NessusClient client = new NessusClient();
-        client.fetchAllScans();
+        IndexResponse ir = client.fetchJson(IndexResponse.pathFor(), IndexResponse.class);
+        IndexResponse.dao.saveOrUpdate(ir);
+
+        for (Scan scan : ir.getScans()) {
+            ScanResponse sr = new ScanResponse();
+            sr.setId(scan.getId());
+            ScanResponse.dao.saveOrUpdate(sr);
+            sr = client.fetchJson(ScanResponse.getUrlPath(scan.getId()), ScanResponse.class);
+            sr.setId(scan.getId());
+            ScanResponse.dao.saveOrUpdate(sr);
+        }
 
         List<Folder> folders = Folder.dao.getAll();
         assertNotEquals(0, folders.size());
@@ -48,18 +65,8 @@ public class TestNessusClient {
         assertEquals(scans.size(), infos.size());
 
 
-        logger.info("FETCHED FOLDERS:");
-        List<Scan> scansFromFolders = new ArrayList(scans.size());
-        for (Folder folder : folders) {
-            Folder.logger.info(folder);
-            //scansFromFolders.addAll(folder.getScans()); //TODO??
-        }
-
-        assertEquals(scans.size(), scansFromFolders.size());
-
         Comparator<DbPojo> comparator = (a, b) -> a.getId() - b.getId();
         scans.sort(comparator);
-        scansFromFolders.sort(comparator);
         infos.sort(comparator);
 
         logger.info("FETCHED SCANS:");
@@ -67,13 +74,11 @@ public class TestNessusClient {
         for (int i = 0; i < scans.size(); i++) {
             Scan scan = scans.get(i);
             ScanInfo info = infos.get(i);
-            Scan fromFolders = scansFromFolders.get(i);
 
             Scan.logger.info(scan);
             ScanInfo.logger.info(info);
 
             assertEquals(scan, info.getResponse().getScan());
-            assertEquals(scan, fromFolders);
         }
 
 

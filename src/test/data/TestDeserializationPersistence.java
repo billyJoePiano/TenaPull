@@ -6,10 +6,9 @@ import nessusTools.data.deserialize.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.persistence.*;
+import nessusTools.run.Main;
 import nessusTools.util.*;
 import org.junit.*;
-import testUtils.Database;
-import testUtils.CustomObjectMapper;
 
 import org.junit.jupiter.api.BeforeAll;
 
@@ -36,6 +35,11 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
     private static final Logger staticLogger =
             LogManager.getLogger(TestDeserializationPersistence.class);
 
+
+    static {
+        Main.loadTestConfig();
+    }
+
     /******************************
      * Parameters for each test
      *
@@ -55,8 +59,7 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
                         );
 
     @Parameterized.Parameters
-    public static Collection testParams() {
-
+    public static Collection testParams() throws FileNotFoundException {
         Map<Integer, Set<Integer>> map = parseFilenames();
         List<Object[]> params = makeParams(map);
 
@@ -226,7 +229,7 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
     }
 
     @BeforeAll
-    public static void dbReset() {
+    public static void dbReset() throws FileNotFoundException {
         Database.reset();
     }
 

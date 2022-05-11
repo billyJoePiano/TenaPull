@@ -18,7 +18,7 @@ import java.util.*;
  */
 
 public class Database {
-    public static final String DB_SOFT_RESET = "dbSoftReset.sql";
+    //public static final String DB_SOFT_RESET = "dbSoftReset.sql";
     public static final String DB_HARD_RESET = "dbHardReset.sql";
 
     private static final Logger logger = LogManager.getLogger(Database.class);
@@ -114,14 +114,17 @@ public class Database {
     }
 
     public static void reset() throws FileNotFoundException {
-        softReset();
+        hardReset();
     }
 
+    /*
     public static void softReset() throws FileNotFoundException {
         logger.info("RUNNING SOFT RESET ON DATABASE");
         runSQL(DB_SOFT_RESET);
         logger.info("FINISHED SOFT RESET ON DATABASE");
     }
+
+     */
 
     public static void hardReset() throws FileNotFoundException {
         logger.info("RUNNING HARD RESET ON DATABASE");

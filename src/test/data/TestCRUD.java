@@ -6,6 +6,8 @@ import java.util.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.DbPojo;
 import nessusTools.data.persistence.*;
+import nessusTools.run.*;
+import nessusTools.util.*;
 import testUtils.*;
 
 import com.fasterxml.jackson.databind.*;
@@ -36,6 +38,10 @@ public class TestCRUD {
 
     };
 
+    static {
+        Main.loadTestConfig();
+    }
+
 
     private final TestParams params;
 
@@ -47,7 +53,7 @@ public class TestCRUD {
     }
 
     @Before
-    public void dbReset() {
+    public void dbReset() throws FileNotFoundException {
         Database.reset();
         if (params.sqlPopulate != null) {
             Database.runSQL(params.sqlPopulate);

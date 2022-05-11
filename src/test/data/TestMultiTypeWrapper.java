@@ -6,6 +6,7 @@ import nessusTools.data.persistence.*;
 import java.math.*;
 import java.util.*;
 
+import nessusTools.run.*;
 import org.apache.logging.log4j.*;
 import org.junit.*;
 import org.junit.Test;
@@ -14,6 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class TestMultiTypeWrapper {
     public static final Logger logger = LogManager.getLogger(TestMultiTypeWrapper.class);
+
+    static {
+        Main.loadTestConfig();
+    }
 
     public static Map<String, Object> TEST_BOTH_DIRECTIONS =
             new LinkedHashMap() { {
