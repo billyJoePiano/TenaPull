@@ -16,18 +16,39 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.util.*;
 
+/**
+ * Represents a reusable extra json lookup, for any unexpected json returned from the
+ * Nessus API
+ */
 @Entity(name = "ExtraJson")
 @Table(name = "extra_json")
 public class ExtraJson implements HashLookupPojo<ExtraJson> {
+    /**
+     * The dao for ExtraJson
+     */
     public static final HashLookupDao<ExtraJson> dao = new HashLookupDao<>(ExtraJson.class);
 
 
     private static final Logger logger = LogManager.getLogger(ExtraJson.class);
 
+    /**
+     * Static utility method for creating a Json escape string of a given string
+     *
+     * @param str the string to escape
+     * @return the JSON-escaped string
+     */
     public static String escapeString(String str) {
         return "\"" + new String(JsonStringEncoder.getInstance().quoteAsString(str)) + "\"";
     }
 
+    /**
+     * Static utility method for creating a Json escape string of a given string,
+     * but omitting the leading and trailing quotation marks.
+     *
+     *
+     * @param str the string to escape
+     * @return the JSON-escaped string without enclosing quotation marks
+     */
     public static String escapeStringNoQuotes(String str) {
         return new String(JsonStringEncoder.getInstance().quoteAsString(str));
     }
@@ -41,14 +62,28 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
     @Convert(converter = ExtraJson.Converter.class)
     private JsonMap value;
 
+    /**
+     * Instantiates a new Extra json.
+     */
     public ExtraJson() {
         this.value = new JsonMap();
     }
 
+    /**
+     * Instantiates a new Extra json, copying the value map of the passed ExtraJson
+     *
+     * @param copyExceptId the ExtraJson to copy the value map from
+     */
     public ExtraJson(ExtraJson copyExceptId) {
         this(copyExceptId.value.map);
     }
 
+    /**
+     * Instantiates a new Extra json using a map of string keys and JsonNodes.
+     *
+     * @param value the map to copy
+     * @throws NullPointerException if the value is null
+     */
     public ExtraJson(Map<String, JsonNode> value)
             throws NullPointerException {
 
@@ -58,6 +93,13 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         this.value = new JsonMap(value);
     }
 
+    /**
+     * Instantiates a new Extra json by deserializing a string
+     *
+     * @param jsonStr the json str to deserialize
+     * @throws JsonProcessingException  if there is a JsonProcessingException while deserialization
+     * @throws IllegalArgumentException if the deserialized JsonNode is something other than an ObjectNode
+     */
     public ExtraJson(String jsonStr)
             throws JsonProcessingException, IllegalArgumentException {
 
@@ -96,6 +138,14 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         return Objects.equals(this.value.map, other.value.map);
     }
 
+    /**
+     * Put the provided json node in the value map using the provided key
+     *
+     * @param key   the key
+     * @param value the value
+     * @return the json node
+     * @throws IllegalStateException the illegal state exception
+     */
     @Transient
     public JsonNode put(String key, JsonNode value) throws IllegalStateException {
         if (this.id != 0) throw new IllegalStateException(
@@ -103,6 +153,12 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         return this.value.map.put(key, value);
     }
 
+    /**
+     * Get the json node in the value map at the provided key
+     *
+     * @param key the key
+     * @return the json node
+     */
     @Transient
     public JsonNode get(String key) {
         return value.map.get(key);
@@ -113,6 +169,11 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         return this.value.toString();
     }
 
+    /**
+     * The size of the value map
+     *
+     * @return the int
+     */
     @Transient
     public int size() {
         return this.value.map.size();
@@ -128,10 +189,21 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         this.id = id;
     }
 
+    /**
+     * Returns the value map
+     *
+     * @return the value
+     */
     public JsonMap getValue() {
         return this.value;
     }
 
+    /**
+     * Sets the value map
+     *
+     * @param map the map
+     * @throws NullPointerException the null pointer exception
+     */
     public void setValue(JsonMap map) throws NullPointerException {
         if (map == null) throw new NullPointerException();
         if (this.value == map) return;
@@ -201,19 +273,48 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         this.value = other.value;
     }
 
+    /**
+     * A wrapper for the map representing the key-value pairs of the ExtraJson.  Hibernate is
+     * not able to directly process a Map, but by wrapping it I am able to use a converter
+     * to convert between the DB and the ORM
+     */
     @Convert(converter = ExtraJson.Converter.class)
     public static class JsonMap {
+        /**
+         * Tree map is used so that the keys are always in "ASCII-betical" order,
+         * so that the hashes of two otherwise identical objects will always match,
+         * if the keys were added in a different order
+         */
         private final TreeMap<String, JsonNode> map;
+
+        /**
+         * Immutable view of the map
+         */
         private Map<String, JsonNode> view;
 
+        /**
+         * Instantiates a new empty JsonMap
+         */
         public JsonMap() {
             this.map = new TreeMap<>();
         }
 
+        /**
+         * Instantiates a new JsonMap, copying the provided map
+         *
+         * @param map the map
+         */
         public JsonMap(Map<String, JsonNode> map) {
             this.map = new TreeMap<>(map);
         }
 
+        /**
+         * Instantiates a new Json map by deserializing the provided string
+         *
+         * @param jsonStr the json string to deserialize
+         * @throws JsonProcessingException  if there was an exception while deserializing
+         * @throws IllegalArgumentException if the deserialized JsonNode is not an ObjectNode
+         */
         public JsonMap(String jsonStr)
                 throws JsonProcessingException, IllegalArgumentException {
             this();
@@ -231,6 +332,11 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
             }
         }
 
+        /**
+         * Gets the immutable view of the map
+         *
+         * @return the view
+         */
         public Map<String, JsonNode> getView() {
             if (this.view == null) {
                 this.view = Collections.unmodifiableMap(this.map);
@@ -238,10 +344,19 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
             return this.view;
         }
 
+        /**
+         * Returns a mutable copy of the map
+         *
+         * @return the map
+         */
         public Map<String, JsonNode> makeCopy() {
             return new TreeMap(map);
         }
 
+        /**
+         * Serializes the map into a string
+         * @return
+         */
         public String toString() {
             try {
                 return new ObjectMapper().writeValueAsString(this.map);
@@ -274,6 +389,12 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
 
         private Hash _hash;
 
+        /**
+         * Calculates the hash of the JsonMap if it is not already calculated, or returns
+         * the pre-calculated hash if it was calculated.
+         *
+         * @return the SHA-512 hash of the serialized map
+         */
         public Hash get_hash() {
             if (this._hash == null) {
                 this._hash = new Hash(this.toString());
@@ -281,6 +402,14 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
             return this._hash;
         }
 
+        /**
+         * Sets the hash after performing an immutability check
+         *
+         * @param hash the hash to set
+         * @throws IllegalStateException if the hash is being changed to a value different
+         * than previously set.  All values including the hash are intended to be immutable
+         * once a lookup record is created
+         */
         public void set_hash(Hash hash) throws IllegalStateException {
             if (this._hash != null && !Objects.equals(this._hash, hash)) {
                 throw new IllegalStateException("Cannot alter the hash of a HashLookup (" +
@@ -294,8 +423,15 @@ public class ExtraJson implements HashLookupPojo<ExtraJson> {
         }
     }
 
+    /**
+     * A singleton instance of the DB converter for static utility usage
+     */
     public static final Converter converter = new Converter();
 
+    /**
+     * Hibernate converter.  Converts a JsonMap into a string for the database,
+     * and a database string back into a JsonMap
+     */
     @javax.persistence.Converter
     public static class Converter implements AttributeConverter<JsonMap, String> {
         private static final Logger logger = LogManager.getLogger(Converter.class);

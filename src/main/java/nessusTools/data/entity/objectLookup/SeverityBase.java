@@ -8,6 +8,10 @@ import nessusTools.util.*;
 import javax.persistence.*;
 import java.util.*;
 
+/**
+ * Represents a reusable "object lookup", for the "severity_base" objects included
+ * in the scan info returned from the Nessus API at /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "SeverityBase")
 @Table(name = "severity_base")
 public class SeverityBase extends GeneratedIdPojo

@@ -13,11 +13,18 @@ import nessusTools.util.*;
 import javax.persistence.*;
 import java.util.*;
 
+/**
+ * Represents a reusable "object lookup", for a license object returned from the
+ * Nessus API at /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "License")
 @Table(name = "license")
 public class License extends GeneratedIdPojo implements MapLookupPojo<License> {
 
-	public static final MapLookupDao<License> dao
+    /**
+     * The dao for License
+     */
+    public static final MapLookupDao<License> dao
 			= new MapLookupDao<License>(License.class);
 
 	@Column(name = "`limit`") // tick marks to escape the field name, because 'limit' is a SQL keyword
@@ -32,18 +39,38 @@ public class License extends GeneratedIdPojo implements MapLookupPojo<License> {
     @JsonSerialize(using = MultiType.Serializer.class)
 	private MultiTypeWrapper trimmed;
 
-	public MultiTypeWrapper getLimit(){
+    /**
+     * Get limit.  This may be a string or number, so requires MultiTypeWrapper
+     *
+     * @return the multi type wrapper
+     */
+    public MultiTypeWrapper getLimit(){
 		return this.limit;
 	}
 
-	public MultiTypeWrapper getTrimmed(){
+    /**
+     * Get trimmed.  This may be a string or number, so requires MultiTypeWrapper
+     *
+     * @return the multi type wrapper
+     */
+    public MultiTypeWrapper getTrimmed(){
 		return this.trimmed;
 	}
 
+    /**
+     * Sets limit.  This may be a string or number, so requires MultiTypeWrapper
+     *
+     * @param limit the limit
+     */
     public void setLimit(MultiTypeWrapper limit) {
         this.limit = limit;
     }
 
+    /**
+     * Sets trimmed.  This may be a string or number, so requires MultiTypeWrapper
+     *
+     * @param trimmed the trimmed
+     */
     public void setTrimmed(MultiTypeWrapper trimmed) {
         this.trimmed = trimmed;
     }

@@ -16,37 +16,59 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.util.*;
 
+/**
+ * Represents a reusable "object lookup", for a plugin_attributes object returned from the
+ * Nessus API at /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "PluginAttributes")
 @Table(name = "plugin_attributes")
 public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
 
+    /**
+     * The dao for PluginAttributes
+     */
     public static final HashLookupDao<PluginAttributes> dao
             = new HashLookupDao<PluginAttributes>(PluginAttributes.class);
 
     @Column(name = "threat_intensity_last_28")
     @JsonProperty("threat_intensity_last_28")
-    String threatIntensityLast28;
+    private String threatIntensityLast28;
 
+    /**
+     * The Synopsis.
+     */
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "synopsis_id")
-    PluginSynopsis synopsis;
+    private PluginSynopsis synopsis;
 
+    /**
+     * The Script copyright.
+     */
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "script_copyright_id")
     @JsonProperty("script_copyright")
-    PluginScriptCopyright scriptCopyright;
+    private PluginScriptCopyright scriptCopyright;
 
+    /**
+     * The Description.
+     */
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "description_id")
-    PluginDescription description;
+    private PluginDescription description;
 
+    /**
+     * The Risk information.
+     */
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "risk_information_id")
     @Access(AccessType.PROPERTY)
     @JsonProperty("risk_information")
-    PluginRiskInformation riskInformation;
+    private PluginRiskInformation riskInformation;
 
 
+    /**
+     * The Ref information.
+     */
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
     @Fetch(value = FetchMode.SUBSELECT)
@@ -58,30 +80,48 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     )
     @OrderColumn(name = "__order_for_plugin_attributes_ref_information", nullable = false)
     @JsonIgnore
-    List<PluginRefInformation> refInformation;
+    private List<PluginRefInformation> refInformation;
 
+    /**
+     * The Ref information.
+     */
     @Transient
-    RefInformation ref_information;
+    private RefInformation ref_information;
 
+    /**
+     * The Threat sources last 28.
+     */
     @Column(name = "threat_sources_last_28")
     @JsonProperty("threat_sources_last_28")
-    String threatSourcesLast28;
+    private String threatSourcesLast28;
 
+    /**
+     * The Plugin name.
+     */
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "plugin_name_id")
     @JsonProperty("plugin_name")
-    PluginName pluginName;
+    private PluginName pluginName;
 
+    /**
+     * The Vpr score.
+     */
     @Column(name = "vpr_score")
     @JsonProperty("vpr_score")
     @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
-    String vprScore;
+    private String vprScore;
 
+    /**
+     * The Cvss score source.
+     */
     @Column(name = "cvss_score_source")
     @JsonProperty("cvss_score_source")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    String cvssScoreSource;
+    private String cvssScoreSource;
 
+    /**
+     * The See also.
+     */
     @Column(name = "see_also_id")
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
@@ -93,67 +133,103 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     @OrderColumn(name = "__order_for_plugin_attributes_see_also", nullable = false)
     @JsonProperty("see_also")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    List<PluginSeeAlso> seeAlso;
+    private List<PluginSeeAlso> seeAlso;
 
+    /**
+     * The Product coverage.
+     */
     @Column(name = "product_coverage")
     @JsonProperty("product_coverage")
     @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
-    String productCoverage;
+    private String productCoverage;
 
+    /**
+     * The Threat recency.
+     */
     @Column(name = "threat_recency")
     @JsonProperty("threat_recency")
     @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
-    String threatRecency;
+    private String threatRecency;
 
+    /**
+     * The Fname.
+     */
     @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
-    String fname;
+    private String fname;
 
+    /**
+     * The Cvss v 3 impact score.
+     */
     @Column(name = "cvss_v3_impact_score")
     @JsonProperty("cvssV3_impactScore")
     @JsonInclude(JsonInclude.Include.NON_EMPTY) // maybe ????
-    String cvssV3ImpactScore;
+    private String cvssV3ImpactScore;
 
+    /**
+     * The Plugin information.
+     */
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "plugin_information_id")
     @Access(AccessType.PROPERTY)
     @JsonProperty("plugin_information")
-    PluginInformation pluginInformation;
+    private PluginInformation pluginInformation;
 
+    /**
+     * The Required port.
+     */
     @Column(name = "required_port")
     @JsonProperty("required_port")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    String requiredPort;
+    private String requiredPort;
 
-    String dependency;
+    /**
+     * The Dependency.
+     */
+    private String dependency;
 
+    /**
+     * The Solution.
+     */
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "solution_id")
-    PluginSolution solution;
+    private PluginSolution solution;
 
+    /**
+     * The Plugin vuln information.
+     */
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "vuln_information_id")
     @Access(AccessType.PROPERTY)
     @JsonProperty("vuln_information")
-    PluginVulnInformation pluginVulnInformation;
+    private PluginVulnInformation pluginVulnInformation;
 
+    /**
+     * The Age of vuln.
+     */
     @Column(name = "age_of_vuln")
     @JsonProperty("age_of_vuln")
-    String ageOfVuln;
+    private String ageOfVuln;
 
+    /**
+     * The Exploit code maturity.
+     */
     @Column(name = "exploit_code_maturity")
     @JsonProperty("exploit_code_maturity")
-    String exploitCodeMaturity;
+    private String exploitCodeMaturity;
 
+    /**
+     * The Cert.
+     */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    String cert;
+    private String cert;
 
     @Column(name = "required_key")
     @JsonProperty("required_key")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    String requiredKey;
+    private String requiredKey;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    String iava;
+    private String iava;
 
     @Transient
     @JsonIgnore
@@ -167,16 +243,31 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     }
 
 
+    /**
+     * Gets ref information.
+     *
+     * @return the ref information
+     */
     public List<PluginRefInformation> getRefInformation() {
         return this.refInformation;
     }
 
+    /**
+     * Sets ref information.
+     *
+     * @param refInformation the ref information
+     */
     public void setRefInformation(List<PluginRefInformation> refInformation) {
         if (refInformation == this.refInformation) return; //break infinite recursion with child
         this.refInformation = refInformation;
         if (this.ref_information != null) this.ref_information.setRef(this.refInformation);
     }
 
+    /**
+     * Gets ref information.
+     *
+     * @return the ref information
+     */
     public RefInformation getRef_information() {
         if (this.ref_information == null) {
             this.ref_information = new RefInformation();
@@ -185,6 +276,11 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
         return this.ref_information;
     }
 
+    /**
+     * Sets ref information.
+     *
+     * @param ref_information the ref information
+     */
     public void setRef_information(RefInformation ref_information) {
         if (this.ref_information != null && this.ref_information != ref_information) {
             this.ref_information.clearParent();
@@ -325,195 +421,434 @@ public class PluginAttributes extends HashLookupTemplate<PluginAttributes> {
     }
 
 
-
+    /**
+     * Gets threat intensity last 28.
+     *
+     * @return the threat intensity last 28
+     */
     public String getThreatIntensityLast28() {
         return threatIntensityLast28;
     }
 
+    /**
+     * Sets threat intensity last 28.
+     *
+     * @param threatIntensityLast28 the threat intensity last 28
+     */
     public void setThreatIntensityLast28(String threatIntensityLast28) {
         this.threatIntensityLast28 = threatIntensityLast28;
     }
 
+    /**
+     * Gets synopsis.
+     *
+     * @return the synopsis
+     */
     public PluginSynopsis getSynopsis() {
         return synopsis;
     }
 
+    /**
+     * Sets synopsis.
+     *
+     * @param synopsis the synopsis
+     */
     public void setSynopsis(PluginSynopsis synopsis) {
         this.synopsis = synopsis;
     }
 
+    /**
+     * Gets script copyright.
+     *
+     * @return the script copyright
+     */
     public PluginScriptCopyright getScriptCopyright() {
         return scriptCopyright;
     }
 
+    /**
+     * Sets script copyright.
+     *
+     * @param scriptCopyright the script copyright
+     */
     public void setScriptCopyright(PluginScriptCopyright scriptCopyright) {
         this.scriptCopyright = scriptCopyright;
     }
 
+    /**
+     * Gets description.
+     *
+     * @return the description
+     */
     public PluginDescription getDescription() {
         return description;
     }
 
+    /**
+     * Sets description.
+     *
+     * @param description the description
+     */
     public void setDescription(PluginDescription description) {
         this.description = description;
     }
 
+    /**
+     * Gets risk information.
+     *
+     * @return the risk information
+     */
     public PluginRiskInformation getRiskInformation() {
         return riskInformation;
     }
 
+    /**
+     * Sets risk information.
+     *
+     * @param riskInformation the risk information
+     */
     public void setRiskInformation(PluginRiskInformation riskInformation) {
         this.riskInformation = riskInformation;
     }
 
+    /**
+     * Gets threat sources last 28.
+     *
+     * @return the threat sources last 28
+     */
     public String getThreatSourcesLast28() {
         return threatSourcesLast28;
     }
 
+    /**
+     * Sets threat sources last 28.
+     *
+     * @param threatSourcesLast28 the threat sources last 28
+     */
     public void setThreatSourcesLast28(String threatSourcesLast28) {
         this.threatSourcesLast28 = threatSourcesLast28;
     }
 
+    /**
+     * Gets plugin name.
+     *
+     * @return the plugin name
+     */
     public PluginName getPluginName() {
         return pluginName;
     }
 
+    /**
+     * Sets plugin name.
+     *
+     * @param pluginName the plugin name
+     */
     public void setPluginName(PluginName pluginName) {
         this.pluginName = pluginName;
     }
 
+    /**
+     * Gets vpr score.
+     *
+     * @return the vpr score
+     */
     public String getVprScore() {
         return vprScore;
     }
 
+    /**
+     * Sets vpr score.
+     *
+     * @param vprScore the vpr score
+     */
     public void setVprScore(String vprScore) {
         this.vprScore = vprScore;
     }
 
+    /**
+     * Gets cvss score source.
+     *
+     * @return the cvss score source
+     */
     public String getCvssScoreSource() {
         return cvssScoreSource;
     }
 
+    /**
+     * Sets cvss score source.
+     *
+     * @param cvssScoreSource the cvss score source
+     */
     public void setCvssScoreSource(String cvssScoreSource) {
         this.cvssScoreSource = cvssScoreSource;
     }
 
+    /**
+     * Gets see also.
+     *
+     * @return the see also
+     */
     public List<PluginSeeAlso> getSeeAlso() {
         return seeAlso;
     }
 
+    /**
+     * Sets see also.
+     *
+     * @param seeAlso the see also
+     */
     public void setSeeAlso(List<PluginSeeAlso> seeAlso) {
         this.seeAlso = seeAlso;
     }
 
+    /**
+     * Gets product coverage.
+     *
+     * @return the product coverage
+     */
     public String getProductCoverage() {
         return productCoverage;
     }
 
+    /**
+     * Sets product coverage.
+     *
+     * @param productCoverage the product coverage
+     */
     public void setProductCoverage(String productCoverage) {
         this.productCoverage = productCoverage;
     }
 
+    /**
+     * Gets threat recency.
+     *
+     * @return the threat recency
+     */
     public String getThreatRecency() {
         return threatRecency;
     }
 
+    /**
+     * Sets threat recency.
+     *
+     * @param threatRecency the threat recency
+     */
     public void setThreatRecency(String threatRecency) {
         this.threatRecency = threatRecency;
     }
 
+    /**
+     * Gets fname.
+     *
+     * @return the fname
+     */
     public String getFname() {
         return fname;
     }
 
+    /**
+     * Sets fname.
+     *
+     * @param fname the fname
+     */
     public void setFname(String fname) {
         this.fname = fname;
     }
 
+    /**
+     * Gets cvss v 3 impact score.
+     *
+     * @return the cvss v 3 impact score
+     */
     public String getCvssV3ImpactScore() {
         return cvssV3ImpactScore;
     }
 
+    /**
+     * Sets cvss v 3 impact score.
+     *
+     * @param cvssV3ImpactScore the cvss v 3 impact score
+     */
     public void setCvssV3ImpactScore(String cvssV3ImpactScore) {
         this.cvssV3ImpactScore = cvssV3ImpactScore;
     }
 
+    /**
+     * Gets plugin information.
+     *
+     * @return the plugin information
+     */
     public PluginInformation getPluginInformation() {
         return pluginInformation;
     }
 
+    /**
+     * Sets plugin information.
+     *
+     * @param pluginInformation the plugin information
+     */
     public void setPluginInformation(PluginInformation pluginInformation) {
         this.pluginInformation = pluginInformation;
     }
 
+    /**
+     * Gets required port.
+     *
+     * @return the required port
+     */
     public String getRequiredPort() {
         return requiredPort;
     }
 
+    /**
+     * Sets required port.
+     *
+     * @param requiredPort the required port
+     */
     public void setRequiredPort(String requiredPort) {
         this.requiredPort = requiredPort;
     }
 
+    /**
+     * Gets dependency.
+     *
+     * @return the dependency
+     */
     public String getDependency() {
         return dependency;
     }
 
+    /**
+     * Sets dependency.
+     *
+     * @param dependency the dependency
+     */
     public void setDependency(String dependency) {
         this.dependency = dependency;
     }
 
+    /**
+     * Gets solution.
+     *
+     * @return the solution
+     */
     public PluginSolution getSolution() {
         return solution;
     }
 
+    /**
+     * Sets solution.
+     *
+     * @param solution the solution
+     */
     public void setSolution(PluginSolution solution) {
         this.solution = solution;
     }
 
+    /**
+     * Gets plugin vuln information.
+     *
+     * @return the plugin vuln information
+     */
     public PluginVulnInformation getPluginVulnInformation() {
         return pluginVulnInformation;
     }
 
+    /**
+     * Sets plugin vuln information.
+     *
+     * @param pluginVulnInformation the plugin vuln information
+     */
     public void setPluginVulnInformation(PluginVulnInformation pluginVulnInformation) {
         this.pluginVulnInformation = pluginVulnInformation;
     }
 
+    /**
+     * Gets age of vuln.
+     *
+     * @return the age of vuln
+     */
     public String getAgeOfVuln() {
         return ageOfVuln;
     }
 
+    /**
+     * Sets age of vuln.
+     *
+     * @param ageOfVuln the age of vuln
+     */
     public void setAgeOfVuln(String ageOfVuln) {
         this.ageOfVuln = ageOfVuln;
     }
 
+    /**
+     * Gets exploit code maturity.
+     *
+     * @return the exploit code maturity
+     */
     public String getExploitCodeMaturity() {
         return exploitCodeMaturity;
     }
 
+    /**
+     * Sets exploit code maturity.
+     *
+     * @param exploitCodeMaturity the exploit code maturity
+     */
     public void setExploitCodeMaturity(String exploitCodeMaturity) {
         this.exploitCodeMaturity = exploitCodeMaturity;
     }
 
+    /**
+     * Gets cert.
+     *
+     * @return the cert
+     */
     public String getCert() {
         return cert;
     }
 
+    /**
+     * Sets cert.
+     *
+     * @param cert the cert
+     */
     public void setCert(String cert) {
         this.cert = cert;
     }
 
+    /**
+     * Gets required key.
+     *
+     * @return the required key
+     */
     public String getRequiredKey() {
         return requiredKey;
     }
 
+    /**
+     * Sets required key.
+     *
+     * @param requiredKey the required key
+     */
     public void setRequiredKey(String requiredKey) {
         this.requiredKey = requiredKey;
     }
 
+    /**
+     * Gets iava.
+     *
+     * @return the iava
+     */
     public String getIava() {
         return iava;
     }
 
+    /**
+     * Sets iava.
+     *
+     * @param iava the iava
+     */
     public void setIava(String iava) {
         this.iava = iava;
     }

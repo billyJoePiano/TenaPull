@@ -14,10 +14,17 @@ import nessusTools.util.*;
 import javax.persistence.*;
 import java.util.*;
 
+/**
+ * Represents a reusable "object lookup", for an object in the hosts list within each
+ * plugin returned from the Nessus API at /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "PluginHost")
 @Table(name = "plugin_host")
 public class PluginHost extends GeneratedIdPojo implements MapLookupPojo<PluginHost> {
 
+    /**
+     * The dao for PluginHost
+     */
     public static final MapLookupDao<PluginHost> dao = new MapLookupDao<PluginHost>(PluginHost.class);
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
@@ -27,45 +34,85 @@ public class PluginHost extends GeneratedIdPojo implements MapLookupPojo<PluginH
 
     @Column(name = "host_id")
     @JsonProperty("id")
-    Integer hostId;
+    private Integer hostId;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "host_fqdn_id")
     @JsonProperty("host_fqdn")
-    HostFqdn hostFqdn;
+    private HostFqdn hostFqdn;
 
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "hostname_id")
-    Hostname hostname;
+    private Hostname hostname;
 
+    /**
+     * Gets host ip.
+     *
+     * @return the host ip
+     */
     public HostIp getHostIp() {
         return hostIp;
     }
 
+    /**
+     * Sets host ip.
+     *
+     * @param hostIp the host ip
+     */
     public void setHostIp(HostIp hostIp) {
         this.hostIp = hostIp;
     }
 
+    /**
+     * Gets host id.
+     *
+     * @return the host id
+     */
     public Integer getHostId() {
         return hostId;
     }
 
+    /**
+     * Sets host id.
+     *
+     * @param hostId the host id
+     */
     public void setHostId(Integer hostId) {
         this.hostId = hostId;
     }
 
+    /**
+     * Gets host fqdn.
+     *
+     * @return the host fqdn
+     */
     public HostFqdn getHostFqdn() {
         return hostFqdn;
     }
 
+    /**
+     * Sets host fqdn.
+     *
+     * @param hostFqdn the host fqdn
+     */
     public void setHostFqdn(HostFqdn hostFqdn) {
         this.hostFqdn = hostFqdn;
     }
 
+    /**
+     * Gets hostname.
+     *
+     * @return the hostname
+     */
     public Hostname getHostname() {
         return hostname;
     }
 
+    /**
+     * Sets hostname.
+     *
+     * @param hostname the hostname
+     */
     public void setHostname(Hostname hostname) {
         this.hostname = hostname;
     }

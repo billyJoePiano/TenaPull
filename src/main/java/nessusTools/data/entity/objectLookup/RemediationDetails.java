@@ -13,6 +13,10 @@ import nessusTools.util.*;
 import javax.persistence.*;
 import java.util.*;
 
+/**
+ * Represents a reusable "object lookup", for an object in the list of remediations,
+ * returned from the Nessus API at /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "RemediationDetails")
 @Table(name = "remediation_details")
 public class RemediationDetails extends GeneratedIdPojo implements MapLookupPojo<RemediationDetails> {

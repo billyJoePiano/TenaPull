@@ -13,7 +13,10 @@ import javax.persistence.Table;
 import java.util.*;
 
 
-// for ScanHost
+/**
+ * Represents a reusable "object lookup", for the list of objects in the "severitycount" arrays
+ * within the host objects returned from the Nessus API at /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "SeverityLevelCount")
 @Table(name = "severity_level_count")
 @JsonIgnoreProperties({"id"})
@@ -21,6 +24,9 @@ public class SeverityLevelCount extends GeneratedIdPojo
         implements MapLookupPojo<SeverityLevelCount>,
                     Comparable<SeverityLevelCount> {
 
+    /**
+     * The dao for SeverityLevelCount
+     */
     public static final MapLookupDao<SeverityLevelCount> dao = new MapLookupDao<>(SeverityLevelCount.class);
 
     @Column(name = "severity_level")
@@ -29,18 +35,38 @@ public class SeverityLevelCount extends GeneratedIdPojo
 
     private Integer count;
 
+    /**
+     * Gets severity level.
+     *
+     * @return the severity level
+     */
     public int getSeverityLevel() {
         return severityLevel;
     }
 
+    /**
+     * Sets severity level.
+     *
+     * @param severityLevel the severity level
+     */
     public void setSeverityLevel(int severityLevel) {
         this.severityLevel = severityLevel;
     }
 
+    /**
+     * Gets count.
+     *
+     * @return the count
+     */
     public int getCount() {
         return count;
     }
 
+    /**
+     * Sets count.
+     *
+     * @param count the count
+     */
     public void setCount(int count) {
         this.count = count;
     }

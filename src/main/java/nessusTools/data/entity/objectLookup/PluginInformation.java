@@ -7,10 +7,17 @@ import nessusTools.data.persistence.*;
 import javax.persistence.*;
 import java.util.*;
 
+/**
+ * Represents a reusable "object lookup", for the information object included
+ * in the plugin attributes returned from the Nessus API at /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "PluginInformation")
 @Table(name = "plugin_information")
 public class PluginInformation extends HashLookupTemplate<PluginInformation> {
 
+    /**
+     * The dao for PluginInformation
+     */
     public static final HashLookupDao<PluginInformation> dao
             = new HashLookupDao<PluginInformation>(PluginInformation.class);
 
@@ -72,50 +79,110 @@ public class PluginInformation extends HashLookupTemplate<PluginInformation> {
     }
 
 
+    /**
+     * Gets plugin version.
+     *
+     * @return the plugin version
+     */
     public String getPluginVersion() {
         return pluginVersion;
     }
 
+    /**
+     * Sets plugin version.
+     *
+     * @param pluginVersion the plugin version
+     */
     public void setPluginVersion(String pluginVersion) {
         this.pluginVersion = pluginVersion;
     }
 
+    /**
+     * Gets plugin id.
+     *
+     * @return the plugin id
+     */
     public Integer getPluginId() {
         return pluginId;
     }
 
+    /**
+     * Sets plugin id.
+     *
+     * @param pluginId the plugin id
+     */
     public void setPluginId(Integer pluginId) {
         this.pluginId = pluginId;
     }
 
+    /**
+     * Gets plugin type.
+     *
+     * @return the plugin type
+     */
     public String getPluginType() {
         return pluginType;
     }
 
+    /**
+     * Sets plugin type.
+     *
+     * @param pluginType the plugin type
+     */
     public void setPluginType(String pluginType) {
         this.pluginType = pluginType;
     }
 
+    /**
+     * Gets plugin publication date.
+     *
+     * @return the plugin publication date
+     */
     public String getPluginPublicationDate() {
         return pluginPublicationDate;
     }
 
+    /**
+     * Sets plugin publication date.
+     *
+     * @param pluginPublicationDate the plugin publication date
+     */
     public void setPluginPublicationDate(String pluginPublicationDate) {
         this.pluginPublicationDate = pluginPublicationDate;
     }
 
+    /**
+     * Gets plugin family.
+     *
+     * @return the plugin family
+     */
     public String getPluginFamily() {
         return pluginFamily;
     }
 
+    /**
+     * Sets plugin family.
+     *
+     * @param pluginFamily the plugin family
+     */
     public void setPluginFamily(String pluginFamily) {
         this.pluginFamily = pluginFamily;
     }
 
+    /**
+     * Gets plugin modification date.
+     *
+     * @return the plugin modification date
+     */
     public String getPluginModificationDate() {
         return pluginModificationDate;
     }
 
+    /**
+     * Sets plugin modification date.
+     *
+     * @param pluginModificationDate the plugin modification date
+     */
     public void setPluginModificationDate(String pluginModificationDate) {
         this.pluginModificationDate = pluginModificationDate;
     }

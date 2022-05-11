@@ -14,15 +14,28 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.util.*;
 
+/**
+ * Represents a reusable "object lookup", for the "ref" object included
+ * in the plugin attributes returned from the Nessus API at /scans/&lt;scan-id&gt;
+ */
 @Entity(name = "PluginRefInformation")
 @Table(name = "plugin_ref_information")
 public class PluginRefInformation extends HashLookupTemplate<PluginRefInformation> {
 
+    /**
+     * The dao for PluginRefInformation
+     */
     public static final HashLookupDao<PluginRefInformation> dao
             = new HashLookupDao<PluginRefInformation>(PluginRefInformation.class);
 
-    String name;
+    /**
+     * The Name.
+     */
+    private String name;
 
+    /**
+     * The list of plugin ref values
+     */
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
     @Fetch(value = FetchMode.SUBSELECT)
@@ -34,16 +47,22 @@ public class PluginRefInformation extends HashLookupTemplate<PluginRefInformatio
     )
     @OrderColumn(name = "__order_for_plugin_ref_value", nullable = false)
     @JsonIgnore
-    List<PluginRefValue> values;
+    private List<PluginRefValue> values;
 
+    /**
+     * The Values json.
+     */
     @Transient
     @JsonProperty("values")
-    RefValues valuesJson;
+    private RefValues valuesJson;
 
+    /**
+     * The Url.
+     */
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name="url_id")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    Url url;
+    private Url url;
 
     @Transient
     @JsonIgnore
@@ -79,24 +98,49 @@ public class PluginRefInformation extends HashLookupTemplate<PluginRefInformatio
                 && Objects.equals(this.getExtraJson(), o.getExtraJson());
     }
 
+    /**
+     * Gets name.
+     *
+     * @return the name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets name.
+     *
+     * @param name the name
+     */
     public void setName(String name) {
         this.name = name;
     }
 
+    /**
+     * Gets values.
+     *
+     * @return the values
+     */
     public List<PluginRefValue> getValues() {
         return this.values;
     }
 
+    /**
+     * Sets values.
+     *
+     * @param values the values
+     */
     public void setValues(List<PluginRefValue> values) {
         if (this.values == values) return;
         this.values = values;
         if (this.valuesJson != null) this.valuesJson.setValue(this.values);
     }
 
+    /**
+     * Gets values json.
+     *
+     * @return the values json
+     */
     public RefValues getValuesJson() {
         if (this.valuesJson == null) {
             this.valuesJson = new RefValues();
@@ -105,6 +149,11 @@ public class PluginRefInformation extends HashLookupTemplate<PluginRefInformatio
         return this.valuesJson;
     }
 
+    /**
+     * Sets values json.
+     *
+     * @param values the values
+     */
     public void setValuesJson(RefValues values) {
         if (this.valuesJson != null && this.valuesJson != values) {
             this.valuesJson.clearParent();
@@ -113,10 +162,20 @@ public class PluginRefInformation extends HashLookupTemplate<PluginRefInformatio
         if (values != null) values.putFieldsIntoParent(this);
     }
 
+    /**
+     * Gets url.
+     *
+     * @return the url
+     */
     public Url getUrl() {
         return url;
     }
 
+    /**
+     * Sets url.
+     *
+     * @param url the url
+     */
     public void setUrl(Url url) {
         this.url = url;
     }
