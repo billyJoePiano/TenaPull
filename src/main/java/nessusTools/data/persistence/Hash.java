@@ -8,9 +8,24 @@ import java.nio.charset.*;
 import java.security.*;
 import java.util.*;
 
+/**
+ * Represents a "lazy" or "dirty" SHA-512 hash of a string lookup or object lookup.
+ * This is referred to as "lazy" because if the string being hashed is less than 64
+ * bytes, then the string itself is used in place of the hash.  This still guarantees
+ * the uniqueness of the hash, while saving the need to calculate the a SHA-512 hash
+ * when it would be unnecessary
+ *
+ *
+ */
 public class Hash implements Comparable<Hash> {
     private static Logger logger = LogManager.getLogger(Hash.class);
+    /**
+     * The constant ALGORITHM which we are using -- SHA-512
+     */
     public static final String ALGORITHM = "SHA-512";
+    /**
+     * The size of a SHA-512 hash -- 64 bytes.
+     */
     public static final int HASH_SIZE = 64;
 
     static {
@@ -30,17 +45,33 @@ public class Hash implements Comparable<Hash> {
 
     private final byte[] bytes;
 
+    /**
+     * Instantiates a new Hash using the given array of bytes
+     *
+     * @param bytes the bytes
+     */
     public Hash(byte[] bytes) {
         if (bytes == null) throw new NullPointerException();
         this.bytes = bytes.clone();
     }
 
+    /**
+     * Instantiates a new Hash, by making a "lazy hash" the given string
+     *
+     * @param str the str
+     */
     public Hash(String str) {
         if (str == null) throw new NullPointerException();
-        this.bytes = dirtyHash(str);
+        this.bytes = lazyHash(str);
     }
 
-    public static byte[] dirtyHash(String str) {
+    /**
+     * Lazily hashes the provided string into an array bytes
+     *
+     * @param str the str
+     * @return the byte [ ]
+     */
+    public static byte[] lazyHash(String str) {
         if (str == null) return null;
         byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
         if (bytes.length < HASH_SIZE) {
@@ -119,6 +150,12 @@ public class Hash implements Comparable<Hash> {
         return "[Hash] 0x" + hexString(this.bytes);
     }
 
+    /**
+     * Converts an array of bytes into a hexadecimal encoded string
+     *
+     * @param bytes the bytes
+     * @return the string
+     */
     public static String hexString(byte[] bytes) {
         StringBuilder hash = new StringBuilder();
         for (byte bt : bytes) {
@@ -131,8 +168,15 @@ public class Hash implements Comparable<Hash> {
         return hash.toString();
     }
 
+    /**
+     * Lazily hashes the provided string and returns the resulting
+     * hash as a hexadecimal encoded
+     *
+     * @param str the str
+     * @return the string
+     */
     public static String hexString(String str) {
-        byte[] bytes = dirtyHash(str);
+        byte[] bytes = lazyHash(str);
         return hexString(bytes);
     }
 
@@ -154,11 +198,26 @@ public class Hash implements Comparable<Hash> {
         else return this.javaHashCode = hashCode(this.bytes);
     }
 
+    /**
+     * Generates a unique java hashCode from the bytes array in the provided
+     * string
+     *
+     * @param str the str
+     * @return the int
+     */
     public static int hashCode(String str) {
         if (str == null) return 0;
         return hashCode(str.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Generates a unique java hashCode from the provided bytes array
+     * by applying a cumulative bitwise XOR operation on each sequential
+     * set of 4 bytes
+     *
+     * @param bytes the bytes
+     * @return the int
+     */
     public static int hashCode(byte[] bytes) {
         if (bytes == null) return 0;
         int result = 0;
@@ -176,6 +235,13 @@ public class Hash implements Comparable<Hash> {
         return result;
     }
 
+    /**
+     * Determines if the two byte array are equivalent
+     *
+     * @param mine   the mine
+     * @param theirs the theirs
+     * @return the boolean
+     */
     public static boolean equals(byte[] mine, byte[] theirs) {
         if (mine == null) {
             return theirs == null;
@@ -199,6 +265,13 @@ public class Hash implements Comparable<Hash> {
         return checkedCompareTo(this.bytes, other.bytes);
     }
 
+    /**
+     * Returns a comparison of two byte arrays
+     *
+     * @param mine   the mine
+     * @param theirs the theirs
+     * @return the int
+     */
     public static int compareTo(byte[] mine, byte[] theirs) {
         if (mine == null) {
             return theirs == null ? 0 : 1;
@@ -235,6 +308,10 @@ public class Hash implements Comparable<Hash> {
         return 0;
     }
 
+    /**
+     * Converts Hash instances back and forth between the database varbinary field
+     * and the hash fields in the ORM.
+     */
     @javax.persistence.Converter
     public static class Converter implements AttributeConverter<Hash, byte[]> {
         private static final Logger logger = LogManager.getLogger(ExtraJson.Converter.class);

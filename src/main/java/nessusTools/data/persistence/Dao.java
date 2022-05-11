@@ -25,12 +25,24 @@ import javax.persistence.metamodel.SingularAttribute;
 import java.lang.*;
 import java.util.*;
 
-
+/**
+ * Standard generic dao.
+ *
+ * @param <POJO> the type parameter
+ */
 public class Dao<POJO extends DbPojo> {
     private static final Logger staticLogger = LogManager.getLogger(Dao.class);
     private static final Map<Class<DbPojo>, Dao<DbPojo>> classMap = new HashMap();
     private static final SessionFactory SESSION_FACTORY;
 
+    /**
+     * Get the dao for the provided pojo type
+     *
+     * @param <P>      the pojo type
+     * @param <D>      the dao for the provided pojo type
+     * @param pojoType the pojo type
+     * @return the dao for the provided pojo type
+     */
     public static <P extends DbPojo, D extends Dao<P>> D get(Class<P> pojoType) {
         synchronized (Dao.class) {
             return (D) classMap.get(pojoType);
@@ -68,6 +80,9 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
+    /**
+     * The logger for the pojo class which the dao is for
+     */
     protected final Logger logger;
     private final Class<POJO> pojoType;
 
@@ -83,7 +98,15 @@ public class Dao<POJO extends DbPojo> {
     private static Set<Class<? extends DbPojo>> notInitializedSessionLenders;
 
 
-    public Dao(final Class<POJO> pojoType) {
+    /**
+     * Instantiates a new Dao for the provided pojoType, and adds it to the map
+     * of pojoTypes and dao.
+     *
+     * @param pojoType the pojo type
+     * @throws IllegalArgumentException if a dao has already been instantiated
+     * for the provided pojoType
+     */
+    public Dao(final Class<POJO> pojoType) throws IllegalArgumentException {
         synchronized (Dao.class) {
             if (classMap.containsKey(pojoType)) {
                 throw new IllegalArgumentException("A Dao for this class already exists: "
@@ -96,15 +119,33 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
+    /**
+     * Gets pojo type for the dao.
+     *
+     * @return the pojo type
+     */
     public Class<POJO> getPojoType() {
         return this.pojoType;
     }
 
+    /**
+     * Gets logger for the dao's pojo type.
+     *
+     * @return the logger
+     */
     public Logger getLogger() {
         return this.logger;
     }
 
 
+    /**
+     * Instructs the dao to borrow any open sessions on the current thread
+     * from the dao of the other pojo type.  This is not currently used,
+     * but may be needed in future use-cases involved database session
+     * synchronization and Hibernate proxies.
+     *
+     * @param pojoType the pojo type
+     */
     public void borrowSessionsFrom(Class<? extends DbPojo> pojoType) {
         synchronized (Dao.class) {
             if (this.borrowSessionsFrom == null) {
@@ -114,6 +155,22 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
+    /**
+     * Holds a session open for all invocations on the current thread
+     * until releaseSession has been called.  This is needed in some cases
+     * to initialize a HibernateProxy that was lazily fetched.
+     * <br/>
+     * NOTE: IT IS VERY IMPORTANT TO INCLUDE RELEASE SESSION IN THE FINALLY
+     * BLOCK OF A TRY ... (catch optional) ... FINALLY CONSTRUCT WHEN USING THIS METHOD.
+     * Otherwise the number of available sessions will become
+     * quickly exhausted, and the application will be deadlocked waiting for
+     * sessions to open up.
+     * <br/>
+     * It should also be noted that if holdSession is invoked multiple times
+     * on a thread before releaseSession is called, then releaseSession must
+     * be invoked the same number of times before the session will be closed.
+     *
+     */
     public void holdSession() {
         Thread current = Thread.currentThread();
         synchronized (this.holdOpen) {
@@ -121,6 +178,19 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
+    /**
+     * Release a session being held open.
+     * <br/>
+     * NOTE: IT IS VERY IMPORTANT TO INCLUDE RELEASE SESSION IN THE FINALLY
+     * BLOCK OF A TRY ... (catch optional) ... FINALLY CONSTRUCT WHEN USING THIS METHOD.
+     * Otherwise the number of available sessions will become
+     * quickly exhausted, and the application will be deadlocked waiting for
+     * sessions to open up.
+     * <br/>
+     * It should also be noted that if holdSession is invoked multiple times
+     * on a thread before releaseSession is called, then releaseSession must
+     * be invoked the same number of times before the session will be closed.
+     */
     public void releaseSession() {
         Thread current = Thread.currentThread();
         SessionTracker session;
@@ -143,6 +213,11 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
+    /**
+     * Gets or creates a session tracker which holds a session to be used
+     *
+     * @return the session tracker with an open session
+     */
     protected SessionTracker getSession() {
 
         SessionTracker session = null;
@@ -190,6 +265,12 @@ public class Dao<POJO extends DbPojo> {
         return session;
     }
 
+    /**
+     * Returns whether the dao has any active sessions on the current
+     * thread
+     *
+     * @return the boolean
+     */
     public boolean hasActiveSession() {
         Thread current = Thread.currentThread();
         synchronized (this.sessions) {
@@ -204,6 +285,13 @@ public class Dao<POJO extends DbPojo> {
         return false;
     }
 
+    /**
+     * Checks whether any other dao that lends session to this dao has
+     * an active session on the current thread
+     *
+     * @return whether any session-lending daos to this dao have active
+     * sessions on the current thread
+     */
     public boolean lenderHasActiveSession() {
         synchronized (Dao.class) {
             if (this.borrowSessionsFrom == null) return false;
@@ -217,14 +305,41 @@ public class Dao<POJO extends DbPojo> {
         return false;
     }
 
+    /**
+     * Session tracker used to track the daos and invocations that are using an
+     * open session
+     */
     protected static class SessionTracker {
+        /**
+         * The Session being tracked
+         */
         protected final Session session = SESSION_FACTORY.openSession();
+
+        /**
+         * The Thread on which this session is being used
+         */
         protected final Thread thread = Thread.currentThread();
+
         private Transaction transaction;
+
+        /**
+         * All daos which are sharing this session.  The same dao
+         * may appear multiple times if its methods using the session are
+         * being invoked sequentially through the call stack, before it
+         * closes its role in the session.  The session is not actually closed
+         * and the transaction committed until this list has been emptied
+         */
         protected List<Dao> sharers = new ArrayList();
 
         private SessionTracker() { }
 
+        /**
+         * The way for a dao to indicate that the current method is finished with
+         * its used of this session, so can be removed from the sharers list.  Once
+         * the sharers list reaches zero, the session will be closed
+         *
+         * @param dao the dao
+         */
         protected void done(Dao dao) {
             if (this.sharers == null) {
                 this.close(dao);
@@ -251,7 +366,16 @@ public class Dao<POJO extends DbPojo> {
             }
         }
 
-        // only call from done() ... session users should only call done(this)
+        /**
+         * Called exclusively by done(Dao dao) once all daos are done
+         * with the given session.  This commits the transaction if needed,
+         * and closes the session, including exception handling if needed
+         * NOTE THAT EXCEPTIONS WILL BE LOGGED BUT THEN THROWN BACK UP THE
+         * CALL STACK
+         *
+         * @param closer
+         * @throws DbException
+         */
         private void close(Dao closer) throws DbException {
             DbException commitException = null;
             try {
@@ -266,6 +390,7 @@ public class Dao<POJO extends DbPojo> {
                         transaction.rollback();
                         closer.logger.error("Error committing DB transaction", e);
                         commitException = new DbException(e, closer.pojoType);
+                        throw commitException;
                     }
                 }
 
@@ -282,6 +407,12 @@ public class Dao<POJO extends DbPojo> {
         }
 
 
+        /**
+         * Gets the transaction for the current session, or creates it if
+         * one does not yet exist
+         *
+         * @return the transaction
+         */
         protected Transaction getTransaction() {
             if (this.transaction == null) {
                 this.transaction = session.beginTransaction();
@@ -289,6 +420,15 @@ public class Dao<POJO extends DbPojo> {
             return this.transaction;
         }
 
+        /**
+         * Method to invoke when there is a DB failure.  This will rollback
+         * the transaction, log the exception, wrap the exception with a DbException,
+         * and then throw it back up the call stack.
+         *
+         * @param e   the e
+         * @param dao the dao
+         * @throws DbException the db exception
+         */
         protected void failed(Throwable e, Dao dao) throws DbException {
             if (this.transaction != null
                     && (this.sharers == null || this.sharers.size() <= 1)) {
@@ -308,9 +448,11 @@ public class Dao<POJO extends DbPojo> {
     }
 
 
-
     /**
      * Get POJO by id
+     *
+     * @param id the id
+     * @return the by id
      */
     public POJO getById(int id) {
         SessionTracker sessionTracker = getSession();
@@ -330,6 +472,11 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
+    /**
+     * Save or update.
+     *
+     * @param pojo the pojo
+     */
     public void saveOrUpdate(POJO pojo) {
         this.saveOrUpdate(pojo, true);
     }
@@ -337,7 +484,8 @@ public class Dao<POJO extends DbPojo> {
     /**
      * update POJO
      *
-     * @param pojo POJO to be inserted or updated
+     * @param pojo       POJO to be inserted or updated
+     * @param runPrepare the run prepare
      */
     protected void saveOrUpdate(POJO pojo, boolean runPrepare) {
         if (pojo == null) return;
@@ -372,12 +520,20 @@ public class Dao<POJO extends DbPojo> {
      * insert POJO
      *
      * @param pojo POJO to be inserted
+     * @return the int
      */
     public int insert(POJO pojo) {
         return this.insert(pojo, true);
     }
 
 
+    /**
+     * Insert int.
+     *
+     * @param pojo       the pojo
+     * @param runPrepare the run prepare
+     * @return the int
+     */
     protected int insert(POJO pojo, boolean runPrepare) {
         if (pojo == null) return -1;
 
@@ -421,6 +577,12 @@ public class Dao<POJO extends DbPojo> {
         this.delete(pojo, true);
     }
 
+    /**
+     * Delete.
+     *
+     * @param pojo       the pojo
+     * @param runPrepare the run prepare
+     */
     public void delete(POJO pojo, boolean runPrepare) {
         SessionTracker session = null;
         Transaction tx = null;
@@ -479,7 +641,7 @@ public class Dao<POJO extends DbPojo> {
      *
      * @param propertyName the property name.
      * @param value        the value by which to find.
-     * @return
+     * @return list
      */
     public List<POJO> findByPropertyEqual(String propertyName, Object value) {
         return keyValueSearch(propertyName, value);
@@ -496,6 +658,13 @@ public class Dao<POJO extends DbPojo> {
         return mapSearch(propertyMap);
     }
 
+    /**
+     * Key value search list.
+     *
+     * @param propertyName the property name
+     * @param value        the value
+     * @return the list
+     */
     protected List<POJO> keyValueSearch(String propertyName, Object value) {
         SessionTracker session = getSession();
 
@@ -525,9 +694,15 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
-    // this method is kept seperate so that the methods which need to call it can be overridden
-    // in MapLookupDao without overriding this functionality
 
+    /**
+     * Map search list.
+     * this method is kept seperate so that the methods which need to call it can be
+     * overridden in MapLookupDao without overriding this functionality.
+     *
+     * @param propertyMap the property map
+     * @return the list
+     */
     protected List<POJO> mapSearch(Map<String, Object> propertyMap) {
         SessionTracker sessionTracker = getSession();
         Session session = sessionTracker.session;
@@ -569,10 +744,15 @@ public class Dao<POJO extends DbPojo> {
         }
     }
 
-    // Search on all fields EXCEPT id.  Return exact match only
-    // IMPORTANT: the id of the passed searchPojo will be mutated in order to test equality.
-    // IF no match is found, its id will be restored to the original value.  If a match is found
-    // the id of the match will be left in the searchPojo.
+    /**
+     * Search on all fields EXCEPT id.  Return exact match only.
+     * IMPORTANT: the id of the passed searchPojo will be mutated in order to test equality.
+     * IF no match is found, its id will be restored to the original value.  If a match is found
+     * the id of the match will be left in the searchPojo.
+     *
+     * @param searchPojo the pojo to search for
+     * @return the pojo found
+     */
     public POJO findByExactPojo(POJO searchPojo) {
         if (searchPojo == null) {
             return null;
@@ -592,6 +772,13 @@ public class Dao<POJO extends DbPojo> {
         return null;
     }
 
+    /**
+     * Makes the search make to be used by findExactPojo, using the attribute
+     * maps created from Hibernate.
+     *
+     * @param searchPojo the search pojo
+     * @return the map
+     */
     protected Map<String, Object> makeExactPojoSearchMap(POJO searchPojo) {
         Map<String, Object> searchMap = new HashMap();
         Map<String, Attribute<? super POJO, ?>> attributeMap = this.getAttributeMap();
@@ -612,7 +799,12 @@ public class Dao<POJO extends DbPojo> {
         return searchMap;
     }
 
-    // Search on all non-null fields except id.  Return a list of matching entries
+    /**
+     * Search on all non-null fields except id.  Return a list of matching entries
+     *
+     * @param searchPojo the search pojo
+     * @return the list
+     */
     public List<POJO> findByPojoNonNull(POJO searchPojo) {
         if (searchPojo == null) {
             return null;
@@ -621,6 +813,12 @@ public class Dao<POJO extends DbPojo> {
         return this.mapSearch(searchMap);
     }
 
+    /**
+     * Make the search make to use for findByPojoNonNull
+     *
+     * @param searchPojo the search pojo
+     * @return the map
+     */
     protected Map<String, Object> makePojoNonNullSearchMap(POJO searchPojo) {
         Map<String, Object> searchMap = new HashMap();
 
@@ -636,6 +834,11 @@ public class Dao<POJO extends DbPojo> {
     }
 
 
+    /**
+     * Gets or constructs the map of pojo attributes from Hibernate
+     *
+     * @return the attribute map
+     */
     public Map<String, Attribute<? super POJO, ?>> getAttributeMap() {
         if (this.attributeMap == null) {
             makeAccessorMaps();
@@ -643,6 +846,11 @@ public class Dao<POJO extends DbPojo> {
         return this.attributeMap;
     }
 
+    /**
+     * Gets or constructs the map of attribute accessors from Hibernate
+     *
+     * @return the access map
+     */
     public Map<String, PropertyAccess> getAccessMap() {
         if (this.accessMap == null) {
             makeAccessorMaps();
@@ -650,6 +858,11 @@ public class Dao<POJO extends DbPojo> {
         return this.accessMap;
     }
 
+    /**
+     * Gets or creates the map of attribute getters from Hibernate
+     *
+     * @return the getter map
+     */
     public Map<String, Getter> getGetterMap() {
         if (this.getterMap == null) {
             makeAccessorMaps();
@@ -657,15 +870,12 @@ public class Dao<POJO extends DbPojo> {
         return this.getterMap;
     }
 
-    /*
-    public Map<String, Class<AttributeConverter>> getConverterMap() {
-        if (this.converterMap == null) {
-            makeAccessorMaps();
-        }
-        return this.converterMap;
-    }
-     */
 
+    /**
+     * Gets or creates map of id fields from Hibernate
+     *
+     * @return the id map
+     */
     public Map<String, Attribute<? super POJO, ?>> getIdMap() {
         if (this.idMap == null) {
             makeAccessorMaps();
@@ -714,6 +924,14 @@ public class Dao<POJO extends DbPojo> {
         return "[Dao for " + this.getPojoType().getSimpleName() + "]";
     }
 
+    /**
+     * Unproxies a pojo if it is a Hibernate Proxy, or if not posssible because
+     * its session has already closed, this re-fetches the record
+     * with a new session and unproxies the new record.
+     *
+     * @param pojo the pojo
+     * @return the pojo
+     */
     public POJO unproxy(POJO pojo) {
         if (pojo == null) return null;
         if (!(pojo instanceof HibernateProxy)) return pojo;
@@ -725,6 +943,13 @@ public class Dao<POJO extends DbPojo> {
         return checkedUnproxy(proxy);
     }
 
+    /**
+     * Invoked by unproxy after it has confirmed that the pojo
+     * is not null and is an uninitialized instance of HibernateProxy
+     *
+     * @param pojo the pojo
+     * @return the pojo
+     */
     protected POJO checkedUnproxy(@NotNull HibernateProxy pojo) {
         int id = ((POJO)pojo).getId();
         if (id > 0) {
