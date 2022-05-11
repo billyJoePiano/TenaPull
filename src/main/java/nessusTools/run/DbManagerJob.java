@@ -161,7 +161,7 @@ public class DbManagerJob extends Job {
 
     @Override
     protected void output() {
-        logger.info("DbManagerJob '" + this.name + "' finished");
+        logger.info("'" + this.name + "' finished");
         synchronized (this.addAfterDone) {
             for (Job job : this.addAfterDone) {
                 this.addJob(job);

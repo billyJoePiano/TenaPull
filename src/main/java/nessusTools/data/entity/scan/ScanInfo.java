@@ -37,6 +37,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
 
     public static final Logger logger = LogManager.getLogger(ScanInfo.class);
 
+    @Column(name = "folder_id")
     private Integer folder;
 
     private String name;

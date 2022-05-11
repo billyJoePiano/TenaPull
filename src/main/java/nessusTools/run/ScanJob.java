@@ -13,11 +13,7 @@ import java.util.*;
 
 public class ScanJob extends DbManagerJob.Child {
     private static Logger logger = LogManager.getLogger(ScanJob.class);
-    //private static final ScanStatus COMPLETED = ScanStatus.dao.getOrCreate("completed");
-    //private static final ScanStatus CANCELED = ScanStatus.dao.getOrCreate("canceled");
     private static final ScanStatus RUNNING = ScanStatus.dao.getOrCreate("running");
-    //private static final long CHECK_BACK_FOR_COMPLETION = 5 * 60 * 1000; // 5 minutes in ms
-    //private static final long MAX_WAIT_FOR_COMPLETION = 2 * 60 * 60 * 1000; //2 hours in ms
 
     private final Scan scan;
     private ScanResponse response;
@@ -36,35 +32,7 @@ public class ScanJob extends DbManagerJob.Child {
             this.failed();
             return false;
 
-        }/* else if (Objects.equals(RUNNING, status)) {
-            if (this.startWait == null) {
-                this.startWait = System.currentTimeMillis();
-                return false;
-
-            }
-
-            boolean done = false;
-            try {
-                response = client.fetchJson(ScanResponse.getUrlPath(this.scan.getId()), ScanResponse.class);
-                ScanInfo info = response.getInfo();
-                if (info != null) {
-                    done = !Objects.equals(RUNNING, info.getStatus());
-                }
-
-            } catch(Exception e) { }
-
-            if (!done) {
-                if (System.currentTimeMillis() - this.startWait > MAX_WAIT_FOR_COMPLETION) {
-                    logger.error("Timed out waiting for scan id " + scan.getId() + " to complete\n" + scan);
-                    this.failed();
-
-                } else {
-                    this.tryAgainIn(CHECK_BACK_FOR_COMPLETION);
-                }
-                return false;
-            }
         }
-        */
 
         ScanResponse old = ScanResponse.dao.getById(scan.getId());
         if (old == null) {

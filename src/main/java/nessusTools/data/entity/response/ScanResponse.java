@@ -39,7 +39,7 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     public static final Dao<ScanResponse> dao = new Dao(ScanResponse.class);
 
     /**
-     * Gets url path.
+     * Gets url path to obtain the scan response
      *
      * @param scanId the scan id
      * @return the url path

@@ -47,7 +47,6 @@ public class HostOutput implements DbPojo {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "hostOutput")
     @LazyCollection(LazyCollectionOption.FALSE)
     @Fetch(value = FetchMode.SUBSELECT)
-    //@OrderColumn(name = "__order_for_host_vulnerability_output", nullable = false)
     private List<HostVulnerabilityOutput> vulnerabilities;
 
 
