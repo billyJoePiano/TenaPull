@@ -10,6 +10,12 @@ import nessusTools.data.entity.template.*;
 import javax.persistence.*;
 import java.sql.*;
 
+/**
+ * Abstract implementation of the NessusResponse interface, which uses the timestamp
+ * provided by the Nessus API
+ *
+ * @param <RES> the nessus response type implementing NessusResponseWithTimestamp
+ */
 @MappedSuperclass
 public abstract class NessusResponseWithTimestamp<RES extends NessusResponseWithTimestamp<RES>>
         extends GeneratedIdPojo

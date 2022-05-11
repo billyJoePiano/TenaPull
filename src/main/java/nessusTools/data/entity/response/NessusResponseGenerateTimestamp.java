@@ -13,6 +13,12 @@ import javax.persistence.*;
 import java.sql.*;
 import java.time.*;
 
+/**
+ * Abstract implementation of the NessusResponse interface, which generates a timestamp at the time
+ * of instantiation, because the Nessus API does not provide a timestamp.
+ *
+ * @param <RES> the nessus response type implementing NessusResponseGenerateTimestamp
+ */
 @MappedSuperclass
 @JsonIgnoreProperties(allowSetters = true, value = {"id"})
 public abstract class NessusResponseGenerateTimestamp<RES extends NessusResponseGenerateTimestamp<RES>>

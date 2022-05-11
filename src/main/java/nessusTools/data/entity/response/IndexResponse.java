@@ -15,6 +15,9 @@ import javax.persistence.Entity;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
+/**
+ * The index response represents Nessus API responses at the root of the API
+ */
 @Entity(name = "IndexResponse")
 @Table(name = "index_response")
 public class IndexResponse extends NessusResponseWithTimestamp {

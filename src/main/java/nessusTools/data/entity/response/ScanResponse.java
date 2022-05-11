@@ -20,13 +20,30 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import java.util.*;
 
+/**
+ * Represents a response from the Nessus API at the url path /scans/&lt;scan-id&gt;
+ * with details about a specific scan
+ */
 @Entity(name = "ScanResponse")
 @Table(name = "scan_response")
 @JsonIgnoreProperties({"id", "filters"})
 public class ScanResponse extends NessusResponseGenerateTimestamp {
+    /**
+     * The logger for ScanResponse
+     */
     public static final Logger logger = LogManager.getLogger(ScanResponse.class);
+    /**
+     * The dao for ScanResponse
+     */
     public static final Dao<ScanResponse> dao = new Dao(ScanResponse.class);
 
+    /**
+     * Gets url path.
+     *
+     * @param scanId the scan id
+     * @return the url path
+     * @throws IllegalArgumentException the illegal argument exception
+     */
     public static String getUrlPath(int scanId) throws IllegalArgumentException {
         if (scanId == 0) {
             throw new IllegalArgumentException("ScanResponse must have a non-zero id to construct the URL");
@@ -150,12 +167,22 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         }
     }
 
+    /**
+     * The interface Scan response child.
+     *
+     * @param <POJO> the type parameter
+     */
     public interface ScanResponseChild<POJO extends ScanResponseChild<POJO>>
             extends ResponseChild<POJO, ScanResponse> {
 
     }
 
 
+    /**
+     * The type Single child.
+     *
+     * @param <POJO> the type parameter
+     */
     @MappedSuperclass
     public abstract static class SingleChild<POJO extends SingleChild<POJO>>
             extends SingleChildTemplate<POJO, ScanResponse>
@@ -164,6 +191,11 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     }
 
 
+    /**
+     * The type Multi child.
+     *
+     * @param <POJO> the type parameter
+     */
     @MappedSuperclass
     @AssociationOverride(
             name = "response",
@@ -176,6 +208,11 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     }
 
 
+    /**
+     * The type Single child lookup.
+     *
+     * @param <POJO> the type parameter
+     */
     @MappedSuperclass
     public abstract static class SingleChildLookup<POJO extends SingleChildLookup<POJO>>
             extends SingleChild<POJO>
@@ -183,6 +220,11 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
 
     }
 
+    /**
+     * The type Multi child lookup.
+     *
+     * @param <POJO> the type parameter
+     */
     @MappedSuperclass
     public abstract static class MultiChildLookup<POJO extends MultiChildLookup<POJO>>
             extends MultiChild<POJO>
@@ -191,42 +233,92 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
     }
 
 
+    /**
+     * Gets scan.
+     *
+     * @return the scan
+     */
     public Scan getScan() {
         return scan;
     }
 
+    /**
+     * Sets scan.
+     *
+     * @param scan the scan
+     */
     public void setScan(Scan scan) {
         this.scan = scan;
     }
 
+    /**
+     * Gets info.
+     *
+     * @return the info
+     */
     public ScanInfo getInfo() {
         return info;
     }
 
+    /**
+     * Sets info.
+     *
+     * @param info the info
+     */
     public void setInfo(ScanInfo info) {
         this.info = info;
     }
 
+    /**
+     * Gets hosts.
+     *
+     * @return the hosts
+     */
     public List<ScanHost> getHosts() {
         return hosts = hosts;
     }
 
+    /**
+     * Sets hosts.
+     *
+     * @param hosts the hosts
+     */
     public void setHosts(List<ScanHost> hosts) {
         this.hosts = hosts;
     }
 
+    /**
+     * Gets vulnerabilities.
+     *
+     * @return the vulnerabilities
+     */
     public List<Vulnerability> getVulnerabilities() {
         return vulnerabilities;
     }
 
+    /**
+     * Sets vulnerabilities.
+     *
+     * @param vulnerabilities the vulnerabilities
+     */
     public void setVulnerabilities(List<Vulnerability> vulnerabilities) {
         this.vulnerabilities = vulnerabilities;
     }
 
+    /**
+     * Gets remediations.
+     *
+     * @return the remediations
+     */
     public ScanRemediationsSummary getRemediations() {
         return remediations;
     }
 
+    /**
+     * Sets remediations.
+     *
+     * @param remediations the remediations
+     */
     public void setRemediations(ScanRemediationsSummary remediations) {
         if (remediations == this.remediations) return;
 
@@ -249,10 +341,20 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         this.remediations = remediations;
     }
 
+    /**
+     * Gets remediations list.
+     *
+     * @return the remediations list
+     */
     public List<ScanRemediation> getRemediationsList() {
         return remediationsList;
     }
 
+    /**
+     * Sets remediations list.
+     *
+     * @param remediationsList the remediations list
+     */
     public void setRemediationsList(List<ScanRemediation> remediationsList) {
         if (this.remediationsList == remediationsList) return;
         this.remediationsList = remediationsList;
@@ -262,24 +364,49 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         }
     }
 
+    /**
+     * Gets history.
+     *
+     * @return the history
+     */
     public List<ScanHistory> getHistory() {
         return history;
     }
 
+    /**
+     * Sets history.
+     *
+     * @param history the history
+     */
     public void setHistory(List<ScanHistory> history) {
         this.history = history;
     }
 
+    /**
+     * Gets plugins.
+     *
+     * @return the plugins
+     */
     public List<ScanPlugin> getPlugins() {
         return this.plugins;
     }
 
+    /**
+     * Sets plugins.
+     *
+     * @param plugins the plugins
+     */
     public void setPlugins(List<ScanPlugin> plugins) {
         if (this.plugins == plugins) return;
         this.plugins = plugins;
         if (this.prioritization != null) this.prioritization.setPlugins(this.plugins);
     }
 
+    /**
+     * Sets prioritization.
+     *
+     * @param prioritization the prioritization
+     */
     public void setPrioritization(ScanPrioritization prioritization) {
         this.prioritization = prioritization;
         if (prioritization != null) {
@@ -287,6 +414,11 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         }
     }
 
+    /**
+     * Gets prioritization.
+     *
+     * @return the prioritization
+     */
     public ScanPrioritization getPrioritization() {
         if (prioritization == null) {
             this.prioritization = new ScanPrioritization();
@@ -295,10 +427,20 @@ public class ScanResponse extends NessusResponseGenerateTimestamp {
         return this.prioritization;
     }
 
+    /**
+     * Gets threat level.
+     *
+     * @return the threat level
+     */
     public Integer getThreatLevel() {
         return threatLevel;
     }
 
+    /**
+     * Sets threat level.
+     *
+     * @param threatLevel the threat level
+     */
     public void setThreatLevel(Integer threatLevel) {
         this.threatLevel = threatLevel;
         if (this.prioritization != null) {
