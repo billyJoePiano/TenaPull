@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @RunWith(Parameterized.class)
 public class TestCRUD {
     // default .sql script to populate the db between tests
+    public static final String DB_PARTIAL_RESET = "dbPartialReset.sql"; // resets the scan data tables but not the lookup tables
     public static final String DB_POPULATE_SQL = "dbPopulate.sql";
 
     // directory with .json files matching class names, with test params
@@ -54,7 +55,7 @@ public class TestCRUD {
 
     @Before
     public void dbReset() throws FileNotFoundException {
-        Database.reset();
+        Database.runSQL("dbPartialReset.sql");
         if (params.sqlPopulate != null) {
             Database.runSQL(params.sqlPopulate);
         }
