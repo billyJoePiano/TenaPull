@@ -27,8 +27,10 @@ public abstract class AbstractPojoLookupDao<POJO extends DbPojo> extends Dao<POJ
      * Instantiates a new Abstract pojo lookup dao.
      *
      * @param pojoType the pojo type
+     * @throws IllegalArgumentException if a dao has already been instantiated
+     * for the provided pojoType
      */
-    protected AbstractPojoLookupDao(Class<POJO> pojoType) {
+    protected AbstractPojoLookupDao(Class<POJO> pojoType) throws IllegalArgumentException {
         super(pojoType);
         this.instances = new InstancesTracker(Integer.class, pojoType, null);
     }

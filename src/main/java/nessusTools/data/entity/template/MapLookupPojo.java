@@ -8,10 +8,13 @@ import java.util.*;
 /**
  * A "complex lookup" or "object lookup" altnerative to the HashLookupPojo interface
  * Rather than using a hash of the object, this approach using a search map instead.
- * This may be necessary in cases where the lookup is NOT immutable, but is represented
- * by a composite key.  It may also be used in some cases of immutable lookups where
- * there are only a handful of primitive values that are more efficient to match by search
- * map or _match than by hashing.
+ *
+ * This pojo type is often (though not always) used for records that are NOT immutable
+ * but have a composite candidate key (e.g. ScanHost, with a host_id and scan_id). It may
+ * also be used for immutable object lookups in place of a hash lookup when the pojo has
+ * a very simple object structure, so the overhead of calculating a hash (which also means
+ * serializing the object to obtain the string to be hashed... arguably the more expensive
+ * operation) may not be worth the indexing benefit it provides
  *
  * @param <POJO> the POJO class implementing MapLookupPojo
  */

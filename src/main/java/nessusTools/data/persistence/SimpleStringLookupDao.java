@@ -5,12 +5,26 @@ import nessusTools.data.entity.template.DbPojo;
 import nessusTools.sync.*;
 
 
+/**
+ * Used for simple string lookups, typically of DB data type varchar(255)
+ * though may be shorter than 255 in some cases.  These string lookups do
+ * NOT use a hash value for indexing
+ *
+ * @param <POJO> the pojo type
+ */
 public class SimpleStringLookupDao<POJO extends SimpleStringLookupPojo<POJO>>
         extends Dao<POJO> implements StringLookupDao<POJO> {
 
     private InstancesTracker<String, POJO> workingInstances;
 
-    public SimpleStringLookupDao(Class<POJO> pojoType) {
+    /**
+     * Instantiates a new Simple string lookup dao using the provided pojo type
+     *
+     * @param pojoType the pojo type
+     * @throws IllegalArgumentException if a dao has already been instantiated
+     * for the provided pojoType
+     */
+    public SimpleStringLookupDao(Class<POJO> pojoType) throws IllegalArgumentException {
         super(pojoType);
         this.workingInstances = new InstancesTracker<String, POJO>(String.class, pojoType, str -> {
             if (str == null) return null;
@@ -55,6 +69,14 @@ public class SimpleStringLookupDao<POJO extends SimpleStringLookupPojo<POJO>>
         return "[SimpleStringLookupDao for " + this.getPojoType().getSimpleName() + "]";
     }
 
+    /**
+     * Gets the representing the provided SimpleStringLookupPojo type
+     *
+     * @param <P>            the type parameter
+     * @param <D>            the type parameter
+     * @param lookupPojoType the lookup pojo type
+     * @return the d
+     */
     public static <P extends DbPojo, D extends Dao<P>> D
             get(Class<P> lookupPojoType) {
 

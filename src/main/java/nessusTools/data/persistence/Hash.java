@@ -10,9 +10,9 @@ import java.util.*;
 
 /**
  * Represents a "lazy" or "dirty" SHA-512 hash of a string lookup or object lookup.
- * This is referred to as "lazy" because if the string being hashed is less than 64
+ * This is referred to as "lazy/drity" because if the string being hashed is less than 64
  * bytes, then the string itself is used in place of the hash.  This still guarantees
- * the uniqueness of the hash, while saving the need to calculate the a SHA-512 hash
+ * the uniqueness of the hash, while saving the need to calculate the SHA-512 hash
  * when it would be unnecessary
  *
  *
@@ -20,7 +20,7 @@ import java.util.*;
 public class Hash implements Comparable<Hash> {
     private static Logger logger = LogManager.getLogger(Hash.class);
     /**
-     * The constant ALGORITHM which we are using -- SHA-512
+     * The algorithm which we are using -- SHA-512
      */
     public static final String ALGORITHM = "SHA-512";
     /**
@@ -236,10 +236,10 @@ public class Hash implements Comparable<Hash> {
     }
 
     /**
-     * Determines if the two byte array are equivalent
+     * Determines if two byte arrays are equivalent
      *
-     * @param mine   the mine
-     * @param theirs the theirs
+     * @param mine   byte array1
+     * @param theirs byte array2
      * @return the boolean
      */
     public static boolean equals(byte[] mine, byte[] theirs) {
@@ -268,8 +268,8 @@ public class Hash implements Comparable<Hash> {
     /**
      * Returns a comparison of two byte arrays
      *
-     * @param mine   the mine
-     * @param theirs the theirs
+     * @param mine   the comparable whose compare method was called
+     * @param theirs the comparable being compared against
      * @return the int
      */
     public static int compareTo(byte[] mine, byte[] theirs) {
@@ -309,7 +309,7 @@ public class Hash implements Comparable<Hash> {
     }
 
     /**
-     * Converts Hash instances back and forth between the database varbinary field
+     * Converts Hash instances back and forth between the database varbinary datatype
      * and the hash fields in the ORM.
      */
     @javax.persistence.Converter

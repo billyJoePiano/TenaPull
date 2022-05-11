@@ -8,31 +8,58 @@ import java.math.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+/**
+ * Used to represent a field which may have multiple JSON primitive data types.  When
+ * entering into the DB, a varchar(255) field is used where the first character represents
+ * the primary data type and the remaining characters represent the value.
+ *
+ * The "primary type" refers to the type used -- e.g. an AtomicInteger may be grouped
+ * with an Integer, etc
+ */
 public final class MultiTypeWrapper {
     private static final Logger logger = LogManager.getLogger(MultiTypeWrapper.class);
 
+    /**
+     * The constant UNKNOWN, used as the data type prefix for Objects of a type
+     * not represented by the defined "primary types"
+     */
     public static char UNKNOWN = 'U';
 
+    /**
+     * The constant STRING_TYPES.
+     */
     public static final List<Class> STRING_TYPES = List.of(
             String.class //,
             // Character[].class // TODO ???
         );
 
+    /**
+     * The constant INT_TYPES.
+     */
     public static final List<Class> INT_TYPES = List.of(
             Integer.class,
             AtomicInteger.class
         );
 
+    /**
+     * The constant BOOLEAN_TYPES.
+     */
     public static final List<Class> BOOLEAN_TYPES = List.of(
             Boolean.class
         );
 
+    /**
+     * The constant DOUBLE_TYPES.
+     */
     public static final List<Class> DOUBLE_TYPES = List.of(
             Double.class,
             DoubleAccumulator.class,
             DoubleAdder.class
         );
 
+    /**
+     * The constant LONG_TYPES.
+     */
     public static final List<Class> LONG_TYPES = List.of(
             Long.class,
             AtomicLong.class,
@@ -40,31 +67,48 @@ public final class MultiTypeWrapper {
             LongAdder.class
         );
 
+    /**
+     * The constant BYTE_TYPES.
+     */
     public static final List<Class> BYTE_TYPES = List.of(
             Byte.class
         );
 
+    /**
+     * The constant SHORT_TYPES.
+     */
     public static final List<Class> SHORT_TYPES = List.of(
             Short.class
         );
 
+    /**
+     * The constant FLOAT_TYPES.
+     */
     public static final List<Class> FLOAT_TYPES = List.of(
             Float.class
         );
 
+    /**
+     * The constant BIGINT_TYPES.
+     */
     public static final List<Class> BIGINT_TYPES = List.of(
             BigInteger.class
         );
 
+    /**
+     * The constant BIGDECIMAL_TYPES.
+     */
     public static final List<Class> BIGDECIMAL_TYPES = List.of(
             BigDecimal.class
         );
 
 
-    // NOTE: the first class in each list is the "Primary type", that will be used when re-marshalling entities
-    // from DB varchar values.
-    // Character == first character of DB varchar value, to indicate the type of the subsequent string
-    // All primary types MUST have a single-argument String constructor
+    /**
+     * The map of types, with their type-character prefix as the key.  The first class in each list is the
+     * "Primary type", that will be used when instantiating entities from DB varchar values.
+     * Character == first character of DB varchar value, to indicate the type of the subsequent string
+     * All primary types MUST have a single-argument String constructor
+     */
     public static final Map<Character, List<Class>> TYPE_MAP = Collections.unmodifiableMap(
             new LinkedHashMap() { { //preserves order
                 put('S',STRING_TYPES);
@@ -80,6 +124,13 @@ public final class MultiTypeWrapper {
             } });
 
 
+    /**
+     * Creates a multi-type wrapper for the provided object (or an unequivilent in its primary type
+     * or returns an already existing one which represents an equivalent value of its primary type.
+     *
+     * @param object the object needing a MultiTypeWrapper representation
+     * @return the multi type wrapper representing the passed value
+     */
     public static MultiTypeWrapper wrap(Object object) {
         if (object == null) {
             return null;
@@ -113,6 +164,13 @@ public final class MultiTypeWrapper {
     }
 
 
+    /**
+     * Build a MultiTypeWrapper from the provided dbString, or provide an already-constructed
+     * one if it already exists
+     *
+     * @param dbString the db string
+     * @return the multi type wrapper
+     */
     public static MultiTypeWrapper buildFrom(String dbString) {
         if (dbString == null) {
             return null;
@@ -123,8 +181,10 @@ public final class MultiTypeWrapper {
     }
 
 
-    // Maps all instances passed to "wrap" to their respective dbStrings
-    // these dbStrings can then be used to access a MultiTypeWrapper in the wrapperTracker
+    /**
+     * Maps all instances passed to "wrap" to their respective dbStrings
+     * these dbStrings can then be used to access a MultiTypeWrapper in the wrapperTracker
+     */
     private static WeakInstancesTracker<Object, MultiTypeWrapper>
             byInstanceWrapped = byInstanceWrapped();
 
@@ -177,18 +237,40 @@ public final class MultiTypeWrapper {
     }
 
 
+    /**
+     * Returns the size of the MultiTypeWrapper's instances tracker
+     * (aka, the number of viable instances of MultiTypeWrapper currently in working memory)
+     *
+     * @return the int
+     */
     public static int size() {
         return byDbString.size();
     }
 
-    //Counts the number of
+    /**
+     * Counts the number of instances constructed total, including ones which may have been GC'd
+     */
     private static long counter = 0;
+
+    /**
+     * Gets the number of instances constructed total, including ones which may have been GC'd
+     *
+     * @return the counter
+     */
     public static long getCounter() {
         return counter;
     }
+
+    /**
+     * Reset the counter.  Used mostly for benchamrking and testing
+     */
     public static void resetCounter() {
         counter = 0;
     }
+
+    /**
+     * Clear instances by replacing the instances trackers.  Used mostly for benchmarking and testing
+     */
     public static void clearInstances() {
         byDbString = byDbString();
         byInstanceWrapped = byInstanceWrapped();
@@ -271,9 +353,12 @@ public final class MultiTypeWrapper {
     }
 
 
-
-
-
+    /**
+     * Gets the primary type of a provided object
+     *
+     * @param object the object
+     * @return the primary type
+     */
     public static Class getPrimaryType(Object object) {
         if (object == null) {
             return null;
@@ -287,6 +372,12 @@ public final class MultiTypeWrapper {
         }
     }
 
+    /**
+     * Gets the primary type based on the character prefix from the DB
+     *
+     * @param object the object
+     * @return the primary type with char
+     */
     public static Map.Entry<Character, Class> getPrimaryTypeWithChar(Object object) {
         if (object == null) {
             return null;
@@ -313,6 +404,12 @@ public final class MultiTypeWrapper {
         return null;
     }
 
+    /**
+     * Make the MultiTypeWrapper db string for a provided object
+     *
+     * @param object the object
+     * @return the db string
+     */
     public static String makeDbStringFor(Object object) {
         if (object == null) {
             return null;
@@ -328,8 +425,17 @@ public final class MultiTypeWrapper {
     //error messages.  These will end up in the DB if there are errors or nulls with unknown types
     private static final String PRE = "<" + MultiTypeWrapper.class.toString() + " for Unknown class : ";
 
+    /**
+     * The NULL_VALUE error message
+     */
     public static final String NULL_VALUE = PRE + "object.toString() returned null>";
+    /**
+     * The NULL_TYPE error message
+     */
     public static final String NULL_TYPE = PRE + "object.getClass() returned null>";
+    /**
+     * The NULL_TYPE_STRING error message
+     */
     public static final String NULL_TYPE_STRING = PRE + "object.getClass().toString() returned null>";
 
     private static String makeDbStringForNotNull(Object object) {
@@ -359,8 +465,14 @@ public final class MultiTypeWrapper {
         return UNKNOWN + typeString + "\n" + valueString;
     }
 
-    // Error messages when there are errors with the init string of an unknown type:
+    /**
+     * The MISSING_TYPE error string
+     */
+// Error messages when there are errors with the init string of an unknown type:
     public static final String MISSING_TYPE = PRE + "init did not include type string>";
+    /**
+     * The MISSING_VALUE error string
+     */
     public static final String MISSING_VALUE = PRE + "init did not include value string>";
 
     private static String[] parseUnknownTypeDbString(String dbString) { // after initial type identifier has been removed
@@ -399,22 +511,46 @@ public final class MultiTypeWrapper {
         return this.toString;
     }
 
+    /**
+     * Gets type string for a MultiTypeWrapper
+     *
+     * @return the type string
+     */
     public String getTypeString() {
         return this.typeString;
     }
 
+    /**
+     * Gets primary type for a MultiTypeWrapper
+     *
+     * @return the primary type
+     */
     public Class getPrimaryType() {
         return this.primaryType;
     }
 
+    /**
+     * Gets the db string for a MultiTypeWrapper
+     *
+     * @return the string
+     */
     public String toDb() {
         return this.dbString;
     }
 
+    /**
+     * Gets the value which the MultiTypeWrapper is wrapping
+     *
+     * @return the object
+     */
     public Object getObject() {
         return this.object;
     }
 
+    /**
+     * A lazily-constructed cache of the java hashCode, created from
+     * the byte array of the dbString
+     */
     private Integer javaHashCode = null;
 
     @Override
@@ -458,6 +594,10 @@ public final class MultiTypeWrapper {
         }
     }
 
+    /**
+     * Hibernate converter, for converting between a string for the DB and a MultiTypeWrapper
+     * instance
+     */
     @javax.persistence.Converter
     public static class Converter implements AttributeConverter<MultiTypeWrapper, String>  {
         @Override

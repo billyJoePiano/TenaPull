@@ -8,16 +8,39 @@ import org.hibernate.proxy.*;
 import java.util.*;
 
 
+/**
+ * Dao used for object lookups that are indexed by their hash.  In addition to the instances
+ * tracker (organized by primary key id) inherited from AbstractPojoLookupDao, this also includes
+ * a second instances tracker organized by
+ *
+ * @param <POJO> the type parameter
+ */
 public class HashLookupDao<POJO extends HashLookupPojo<POJO>>
         extends AbstractPojoLookupDao<POJO> {
 
+    /**
+     * The "canonical" pojo instances organized by hash.
+     */
     protected InstancesTracker<Hash, POJO> instancesByHash;
 
-    public HashLookupDao(Class<POJO> pojoType) {
+    /**
+     * Instantiates a new Hash lookup dao for the provided pojo type
+     *
+     * @param pojoType the pojo type
+     * @throws IllegalArgumentException if a dao has already been instantiated
+     * for the provided pojoType
+     */
+    public HashLookupDao(Class<POJO> pojoType) throws IllegalArgumentException {
         super(pojoType);
         this.instancesByHash = new InstancesTracker<Hash, POJO>(Hash.class, pojoType, null);
     }
 
+    /**
+     * Gets the canonical instance representing the provided hash, if one exists
+     *
+     * @param hash the hash
+     * @return the by hash
+     */
     public POJO getByHash(Hash hash) {
         if (hash == null) return null;
         return this.instancesByHash.getOrConstructWith(hash, h -> {
@@ -59,6 +82,13 @@ public class HashLookupDao<POJO extends HashLookupPojo<POJO>>
         }
     }
 
+    /**
+     * Attempts to use the _match function to find a matching pojo, so that
+     * calculating the hash can be skipped when possible
+     *
+     * @param pojo the pojo
+     * @return the pojo
+     */
     protected POJO tryMatchFilter(POJO pojo) {
         List<POJO> list = this.instancesByHash.get(
                 other -> other == pojo || (other != null && pojo._match(other)), 1);
@@ -72,6 +102,15 @@ public class HashLookupDao<POJO extends HashLookupPojo<POJO>>
         return null;
     }
 
+    /**
+     * Obtains the hash of the pojo and uses it to find a matching pojo if one exists,
+     * otherwise attempts to find it in the database.  If none can be found, the new record
+     * is inserted to the DB and the passed pojo is used as the new canonical instance for
+     * this record
+     *
+     * @param pojo the pojo
+     * @return the pojo
+     */
     protected POJO useHash(POJO pojo) {
         return this.instancesByHash.getOrConstructWith(pojo.get_hash(), hash -> {
             if (hash == null) return null;
@@ -121,6 +160,14 @@ public class HashLookupDao<POJO extends HashLookupPojo<POJO>>
         return "[HashLookupDao for " + this.getPojoType().getSimpleName() + "]";
     }
 
+    /**
+     * Get HashLookupDao for the provided pojo type.
+     *
+     * @param <P>            the type parameter
+     * @param <D>            the type parameter
+     * @param lookupPojoType the lookup pojo type
+     * @return the d
+     */
     public static <P extends DbPojo, D extends Dao<P>> D
             get(Class<P> lookupPojoType) {
 

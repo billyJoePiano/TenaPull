@@ -11,10 +11,26 @@ import com.fasterxml.jackson.databind.*;
 import org.hibernate.proxy.*;
 
 
-// TODO add code to update old PojoFinder keys for workingLookups when the pojo record is mutated
-
+/**
+ * Dao used for map lookup pojos, where a DB record can be matched by a search map
+ * or the _match function.  This pojo type is often (though not always) used for records with
+ * a composite candidate key (e.g. ScanHost, with a host_id and scan_id) but may
+ * also be used for immutable object lookups in place of a hash lookup for very simple
+ * object structures where the overhead of a hash may not be worth the indexing benefit
+ * it provides
+ *
+ * @param <POJO> the type parameter
+ */
 public class MapLookupDao<POJO extends MapLookupPojo<POJO>> extends AbstractPojoLookupDao<POJO> {
-    public MapLookupDao(Class<POJO> pojoType) {
+
+    /**
+     * Instantiates a new MapLookupDao for the pojo type provided.
+     *
+     * @param pojoType
+     * @throws IllegalArgumentException if a dao has already been instantiated
+     * for the provided pojoType
+     */
+    public MapLookupDao(Class<POJO> pojoType) throws IllegalArgumentException {
         super(pojoType);
     }
 
@@ -94,6 +110,13 @@ public class MapLookupDao<POJO extends MapLookupPojo<POJO>> extends AbstractPojo
     }
 
 
+    /**
+     * Make a pojo search map from a json node
+     *
+     * @param searchMapNode the json node to make the search map for
+     * @return the search map
+     * @throws JsonException if there is an error processing json
+     */
     public static Map<String, Object> makeSearchMapFromJson(JsonNode searchMapNode)
             throws JsonException {
 
@@ -160,6 +183,14 @@ public class MapLookupDao<POJO extends MapLookupPojo<POJO>> extends AbstractPojo
         return "[MapLookupDao for " + this.getPojoType().getSimpleName() + "]";
     }
 
+    /**
+     * Get the MapLookupDao for the provided pojo type
+     *
+     * @param <P>                   the type parameter
+     * @param <D>                   the type parameter
+     * @param objectLookupPojoClass the object lookup pojo class
+     * @return the d
+     */
     public static <P extends DbPojo, D extends Dao<P>> D get(Class<P> objectLookupPojoClass) {
         D dao = Dao.get(objectLookupPojoClass);
         if (dao != null && dao instanceof MapLookupDao) {

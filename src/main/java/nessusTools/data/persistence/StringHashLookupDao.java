@@ -3,10 +3,24 @@ package nessusTools.data.persistence;
 import nessusTools.data.entity.template.*;
 
 
+/**
+ * Dao used for string lookups of the longtext db data type,
+ * which cannot be indexed by MySQL.  Therefore a hash of the string
+ * is used for indexing instead
+ *
+ * @param <POJO> the type parameter
+ */
 public class StringHashLookupDao<POJO extends StringHashLookupPojo<POJO>>
         extends HashLookupDao<POJO> implements StringLookupDao<POJO> {
 
-    public StringHashLookupDao(Class<POJO> pojoType) {
+    /**
+     * Instantiates a new String hash lookup dao.
+     *
+     * @param pojoType the pojo type
+     * @throws IllegalArgumentException if a dao has already been instantiated
+     * for the provided pojoType
+     */
+    public StringHashLookupDao(Class<POJO> pojoType) throws IllegalArgumentException {
         super(pojoType);
     }
 
@@ -62,6 +76,14 @@ public class StringHashLookupDao<POJO extends StringHashLookupPojo<POJO>>
         return "[StringHashLookupDao for " + this.getPojoType().getSimpleName() + "]";
     }
 
+    /**
+     * Get the StringHashLookupDao which represents the provided StringHashLookUpPojo type
+     *
+     * @param <P>            the type parameter
+     * @param <D>            the type parameter
+     * @param lookupPojoType the lookup pojo type
+     * @return the d
+     */
     public static <P extends DbPojo, D extends Dao<P>> D
             get(Class<P> lookupPojoType) {
 
