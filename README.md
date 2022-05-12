@@ -13,6 +13,10 @@ For a complete demonstration, click the below picture which will take you to a Y
 
 ## Resources
 
+### TenaPull JavaDocs
+
+https://billyjoepiano.github.io/NessusTools/
+
 ### Tenable / Nessus
 
 - API intro: https://docs.tenable.com/tenablesc/Content/APIKeyAuthentication.htm
