@@ -8,6 +8,7 @@ import nessusTools.data.entity.objectLookup.*;
 import nessusTools.data.entity.response.*;
 import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.splunk.*;
+import nessusTools.run.*;
 import org.hibernate.*;
 import org.junit.*;
 
@@ -36,9 +37,10 @@ public class TestSplunkOutput {
     private static final Logger logger = LogManager.getLogger(TestSplunkOutput.class);
 
     static {
+        Main.loadTestConfig();
         ScanResponse.dao.holdSession();
     }
-    private static List<ScanResponse> scanResponses = ScanResponse.dao.getAll();
+    private static List<ScanResponse> scanResponses = (List<ScanResponse>)Hibernate.unproxy(ScanResponse.dao.getAll());
 
     /**
      * Obtains the test params from the database's existing data
@@ -49,7 +51,6 @@ public class TestSplunkOutput {
     public static Collection getTestParams() {
         ScanHostResponse.dao.holdSession();
         try {
-            Hibernate.initialize(scanResponses);
             return makeParams();
 
         } finally {
@@ -60,28 +61,28 @@ public class TestSplunkOutput {
 
     private static Collection makeParams() {
         List<ScanHostResponse> list = ScanHostResponse.dao.getAll();
-        Hibernate.initialize(list);
+        list = (List<ScanHostResponse>)Hibernate.unproxy(list);
 
         List<Object[]> params = new LinkedList<>();
 
         for (ScanHostResponse response : list) {
             if (response == null) continue;
-            Hibernate.initialize(response);
+            response = (ScanHostResponse)Hibernate.unproxy(response);
 
             ScanHost host = response.getHost();
             if (host != null) {
-                Hibernate.initialize(host);
+                host = (ScanHost)Hibernate.unproxy(host);
 
                 ScanResponse sr = host.getResponse();
                 if (sr != null) {
-                    Hibernate.initialize(sr);
+                    sr = (ScanResponse)Hibernate.unproxy(sr);
 
                     int id = sr.getId();
                     if (id != 0) {
 
                         for (ScanResponse res : scanResponses) {
                             if (res == null) continue;
-                            Hibernate.initialize(res);
+                            res = (ScanResponse)Hibernate.unproxy(res);
 
                             if (res.getId() == id) {
                                 response.setScanResponse(res);
@@ -174,7 +175,8 @@ public class TestSplunkOutput {
         HostOutput persisted = null;
         HostOutput.dao.holdSession();
         try {
-            persisted = HostOutput.dao.getById(output.getId());
+            persisted = (HostOutput)Hibernate.unproxy(HostOutput.dao.getById(output.getId()));
+            persisted.setScanHostResponse((ScanHostResponse)Hibernate.unproxy(persisted.getScanHostResponse()));
 
             Timestamp orig = output.getScanTimestamp();
             Timestamp pers = persisted.getScanTimestamp();
