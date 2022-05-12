@@ -27,18 +27,35 @@ import com.fasterxml.jackson.databind.*;
 import org.apache.logging.log4j.*;
 
 
+/**
+ * Unit test to make sure the Nessus Client works as expected.  Requires that the test
+ * configuration file points to a working and accessible Nessus installation
+ */
 public class TestNessusClient {
+    /**
+     * The TestNessusClient logger
+     */
     public static final Logger logger = LogManager.getLogger(TestNessusClient.class);
 
     static {
         Main.loadTestConfig();
     }
 
+    /**
+     * Resets the database
+     *
+     * @throws FileNotFoundException if the db reset SQL script can't be found
+     */
     @Before
     public void resetDB() throws FileNotFoundException {
         Database.hardReset();
     }
 
+    /**
+     * Fetches and saves all scans from the configured Nessus API
+     *
+     * @throws JsonProcessingException if there is an issue deserializing the responses
+     */
     @Test
     public void testFetchAllScans()
             throws JsonProcessingException {

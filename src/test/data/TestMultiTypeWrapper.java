@@ -13,13 +13,22 @@ import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests the multi-type wrapper logic
+ */
 public class TestMultiTypeWrapper {
+    /**
+     * The logger for TestMultiTypeWrapper
+     */
     public static final Logger logger = LogManager.getLogger(TestMultiTypeWrapper.class);
 
     static {
         Main.loadTestConfig();
     }
 
+    /**
+     * Tests to perform that go in both directions -- from object into the DB, and from the DB into object
+     */
     public static Map<String, Object> TEST_BOTH_DIRECTIONS =
             new LinkedHashMap() { {
                     put(null, null);
@@ -65,6 +74,9 @@ public class TestMultiTypeWrapper {
 
         }};
 
+    /**
+     * Tests that go in one direction, from the DB into an object
+     */
     public static Map<String, Object> TEST_FROM_DB = Map.of(
             "b-0", Byte.valueOf((byte)-0),
             "s-0", Short.valueOf((short)-0),
@@ -76,15 +88,34 @@ public class TestMultiTypeWrapper {
                 "Not a valid dbString.  This should show up in logger.error but won't cause the test to fail"
         );
 
+    /**
+     * Tests that go in one direction, from an object into the DB
+     */
     public static Map<Object, String> TEST_TO_DB = Map.of(
             createUnknownType(), "Uclass nessusTools.data.entity.lookup.ScanType\nthis is a test"
         );
 
+    /**
+     * Tests that will go in both direction, object to DB, and DB to object
+     */
     public Map<String, Object> testBothDirections;
+    /**
+     * Tests that will go from DB to object only
+     */
     public Map<String, Object> testFromDb;
+    /**
+     * Tests that will go from object to DB only
+     */
     public Map<Object, String> testToDb;
+    /**
+     * Whether to print more detailed information about the test.  This is switched off
+     * when running SyncMultiTypeWrapper
+     */
     public boolean printInfo = true;
 
+    /**
+     * Instantiates a new Test multi type wrapper using the default tests
+     */
     public TestMultiTypeWrapper() {
         testBothDirections = TEST_BOTH_DIRECTIONS;
         testFromDb = TEST_FROM_DB;
@@ -92,6 +123,11 @@ public class TestMultiTypeWrapper {
     }
 
 
+    /**
+     * Create a multiTypeWrapper of an unknown type
+     *
+     * @return the object
+     */
     public static Object createUnknownType() {
         ScanType o = new ScanType();
         o.setValue("this is a test");
@@ -106,12 +142,18 @@ public class TestMultiTypeWrapper {
         if (this.printInfo) logger.info(str);
     }
 
+    /**
+     * Logs the number of instances of MultiTypeWrapper which have been constructed
+     */
     @After
     public void logCounter() {
         info("Constructed instances counter for MultiTypeWrapper: " + MultiTypeWrapper.getCounter());
     }
 
 
+    /**
+     * Run all the tests that go in both direections
+     */
     @Test
     public void testBothDirections() {
         if (testBothDirections == null) return;
@@ -192,6 +234,9 @@ public class TestMultiTypeWrapper {
         }
     }
 
+    /**
+     * Run all the tests that go from object to DB
+     */
     @Test
     public void testToDb() {
         if (testToDb == null) return;
@@ -213,6 +258,9 @@ public class TestMultiTypeWrapper {
         }
     }
 
+    /**
+     * Run all tests which go from DB to object
+     */
     @Test
     public void testFromDb() {
         if (testFromDb == null) return;

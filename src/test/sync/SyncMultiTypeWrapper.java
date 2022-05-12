@@ -16,18 +16,47 @@ import org.junit.runners.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
+/**
+ * An intensive test of multi-threading using MultiTypeWrapper as the test subject.
+ * This primarily tests the functionality of the InstanceTracker class and its
+ * multi-threading synchronization capabilities.  The test intentionally
+ * tries to create race conditions and deadlock by spinning up thousands of threads
+ * all trying to access the same two instancesTrackers for MultiTypeWrapper.
+ */
 @RunWith(Parameterized.class)
 public class SyncMultiTypeWrapper {
+    /**
+     * The constant logger.
+     */
     public static final Logger logger = LogManager.getLogger(SyncMultiTypeWrapper.class);
 
+    /**
+     * The constant THREADS.
+     */
     public static final int THREADS = 8192;
+    /**
+     * The constant WARM_UP_ITERATIONS.
+     */
     public static final int WARM_UP_ITERATIONS = 64;
+    /**
+     * The constant RANDOM_INSTANCES.
+     */
     public static final int RANDOM_INSTANCES = 64;
+    /**
+     * The constant RANDOM_INVALID_INSTANCES.
+     */
     public static final int RANDOM_INVALID_INSTANCES = 32; //invalid dbString
             // per-thread... number of random instances created with "RANDOM_LAMBDAS"
 
 
+    /**
+     * Randomize map order linked hash map.
+     *
+     * @param <K>  the type parameter
+     * @param <V>  the type parameter
+     * @param orig the orig
+     * @return the linked hash map
+     */
     public static <K, V> LinkedHashMap<K, V> randomizeMapOrder(Map<K, V> orig) {
         LinkedHashMap<K, V> randomized = new LinkedHashMap<>();
         List<Map.Entry<K, V>> entries = new LinkedList(orig.entrySet());
@@ -40,6 +69,9 @@ public class SyncMultiTypeWrapper {
         return randomized;
     }
 
+    /**
+     * The constant RANDOM_LAMBDAS.
+     */
     public static final List<Lambda0<Object>> RANDOM_LAMBDAS = List.of(
             () -> {
                     int len = (int)Math.floor(Math.pow((Math.random() * 15.5) + 0.5, 2));
@@ -181,6 +213,11 @@ public class SyncMultiTypeWrapper {
         }
     });
 
+    /**
+     * Gets test params.
+     *
+     * @return the test params
+     */
     @Parameterized.Parameters
     public static Collection getTestParams() {
         return params;
@@ -199,9 +236,20 @@ public class SyncMultiTypeWrapper {
     private List<Runnable> warmups = new ArrayList(WARM_UP_ITERATIONS);
     private List<Thread> staged = new ArrayList(THREADS);
     private List<Throwable> exceptions = new LinkedList<>();
+    /**
+     * The Needed count.
+     */
     long neededCount = 0; // instances count after first iteration of warm-up,
     // tells us the number of instances needed per-thread.
 
+    /**
+     * Instantiates a new Sync multi type wrapper with the provided params
+     *
+     * @param both          the both
+     * @param from          the from
+     * @param to            the to
+     * @param loggingLevels the logging levels
+     */
     public SyncMultiTypeWrapper(Lambda0<Map<String, Object>> both,
                                 Lambda0<Map<String, Object>> from,
                                 Lambda0<Map<Object, String>> to,
@@ -224,6 +272,9 @@ public class SyncMultiTypeWrapper {
         }
     }
 
+    /**
+     * Sets target logging levels, to prevent excessive output to the console
+     */
     @Before
     public void setTargetLoggingLevels() {
         if (this.targetLoggingLevels == null) return;
@@ -243,6 +294,9 @@ public class SyncMultiTypeWrapper {
         }
     }
 
+    /**
+     * Restore default logging levels.
+     */
     @After
     public void restoreDefaultLoggingLevels() {
         if (this.origLoggingLevels == null) return;
@@ -250,11 +304,19 @@ public class SyncMultiTypeWrapper {
         logger.info("Restored default logging levels:\n" + origLoggingLevels.toString());
     }
 
+    /**
+     * Logs the number of MultiTypeWrappers that were instantiated during the test
+     */
     public void logCounter() {
         logger.info("\nConstructed instances counter for MultiTypeWrapper: " + MultiTypeWrapper.getCounter()
                     + "\nAlive instances in weak map: " + MultiTypeWrapper.size());
     }
 
+    /**
+     * Starts all the test threads, and then waits for them to finish.
+     *
+     * @throws InterruptedException if there was an issue waiting for one of the threads to finish
+     */
     @Test
     public void run() throws InterruptedException {
         long startTime;
@@ -419,7 +481,9 @@ public class SyncMultiTypeWrapper {
     }
 
 
-
+    /**
+     * Run single-threaded warm ups, to ensure the JVM is prepared for the test
+     */
     public void runWarmUps() {
         //run a few iterations in the main thread, just to warm up the JVM
         for (Runnable warmup : warmups) {

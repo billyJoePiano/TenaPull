@@ -24,8 +24,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.fasterxml.jackson.databind.*;
 import org.apache.logging.log4j.*;
 
+/**
+ * Tests the outputs produced for Splunk, using whatever data is pre-existing in the database
+ */
 @RunWith(Parameterized.class)
 public class TestSplunkOutput {
+    /**
+     * The directory to output to
+     */
     public static final String OUTPUT_DIR = "splunk-output/";
     private static final Logger logger = LogManager.getLogger(TestSplunkOutput.class);
 
@@ -34,6 +40,11 @@ public class TestSplunkOutput {
     }
     private static List<ScanResponse> scanResponses = ScanResponse.dao.getAll();
 
+    /**
+     * Obtains the test params from the database's existing data
+     *
+     * @return the test params
+     */
     @Parameterized.Parameters
     public static Collection getTestParams() {
         ScanHostResponse.dao.holdSession();
@@ -104,6 +115,14 @@ public class TestSplunkOutput {
     private final ScanHostResponse response;
     private final List<Vulnerability> vulns;
 
+    /**
+     * Instantiates a new Test splunk output using the provided responses, host, and vulnerabilities
+     *
+     * @param scanResponse the scan response
+     * @param host         the host
+     * @param response     the response
+     * @param vulns        the vulns
+     */
     public TestSplunkOutput(ScanResponse scanResponse, ScanHost host, ScanHostResponse response, List<Vulnerability> vulns) {
         this.scanResponse = scanResponse;
         this.host = host;
@@ -111,6 +130,10 @@ public class TestSplunkOutput {
         this.vulns = vulns;
     }
 
+    /**
+     * Runs the test, producing a HostOutput record.  The record is serialized into a JsonNode
+     * which is saved for writing to a file at the very end of all tests
+     */
     @Test
     public void run() {
         logger.info ("Creating HostOutput for response id " + this.response.getId());
@@ -175,7 +198,9 @@ public class TestSplunkOutput {
     }
 
 
-
+    /**
+     * Writes all JsonNodes produced by all the tests to a file
+     */
     @AfterClass
     public static void write() {
         LocalDateTime now = LocalDateTime.now();

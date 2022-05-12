@@ -8,7 +8,6 @@ import nessusTools.data.entity.template.DbPojo;
 import nessusTools.data.persistence.*;
 import nessusTools.run.*;
 import nessusTools.util.*;
-import testUtils.*;
 
 import com.fasterxml.jackson.databind.*;
 
@@ -20,17 +19,30 @@ import org.junit.runners.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+/**
+ * Tests Create, Read, Update, Delete operations through the Hibernate ORM,
+ * using parameters from provided .json files.
+ */
 @RunWith(Parameterized.class)
 public class TestCRUD {
-    // default .sql script to populate the db between tests
+    /**
+     * Name of the SQL script which performs a partial reset between tests.  It resets the
+     * scan data tables but not the lookup tables
+     */
     public static final String DB_PARTIAL_RESET = "dbPartialReset.sql"; // resets the scan data tables but not the lookup tables
+    /**
+     * The SQL script which populates the database
+     */
     public static final String DB_POPULATE_SQL = "dbPopulate.sql";
 
-    // directory with .json files matching class names, with test params
+    /**
+     * The directory where the test params can be found, with .json files matching class names.
+     */
     public static final String PARAMS_DIR = "crud-params/";
-    // ...used when no file is provided (JSON_DIR/pojoTypeName.json)
-    // OR when file is a relative path i.e. doesn't start with "/"
 
+    /**
+     * The array of test parameters for the tests to be run
+     */
     public static final Object[][] TESTS = {
             // { pojoType, (optionals) dbPopulate script, jsonFile with params }
             { Folder.class },
@@ -46,6 +58,11 @@ public class TestCRUD {
 
     private final TestParams params;
 
+    /**
+     * Instantiates a new Test crud with the provided params
+     *
+     * @param params the params
+     */
     public TestCRUD(TestParams params) {
         if (params.dao == null) throw new IllegalArgumentException(
                 "Must provide a non-null dao for TestCRUD constructor");
@@ -53,6 +70,11 @@ public class TestCRUD {
         this.params = params;
     }
 
+    /**
+     * Performs a partial reset on the database
+     *
+     * @throws FileNotFoundException the file not found exception
+     */
     @Before
     public void dbReset() throws FileNotFoundException {
         Database.runSQL("dbPartialReset.sql");
@@ -68,7 +90,7 @@ public class TestCRUD {
     private static List<DbPojo> convertFromJsonNode(Class<? extends DbPojo> pojoType,
                                                     List<JsonNode> paramNodes) {
         List<DbPojo> pojoList = new ArrayList();
-        ObjectMapper mapper = new CustomObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
         for (JsonNode node : paramNodes) {
             pojoList.add(convertFromJsonNode(pojoType, mapper, node));
         }
@@ -79,12 +101,15 @@ public class TestCRUD {
                                               ObjectMapper mapper,
                                               JsonNode node) {
         if (mapper == null) {
-            mapper = new CustomObjectMapper();
+            mapper = new ObjectMapper();
         }
 
         return mapper.convertValue(node, pojoType);
     }
 
+    /**
+     * Test create operations
+     */
     @Test
     public void testCreate() {
         if (params.create == null) return;
@@ -104,6 +129,9 @@ public class TestCRUD {
         }
     }
 
+    /**
+     * Test update operations
+     */
     @Test
     public void testUpdate() {
         if (params.update == null) return;
@@ -117,6 +145,9 @@ public class TestCRUD {
         }
     }
 
+    /**
+     * Test delete operations
+     */
     @Test
     public void testDelete() {
         if (params.delete == null) return;
@@ -135,6 +166,9 @@ public class TestCRUD {
         }
     }
 
+    /**
+     * Test read operations
+     */
     @Test
     public void testRead() {
         if (params.read == null) return;
@@ -191,7 +225,18 @@ public class TestCRUD {
 
     private static class Read<POJO extends DbPojo> {
         private enum Type {
-            GET_ALL, GET_ONE, GET_SOME
+            /**
+             * Get all type.
+             */
+            GET_ALL,
+            /**
+             * Get one type.
+             */
+            GET_ONE,
+            /**
+             * Get some type.
+             */
+            GET_SOME
         }
 
         private final Type readType;
@@ -296,6 +341,15 @@ public class TestCRUD {
         }
     }
 
+    /**
+     * For JUnit to obtain the test parameters which will be passed into each
+     * instance of TestCRUD
+     *
+     * @return the test params
+     * @throws NoSuchFieldException   the no such field exception
+     * @throws IllegalAccessException the illegal access exception
+     * @throws IOException            the io exception
+     */
     @Parameterized.Parameters
     public static Collection getTestParams()
             throws NoSuchFieldException, IllegalAccessException, IOException {
@@ -351,7 +405,7 @@ public class TestCRUD {
 
         BufferedReader reader = new BufferedReader(new FileReader(jsonFile));
 
-        ObjectMapper mapper = new CustomObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
         JsonNode rootNode = mapper.readValue(reader, JsonNode.class);
 
         List<TestParams> list = new ArrayList();

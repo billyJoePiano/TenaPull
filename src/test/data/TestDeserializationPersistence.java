@@ -25,11 +25,23 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import org.apache.logging.log4j.*;
 
-//https://www.guru99.com/junit-parameterized-test.html#:~:text=What%20is%20Parameterized%20Test%20in,their%20inputs%20and%20expected%20results.
-//@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+/**
+ * Tests the pipeline from deserialization into persistence, and then fetching back out of the
+ * database, to ensure the re-constituted entity matches the originally deserialized entity
+ * <br/>
+ * https://www.guru99.com/junit-parameterized-test.html#:~:text=What%20is%20Parameterized%20Test%20in,their%20inputs%20and%20expected%20results.
+ *
+ * @param <R> the response type being tested
+ */
 @RunWith(Parameterized.class)
 public class TestDeserializationPersistence<R extends NessusResponse> {
+    /**
+     * The directory which contains the test parameters
+     */
     public static final String PARAMS_DIR = "deserializationPersistence-params/";
+    /**
+     * The constant BILLION, used to convert from nanoseconds into seconds for benchmarking
+     */
     public static final double BILLION = 1000000000;
 
     private static final Logger staticLogger =
@@ -58,6 +70,13 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
                             ScanHostResponse.class, hostResponses
                         );
 
+    /**
+     * Obtains the test parameters from the params directory, and produces
+     * the appropriate inputs for each test
+     *
+     * @return the collection
+     * @throws FileNotFoundException the file not found exception
+     */
     @Parameterized.Parameters
     public static Collection testParams() throws FileNotFoundException {
         Map<Integer, Set<Integer>> map = parseFilenames();
@@ -209,6 +228,9 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
      * Instance variables/methods
      *******************************/
 
+    /**
+     * The logger for the response type being tested
+     */
     private final Logger logger;
 
     private final Class<R> responseType;
@@ -219,6 +241,13 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
     private ObjectNode node;
     private R response;
 
+    /**
+     * Instantiates a new Test deserialization persistence.
+     *
+     * @param jsonFile     the json file
+     * @param responseType the response type
+     * @param initialize   the initialize
+     */
     public TestDeserializationPersistence(String jsonFile,
                                           Class<R> responseType,
                                           Lambda1<ObjectNode, Integer> initialize) {
@@ -228,6 +257,11 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
         this.initialize = initialize;
     }
 
+    /**
+     * Db reset performed before any of the tests run
+     *
+     * @throws FileNotFoundException if the db reset SQL script cannot be found
+     */
     @BeforeAll
     public static void dbReset() throws FileNotFoundException {
         Database.reset();
@@ -235,9 +269,12 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
 
 
     /**
-     * Checks a dummy json API response from the 'index' level.  Dummy response is in
-     * test/resource/indexResponse.json
+     * Checks a json "response" (provided from the params file) from the 'index' level.
      *
+     * @throws InvocationTargetException if there are problem instantiating the response
+     * @throws NoSuchMethodException     if there are problem instantiating the response
+     * @throws InstantiationException    if there are problem instantiating the response
+     * @throws IllegalAccessException    if there are problem instantiating the response
      */
     @Test
     public void run()
@@ -265,6 +302,9 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
                 + "\nTotal time: " + ((time - start) / BILLION));
     }
 
+    /**
+     * Fetch json from the file
+     */
     public void fetchJson() {
         try (BufferedReader reader = new BufferedReader(new FileReader(this.jsonFile))) {
             String line;
@@ -281,6 +321,14 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
         assertNotEquals("", origJson);
     }
 
+    /**
+     * Deserialize the response obtained from the file.
+     *
+     * @throws InvocationTargetException if there are problem instantiating the response
+     * @throws NoSuchMethodException     if there are problem instantiating the response
+     * @throws InstantiationException    if there are problem instantiating the response
+     * @throws IllegalAccessException    if there are problem instantiating the response
+     */
     public void deserialize()
             throws NoSuchMethodException, InvocationTargetException,
                     InstantiationException, IllegalAccessException {
@@ -319,6 +367,9 @@ public class TestDeserializationPersistence<R extends NessusResponse> {
         assertEquals(node, response.toJsonNode());
     }
 
+    /**
+     * Persist the deserialized response
+     */
     public void persist() {
 
         // Put the deserialized objects into the persistence layer
