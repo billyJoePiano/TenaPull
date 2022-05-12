@@ -80,11 +80,14 @@ public class MultiType {
         }
     }
 
+    /**
+     * Serializes a MultiTypeWrapper into the appropriate JSON primitive
+     */
     public static class Serializer extends JsonSerializer<MultiTypeWrapper> {
         Logger logger = LogManager.getLogger(Serializer.class);
 
         /**
-         * Serialies a MultiTypeWrapper into the appropriate JSON primitive, delegating to
+         * Serializes a MultiTypeWrapper into the appropriate JSON primitive, delegating to
          * the static writeValueNotNull method for all non-null and non-string values.
          * If writeValueNotNull returns false, meaning no value was written, then this
          * method will default to writing the value as a string
