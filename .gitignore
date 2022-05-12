@@ -56,9 +56,7 @@ nessus-api.properties*
 nessus-api.properties
 hibernate.cfg.xml
 
-/src/test/resources/deserializationPersistence-params/*
 /src/test/resources/splunk-output/*
-/src/test/resources/severity-base-methods-params/*
 /splunk-output
 /splunk-output/*
 /src/test/resources/logs/*

@@ -358,6 +358,9 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     @Override
     public void _prepare() {
         this.__prepare();
+
+        this.licenseInfo = License.dao.getOrCreate(this.licenseInfo);
+
         this.severityBaseSelections = SeverityBase.dao.getOrCreate(this.severityBaseSelections);
         this.currentSeverityBase = SeverityBase.dao.getOrCreate(this.currentSeverityBase);
 
@@ -647,7 +650,7 @@ public class ScanInfo extends ScanResponse.SingleChild<ScanInfo> {
     }
 
     public void setLicenseInfo(License licenseInfo) {
-        this.licenseInfo = License.dao.getOrCreate(licenseInfo);
+        this.licenseInfo = licenseInfo;
     }
 
     public Boolean getNoTarget() {
