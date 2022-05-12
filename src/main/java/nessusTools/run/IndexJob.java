@@ -10,12 +10,20 @@ import org.apache.logging.log4j.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Fetches the index of scans and folders from the root of the Nessus API.  Generates ScanJobs
+ * based on this response, and puts them into a new DbManager job that is added to the readyJobs
+ * queue
+ */
 public class IndexJob extends Job {
     private static Logger logger = LogManager.getLogger(IndexJob.class);
 
     private IndexResponse response;
     private final boolean markFailed;
 
+    /**
+     * Instantiates a new Index job.
+     */
     public IndexJob() {
         boolean markFailed = false;
 

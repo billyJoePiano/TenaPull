@@ -11,6 +11,11 @@ import org.apache.logging.log4j.*;
 import java.sql.*;
 import java.util.*;
 
+/**
+ * Fetches the details of the scan provided in the constructor, and adds it to the Database.
+ * Generates a HostVulnsJob for each host listed in the Nessus API ScanResponse, that is
+ * added to the "nextJobs" list of the dbManager, to be run after all the ScanJobs are finished.
+ */
 public class ScanJob extends DbManagerJob.Child {
     private static Logger logger = LogManager.getLogger(ScanJob.class);
     private static final ScanStatus RUNNING = ScanStatus.dao.getOrCreate("running");
@@ -20,7 +25,13 @@ public class ScanJob extends DbManagerJob.Child {
     private Timestamp scanTimestamp;
     //private Long startWait;
 
-    public ScanJob(Scan scan) {
+    /**
+     * Instantiates a new Scan job for the provided scan
+     *
+     * @param scan the scan
+     * @throws NullPointerException if the provided scan is null
+     */
+    public ScanJob(Scan scan) throws NullPointerException {
         this.scan = scan;
         this.scanTimestamp = scan.getLastModificationDate();
     }

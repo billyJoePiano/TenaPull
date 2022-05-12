@@ -6,9 +6,29 @@ import org.apache.logging.log4j.*;
 
 import java.util.*;
 
+/**
+ * Manages all jobs and job scheduling for the main thread.  Since worker threads
+ * require a non-null JobFactory instance, and JobFactory instances can only
+ * be constructed privately by JobFactory static methods, it is entirely upto
+ * the JobFactory static methods (run by the main thread) to create and manage
+ * the worker threads and their jobs.
+ */
 public class JobFactory {
+    /**
+     * Timeout to stop processing new jobs.  This forces the main thread to iterate
+     * over other tasks before returning to process the remaining new jobs,
+     * in case e.g. there are any delayed jobs that need to be queued as a readyJob.
+     */
     public static final long MAX_NEW_JOB_PROCESSING_TIME_MS = 1000;
+    /**
+     * The number of worker threads to keep active at once
+     */
     public static final int NUM_WORKER_THREADS = 10;
+    /**
+     * The maximum amount of time the main thread will wait before iterating over its
+     * tasks again.  Probably not necessary, but included as a fail-safe in case of a
+     * bug in the synchronization/wait/notify logic.
+     */
     public static final long MAX_MAIN_WAIT_TIME = 60000; // 1 minute in ms
 
 
@@ -29,6 +49,12 @@ public class JobFactory {
         }
     }
 
+    /**
+     * For worker threads to obtain their job.  If there are no jobs currently available,
+     * the worker thread may be repurposed to run finalizer tasks for InstancesTracker
+     *
+     * @return the next job
+     */
     public synchronized Job getNextJob() {
         checkThread();
         Job job = null;
@@ -77,7 +103,13 @@ public class JobFactory {
     }
 
 
-
+    /**
+     * May only be invoked by the main thread once, to obtain an Init instance that will placed
+     * inside the provided container.  The Init instance will be used by Main as the entry point
+     * into the JobsFactory jobs management loop.
+     *
+     * @param holder the holder
+     */
     public static void init(Var<Init> holder) {
         if (!Main.isMain()) {
             throw new IllegalStateException("Only the main thread can call JobFactory.init()");
@@ -92,7 +124,15 @@ public class JobFactory {
 
     private static Init init;
 
+    /**
+     * The entry point which the main thread uses to enter the JobsFactory job management loop
+     */
     static class Init {
+        /**
+         * Run jobs loop.
+         *
+         * @param seed the seed
+         */
         public void runJobsLoop(Var<Job> seed) {
             if (!Main.isMain()) {
                 throw new IllegalStateException("Only the main thread can use JobFactory.Init");
@@ -123,12 +163,26 @@ public class JobFactory {
 
     private static Map<WorkerThread, JobFactory> workerThreads = new LinkedHashMap<>();
 
+    /**
+     * Called by all jobs when they exit, either due to returning false from isReady,
+     * an exception being thrown, or being completed.  Notifies the main thread that
+     * there may be new tasks to check on.
+     *
+     * @param source the source
+     */
     public static void notifyOfJobExit(Job source) {
         synchronized (newJobProviders) {
             newJobProviders.notifyAll();
         }
     }
 
+    /**
+     * Notifies the main thread that a source job is providing new jobs.  The source
+     * job will be placed in the queue of new job providers, so the main thread can
+     * go fetch these jobs when it is able to.
+     *
+     * @param source the source job, providing new jobs
+     */
     public static void notifyOfJobProvider(Job source) {
         synchronized (newJobProviders) {
             newJobProviders.add(source);
@@ -357,7 +411,9 @@ public class JobFactory {
         }
     }
 
-    //ONLY CALL WITH LOCK ON newJobProviders
+    /**
+     * IMPORTANT: ONLY CALL WITH LOCK ON newJobProviders
+     */
     private static void fetchFromProviders() {
         if (newJobProviders.size() <= 0) {
             haveNewJobsToProcess = newJobs.size() > 0;

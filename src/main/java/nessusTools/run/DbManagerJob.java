@@ -5,11 +5,37 @@ import org.apache.logging.log4j.*;
 
 import java.util.*;
 
+/**
+ * DbManager Job manages the pile of dbTasks which other threads will provide.  Because multi-threaded
+ * DB write operations tend to cause many exceptions, the critical dbTasks are all handled by a single
+ * thread whose job is strictly to execute these tasks.  The thread actually executing the tasks runs
+ * the DbManager.Helper job, while the DbManager job/thread itself merely manages the pile of db tasks
+ * coming in from the child jobs.
+ */
 public class DbManagerJob extends Job {
     private static final Logger logger = LogManager.getLogger(DbManagerJob.class);
+    /**
+     * The number of helper jobs.  Experience has shown that any more than 1 will cause exceptions
+     */
     public static final int NUM_HELPERS = 1;
+    /**
+     * The constant MAX_JOBS_TASKS.  The limit on the number of tasks which will be allowed
+     * to pile up, before new child jobs are released to the main thread for scheduling in the
+     * readyJobs queue
+     */
     public static final int MAX_JOBS_TASKS = 64;
+    /**
+     * The constant MAX_EXCEPTIONS.  The maximum number of exceptions that will be allowed before
+     * the job exits with failure status.  Prevents infinite loops of exceptions and rescheduling
+     * the jobs causing them.
+     */
     public static final int MAX_EXCEPTIONS = 32;
+    /**
+     * The constant WAIT_FOR_CHILD_JOB_TIMEOUT_MS.  The maximum amount of time the DbManager job will
+     * wait for a child job to finish before double-checking the status of other tasks or jobs.  This
+     * is probably unnecessary, but was included as a fail-safe in case of a bug or mistake in the
+     * DbManager logic...
+     */
     public static final long WAIT_FOR_CHILD_JOB_TIMEOUT_MS = 1800000; //30 minutes in ms
 
     private final String name;
@@ -24,10 +50,21 @@ public class DbManagerJob extends Job {
     private final Object monitor = new Object();
     private boolean done = false;
 
+    /**
+     * Instantiates a new Db manager job with the provided name
+     *
+     * @param name the name
+     */
     public DbManagerJob(String name) {
         this(name, null);
     }
 
+    /**
+     * Instantiates a new Db manager job with the provided name and list of child jobs
+     *
+     * @param name      the name
+     * @param childJobs the child jobs
+     */
     public DbManagerJob(String name, List<Child> childJobs) {
         this.name = name;
         if (childJobs == null) return;
@@ -83,6 +120,13 @@ public class DbManagerJob extends Job {
         this.done = true;
     }
 
+    /**
+     * Process loop boolean.
+     *
+     * @param runningJob the running job
+     * @return the boolean
+     * @throws Exception the exception
+     */
     protected boolean processLoop(Job runningJob) throws Exception {
         boolean dbTask;
         if (runningJob != this) {
@@ -307,6 +351,16 @@ public class DbManagerJob extends Job {
         return exceptionHandler(e, stage, this);
     }
 
+    /**
+     * If there is an exception, the exceptionCount is incremented, then checked to see if it
+     * has surpassed MAX_EXCEPTIONS.  If it has, the job is marked as failed and false is returned.
+     * Otherwise, the true is returned and processing continues.
+     *
+     * @param e          the e
+     * @param stage      the stage
+     * @param runningJob the running job
+     * @return the boolean
+     */
     protected boolean exceptionHandler(Exception e, Stage stage, Job runningJob) {
         logger.error("Exception in DbManagerJob", e);
         synchronized (this.monitor) {
@@ -324,31 +378,83 @@ public class DbManagerJob extends Job {
         return true;
     }
 
+    /**
+     * Jobs which implement DbManager.Child are the jobs which do all of the fetching
+     * and pre-processing before providing dbTasks to the db manager.  They may invoke
+     * the addDbTask method to add a dbTask for the current dbManager to process,
+     * or addToNextDbJobs method, as a way to add new child jobs for the next
+     * dbManager to run, once the current dbManager is finished.
+     *
+     * Additionally, all child jobs must implement the comparable interface so they
+     * can be sorted for order of execution.
+     */
     public static abstract class Child extends Job implements Comparable<Child> {
-        DbManagerJob dbManager;
+        private DbManagerJob dbManager;
 
+        /**
+         * This method is invoked if the dbTask throws an exception.  Since the child
+         * job will likely have returned and be marked as done by the time the task
+         * is actually run, it is necessary to include this in addition to the run-time
+         * exceptionHandler method of the Job superclass.  This method is specific to
+         * exceptions thrown during the dbTask
+         *
+         * @param e the e
+         * @return the boolean
+         */
         protected abstract boolean dbExceptionHandler(Exception e);
 
+        /**
+         * Add db task to run in the current dbManager job
+         *
+         * @param task the task
+         */
         protected final void addDbTask(Runnable task) {
             if (task == null) return;
             this.dbManager.addDbTask(task, this);
         }
 
+        /**
+         * Add child job to be run by the next dbManager that will be
+         * run after the current dbManager has finished all of its
+         * child jobs and dbTasks.
+         *
+         * @param dbJobToRunAfterDone the child job to run by the next
+         *                            dbManager
+         */
         protected final void addToNextDbJobs(Child dbJobToRunAfterDone) {
             if (dbJobToRunAfterDone == null) return;
             this.dbManager.addToNextDbJobs(dbJobToRunAfterDone);
         }
 
+        /**
+         * Add a regular job (non-child job) to be run after the current
+         * dbManager job has finished
+         *
+         * @param nonDbJobToRunAfterDone the non db job to run after done
+         */
         protected final void addAfterDone(Job nonDbJobToRunAfterDone) {
             if (nonDbJobToRunAfterDone == null) return;
             this.dbManager.addAfterDone(nonDbJobToRunAfterDone);
         }
 
+        /**
+         * Add a child job to the list of child jobs to be run by the
+         * current dbManager
+         *
+         * @param jobToRunBeforeDone the job to run before done
+         */
         protected final void addCurrentChildJob(Child jobToRunBeforeDone) {
             if (jobToRunBeforeDone == null) return;
             this.dbManager.addCurrentChildJob(jobToRunBeforeDone);
         }
 
+        /**
+         * Notifies the dbManager that the job has exited.  Allows it to
+         * process any dbTasks the job may have provided, and to remove
+         * it from the list of running child jobs.  Final method -- may
+         * not be overridden.  Child jobs may override notifyChildOfExit instead,
+         * which will be invoked after notifying the dbManager.
+         */
         @Override
         protected final void notifyOfExit() {
             if (this.dbManager != null) {
@@ -356,14 +462,34 @@ public class DbManagerJob extends Job {
                     this.dbManager.monitor.notifyAll();
                 }
             }
+            this.notifyChildOfExit();
+        }
+
+        /**
+         * Substitute for notifyOfExit, that can be overridden by child jobs, since
+         * notifyOfExit is final.  The default implementation does nothing.
+         */
+        protected void notifyChildOfExit() {
+
         }
     }
 
+    /**
+     * Sets name for the next DbManager job to be created from the list of nextJobs,
+     * after this dbManager is finished
+     *
+     * @param name the name of the next dbManager
+     */
     public void setNameForNext(String name) {
         checkStatus();
         this.nameForNext = name;
     }
 
+    /**
+     * Gets the name set for the next dbManager job
+     *
+     * @return the name for next dbManager job
+     */
     public String getNameForNext() {
         return this.nameForNext;
     }

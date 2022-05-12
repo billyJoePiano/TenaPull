@@ -10,7 +10,7 @@ import java.util.*;
  * Simple class for synchronizing concurrent read access and exclusive write access to an object.
  * The Object is passed into the constructor, and should only be accessed via lambdas submitted to the
  * read() or write() methods.  The object will be provided as the argument to these lambdas.
- *
+ * <p>
  * It is entirely up to the implementation to honor read and write rules. This class simply helps to
  * synchronize those operations.  However, the implementation may choose to submit both the object AND
  * an unmodifiable view of the object to the ReadWriteLock constructor, where the original object
@@ -19,45 +19,85 @@ import java.util.*;
  * Map, Set, List, or Collection to the respective static methods which create an unmodifiable view
  * of the original that is used for reading in a new ReadWriteLock instance (the original, of course,
  * will be used for writing).
- *
+ * <p>
  * Mechanics:
- *
+ * <p>
  * Multiple threads can read at one time.  Only one thread can write at a time, and no other
  * threads can read while the write thread holds the lock.  Note that the write thread will still be
  * able to run read lambdas with the read() method while holding the write lock.
- *
+ * <p>
  * More importantly, a thread with only a read lock must release all read locks BEFORE it requests
  * a write lock.  Otherwise it could lead to a deadlock if multiple threads are doing this
  * simultaneously, but an ConcurrentAccessException will be thrown to prevent this.
- *
+ * <p>
  * Type Parameters:
- *  * O : Object type, of the object needing synchronized access and passed into the constructor.  This will also
- *  *          be the object and type submitted to the read and write lambdas
- *  *
- *  * R : Return type from the most commonly used lambda.  Typically, this is the type being held in the list/map/set
- *  *          being synchronized. You can return null and ignore the return value if it is not needed.  If you need a
- *  *          different return type under varying situations, this can be specified on a per-invocation basis using
- *  *          read/write(Class&lt;T&gt; returnType, Callable&lt;O, T&gt; lambda)
+ * * O : Object type, of the object needing synchronized access and passed into the constructor.  This will also
+ * *          be the object and type submitted to the read and write lambdas
+ * *
+ * * R : Return type from the most commonly used lambda.  Typically, this is the type being held in the list/map/set
+ * *          being synchronized. You can return null and ignore the return value if it is not needed.  If you need a
+ * *          different return type under varying situations, this can be specified on a per-invocation basis using
+ * *          read/write(Class&lt;T&gt; returnType, Callable&lt;O, T&gt; lambda)
  *
+ * @param <O> the object for which read/write access needs to be synchronized
+ * @param <R> the standard return value from the read/write lambdas.  Other values types can also
+ *           be returned with the overloaded methods
  */
 public class ReadWriteLock<O, R> {
     private static Logger logger = LogManager.getLogger(ReadWriteLock.class);
 
-    public static <R, K, V> ReadWriteLock<Map<K, V>, R> forMap(Map<K, V> map) {
+    /**
+     * Creates a ReadWriteLock with the given map for writing, and an
+     * unmodifiable view of the map for reading
+     *
+     * @param <K> the key type for the map
+     * @param <V> the value type for the map
+     * @param <R> the standard return type
+     * @param map the map
+     * @return the read write lock
+     */
+    public static <K, V, R> ReadWriteLock<Map<K, V>, R> forMap(Map<K, V> map) {
         Map view = Collections.unmodifiableMap(map);
         return new ReadWriteLock<>(map, view);
     }
 
-    public static <R, T> ReadWriteLock<Set<T>, R> forSet(Set<T> set) {
+    /**
+     * Creates a ReadWriteLock with the given set for writing, and an
+     * unmodifiable view of the set for reading
+     *
+     * @param <T> the set type param
+     * @param <R> the standard return type
+     * @param set the set
+     * @return the read write lock
+     */
+    public static <T, R> ReadWriteLock<Set<T>, R> forSet(Set<T> set) {
         Set<T> view = Collections.unmodifiableSet(set);
         return new ReadWriteLock<>(set, view);
     }
 
-    public static <R, T> ReadWriteLock<List<T>, R> forList(List<T> list) {
+    /**
+     * Creates a ReadWriteLock with the given list for writing, and an
+     * unmodifiable view of the list for reading
+     *
+     * @param <T>  the list type param
+     * @param <R> the standard return type
+     * @param list the list
+     * @return the read write lock
+     */
+    public static <T, R> ReadWriteLock<List<T>, R> forList(List<T> list) {
         List<T> view = Collections.unmodifiableList(list);
         return new ReadWriteLock<>(list, view);
     }
 
+    /**
+     * Creates a ReadWriteLock with the given collection for writing, and an
+     * unmodifiable view of the collection for reading
+     *
+     * @param <T> the collection type param
+     * @param <R> the standard return type
+     * @param collection the collection
+     * @return the read write lock
+     */
     public static <R, T> ReadWriteLock<Collection<T>, R> forCollection(Collection<T> collection) {
         Collection<T> view = Collections.unmodifiableCollection(collection);
         return new ReadWriteLock<>(collection, view);
@@ -90,6 +130,11 @@ public class ReadWriteLock<O, R> {
 
     private final long id;
 
+    /**
+     * Private constructor used only to construct the first instance of ReadWriteLock, which synchronizes
+     * access to the static instances map.  This is a WeakHashMap holding weak references to all instances
+     * of ReadWriteLock which have been constructed and not GC'd
+     */
     private ReadWriteLock() {
         // static instances ReadWriteLock only
         Map map = new WeakHashMap<>();
@@ -99,10 +144,22 @@ public class ReadWriteLock<O, R> {
         this.id = 0;
     }
 
+    /**
+     * Instantiates a new Read write lock that synchronizes access to the given object.
+     *
+     * @param objectToLock the object to lock
+     */
     public ReadWriteLock(O objectToLock) {
         this(objectToLock, objectToLock);
     }
 
+    /**
+     * Instantiates a new Read write lock that synchronizes access to the given object,
+     * and the given unmodifiable view of this object
+     *
+     * @param objectToLock     the object to lock
+     * @param unmodifiableView the unmodifiable view of the object to lock
+     */
     public ReadWriteLock(O objectToLock, O unmodifiableView) {
         this.object = objectToLock;
         this.view = unmodifiableView;
@@ -134,15 +191,41 @@ public class ReadWriteLock<O, R> {
             return lock;
         }
     }
-    
+
+    /**
+     * Grants read access to the provided lambda, allowing it to return the
+     * standard return type
+     *
+     * @param lambda the lambda
+     * @return the value returned by the lambda
+     */
     public final R read(Lambda1<O, R> lambda) {
         return (R) this.read(null, lambda);
     }
 
+    /**
+     * Grants write access to the provided lambda, allowing it to return the standard
+     * return type
+     *
+     * @param lambda the lambda
+     * @return the value returned by the lambda
+     * @throws ConcurrentAccessException if the invoking thread already holds a read lock
+     * for this ReadWriteLock instance.  It must release the read lock before requesting a
+     * write lock
+     */
     public final R write(Lambda1<O, R> lambda) throws ConcurrentAccessException {
         return (R) this.write(null, lambda);
     }
 
+    /**
+     * Grants read access to the provided lambda, allowing it to return any
+     * type
+     *
+     * @param <T>        the type parameter
+     * @param returnType the return type
+     * @param lambda     the lambda
+     * @return the value returned by the lambda
+     */
     public final <T> T read(Class<T> returnType, Lambda1<O, T> lambda) {
         Lock readLock = this.getCurrentLock();
         if (readLock != null) {
@@ -195,6 +278,18 @@ public class ReadWriteLock<O, R> {
 
     }
 
+    /**
+     * Grants write access to the provided lambda, allowing it to return any
+     * type
+     *
+     * @param <T>        the type parameter
+     * @param returnType the return type
+     * @param lambda     the lambda
+     * @return the value returned by the lambda
+     * @throws ConcurrentAccessException if the invoking thread already holds a read lock
+     * for this ReadWriteLock instance.  It must release the read lock before requesting a
+     * write lock
+     */
     public final <T> T write(Class<T> returnType, Lambda1<O, T> lambda)
             throws ConcurrentAccessException {
 
@@ -313,10 +408,21 @@ public class ReadWriteLock<O, R> {
     }
      */
 
+    /**
+     * Find out if the current thread holds the write lock on this ReadWriteLock
+     *
+     * @return true if the current thread holds the write lock, false if not
+     */
     public final boolean holdsWriteLock() {
         return Thread.holdsLock(writeLock);
     }
 
+    /**
+     * Find out if the provided thread holds the write lock on this ReadWriteLock
+     *
+     * @param thread the thread to check
+     * @return true if the provided thread holds the write lock, false if not
+     */
     public final boolean holdsWriteLock(Thread thread) {
         synchronized (this.waitingForWrite) {
             return this.currentWriteThread != null
@@ -325,6 +431,11 @@ public class ReadWriteLock<O, R> {
 
     }
 
+    /**
+     * Find out if the current thread holds a read lock on this ReadWriteLock
+     *
+     * @return true if the current thread holds a read lock, false if not
+     */
     public final boolean holdsReadLock() {
         synchronized (removeLock) {
             Thread current = Thread.currentThread();
@@ -337,6 +448,12 @@ public class ReadWriteLock<O, R> {
         }
     }
 
+    /**
+     * Find out if the provided thread holds a read lock on this ReadWriteLock
+     *
+     * @param thread the thread to check
+     * @return true if the provided thread holds a read lock, false if not
+     */
     public final boolean holdsReadLock(Thread thread) {
         if (thread == null) {
             return false;
@@ -352,20 +469,30 @@ public class ReadWriteLock<O, R> {
         }
     }
 
+    /**
+     * Find out if the current thread holds any lock (read or write) on this ReadWriteLock
+     *
+     * @return true if the current thread holds a lock, false if not
+     */
     public final boolean holdsLock() {
         return this.holdsWriteLock() || this.holdsReadLock();
     }
 
+    /**
+     * Returns the thread that currently holds the write lock on this ReadWriteLock, if any
+     *
+     * @return that thread that currently holds the write lock, or null if none does
+     */
     public final Thread getCurrentWriteThread() {
         return this.currentWriteThread;
     }
 
     /**
-     * Returns whether the current thread is blocking the passed thread from obtaining
-     * a read or write lock
+     * Returns whether the current thread is blocking the provided thread from obtaining
+     * a read or write lock from this ReadWriteLock instance
      *
-     * @param thread
-     * @return
+     * @param thread the thread that may or may not be blocked
+     * @return boolean whether this thread is blocking it
      */
     public final boolean isCurrentBlocking(Thread thread) {
         return this.isCurrentBlocking(Thread.currentThread(), thread);
@@ -388,23 +515,48 @@ public class ReadWriteLock<O, R> {
         return false;
     }
 
+    /**
+     * Returns whether the provided thread is waiting for a read lock
+     *
+     * @param thread the thread to check
+     * @return whether the thread is waiting for a read lock
+     */
     public boolean isWaitingForReadLock(Thread thread) {
         synchronized (this.waitingForRead) {
             return this.waitingForRead.contains(thread);
         }
     }
 
+    /**
+     * Returns whether the provided thread is waiting for a write lock
+     *
+     * @param thread the thread to check
+     * @return whether the thread is waiting for a write lock
+     */
     public boolean isWaitingForWriteLock(Thread thread) {
         synchronized (this.waitingForWrite) {
             return this.waitingForWrite.contains(thread);
         }
     }
 
+    /**
+     * Returns whether the provided thread is waiting for any lock (read or write)
+     *
+     * @param thread the thread to check
+     * @return whether the thread is waiting for a lock
+     */
     public boolean isWaitingForLock(Thread thread) {
         return this.isWaitingForReadLock(thread) ||
                 this.isWaitingForWriteLock(thread);
     }
 
+    /**
+     * Gets the set of all threads which are blocked by the provided thread
+     * within the context of this ReadWriteLock
+     *
+     * @param thread the thread that may be blocking other threads
+     * @return the threads blocked by the provided thread
+     */
     public Set<Thread> getThreadsBlockedBy(Thread thread) {
         Set<Thread> blocked = new LinkedHashSet<>();
         getThreadsBlockedBy(thread, blocked);
@@ -490,6 +642,13 @@ public class ReadWriteLock<O, R> {
         }
     }
 
+    /**
+     * Register the provided thread as a "disruptable" thread, meaning that it may
+     * be denied read/write access if doing so would lead to a circular blocking
+     * pattern that would result in deadlock
+     *
+     * @param disruptableThread the disruptable thread
+     */
     public static void registerAsDisruptable(Thread disruptableThread) {
         disruptableThreads.write(dtMap -> {
             dtMap.put(disruptableThread, null);
@@ -518,10 +677,23 @@ public class ReadWriteLock<O, R> {
         throw new ThreadDisruption();
     }
 
+    /**
+     * Error (NOT Exception) thrown when a disruptable thread would create a
+     * deadlock if allowed the request read/write access.  Because this is NOT
+     * an exception, it should pass through almost all try ... catch statements and unwind
+     * the thread back to its origin.  Similar to ThreadDeath, except that the thread may
+     * catch this and continue on to its next operation without dying
+     */
     public static class ThreadDisruption extends Error {
         private ThreadDisruption() { }
     }
 
+    /**
+     * Gets the recursive map of which threads are blocking which other threads
+     * from obtaining locks, across all instances of ReadWriteLock
+     *
+     * @return the thread blocking map
+     */
     public static RecursiveMap<Thread> getThreadBlockingMap() {
         RecursiveMap<Thread> threadMap = new RecursiveMap<>();
 
@@ -535,7 +707,13 @@ public class ReadWriteLock<O, R> {
     }
 
 
-    // Does the current thread block the given thread from obtaining any locks?
+    /**
+     * Determine whether the current thread is blocking the provided thread
+     * from obtaining any locks (read or write) in any instance of ReadWriteLock
+     *
+     * @param thread the thread that may be blocked
+     * @return whether the current thread is blocking the provided thread
+     */
     public static boolean isBlockingAnyLock(Thread thread) {
         return instances.read(Boolean.class, instances -> {
             Thread current = Thread.currentThread();
@@ -548,6 +726,13 @@ public class ReadWriteLock<O, R> {
         });
     }
 
+    /**
+     * Determine whether the provided thread is waiting for a read lock in
+     * any instance of ReadWriteLock
+     *
+     * @param thread the thread to check
+     * @return true if the provided thread is waiting for any read lock
+     */
     public static boolean isWaitingForAnyReadLock(Thread thread) {
         return instances.read(Boolean.class, instances -> {
             for (ReadWriteLock rwl : instances.keySet()) {
@@ -559,6 +744,13 @@ public class ReadWriteLock<O, R> {
         });
     }
 
+    /**
+     * Determine whether the provided thread is waiting for a write lock in
+     * any instance of ReadWriteLock
+     *
+     * @param thread the thread to check
+     * @return true if the provided thread is waiting for any write lock
+     */
     public static boolean isWaitingForAnyWriteLock(Thread thread) {
         return instances.read(Boolean.class, instances -> {
             for (ReadWriteLock rwl : instances.keySet()) {
@@ -570,6 +762,13 @@ public class ReadWriteLock<O, R> {
         });
     }
 
+    /**
+     * Determine whether the provided thread is waiting for a lock (read or write) in
+     * any instance of ReadWriteLock
+     *
+     * @param thread the thread to check
+     * @return true if the provided thread is waiting for any lock (read or write)
+     */
     public static boolean isWaitingForAnyLock(Thread thread) {
         return instances.read(Boolean.class, instances -> {
             for (ReadWriteLock rwl : instances.keySet()) {
@@ -581,123 +780,15 @@ public class ReadWriteLock<O, R> {
         });
     }
 
+    /**
+     * Gets an unmodifiable view of the set of threads currently holding a read lock
+     * on this ReadWriteLock
+     *
+     * @return the current read threads
+     */
     public final Set<Thread> getCurrentReadThreads() {
         return this.readThreads;
     }
-
-
-    /*
-    private void clearGarbageCollector() {
-        this.garbageCollector = null;
-    }
-
-    private void startGarbageCollector() {
-        this.garbageCollector = new Thread(() -> {
-            try {
-                Thread garbageCollector = Thread.currentThread();
-                garbageCollector.setPriority(Thread.MIN_PRIORITY);
-                int zeroLocksCounter = 0;
-                Map<Thread, Lock> inactive = new WeakHashMap<>();
-                while (true) {
-                    List<Map.Entry<Thread, Lock>> entries;
-
-                    synchronized (removeLock) {
-                        entries = new ArrayList(this.readLocks.entrySet());
-                    }
-
-                    boolean zeroLocks = true;
-                    int size = entries.size();
-
-                    for (Map.Entry<Thread, Lock> entry : entries) {
-                        // can use an iterator since this is a copy
-                        Lock lock = entry.getValue();
-                        if (lock == null) continue;
-                        zeroLocks = false;
-
-                        if (!lock.active) {
-                            inactive.put(entry.getKey(), lock);
-                        }
-                    }
-
-                    entries = null; //allows garbage collection of thread in the map entries ???
-
-                    if (zeroLocks) {
-                        if (++zeroLocksCounter >= 5) {
-                            // discontinue the GC thread if there are no
-                            // new readLocks created in the last 5+ seconds
-                            break;
-
-                        }
-
-                    } else {
-                        zeroLocksCounter = 0;
-                    }
-
-                    garbageCollector.setPriority(Thread.MAX_PRIORITY);
-                    this.clear(inactive);
-                    garbageCollector.setPriority(Thread.MIN_PRIORITY);
-
-                    // size is used as divisor for sleep time
-                    // the more locks are present, the more active the GC should be
-                    if (size <= 0) {
-                        size = 1;
-                    } else {
-                        size++;
-                    }
-
-                    try {
-                        Thread.sleep(1000 / size);
-                    } catch (Throwable e) { }
-                }
-
-            } finally {
-                synchronized (removeLock) {
-                    synchronized (gcLock)   {
-                        this.clearGarbageCollector();
-                        if (this.readLocks.size() > 0) {
-                            startGarbageCollector();
-                        }
-                    }
-                }
-            }
-        }, "ReadWriteLock (" + this.id + ") garbage collector");
-
-        this.garbageCollector.start();
-    }
-
-    private void clear(Map<Thread, Lock> inactive) {
-        if (inactive.size() <= 0) return;
-
-        // CLEAR all the read locks identified as inactive!
-        synchronized (removeLock) {
-            if (this.readLocks.size() > 0) {
-                // ^^^ in case a write lock cleared it for the GC :-)
-                // means we can just skip this...
-                return;
-            }
-
-            for (Map.Entry<Thread, Lock> entry : inactive.entrySet()) {
-                Lock lock = entry.getValue();
-                if (lock != null) {
-                    synchronized (lock) {
-                        if(!lock.active) {
-                            this.readLocks.remove(entry.getKey());
-                        } else {
-                            //WTF!?
-                            logger.error(
-                                    "UNEXPECTED condition in garbage collecting thread: " +
-                                            "A readLock that was marked as inactive is now active again!!??");
-                        }
-                    }
-                } else {
-                    this.readLocks.remove(entry.getKey());
-                }
-            }
-
-        }
-        inactive.clear();
-    }
-    */
 
     private class ReadThreadsSet implements Set<Thread> {
         private Set<Thread> keySet = ReadWriteLock.this.readLocks.keySet();
@@ -783,6 +874,10 @@ public class ReadWriteLock<O, R> {
         }
     }
 
+    /**
+     * A special iterator to handle dynamically changing state of read lock threads,
+     * for the ReadThreadsSet
+     */
     public class ReadThreadsIterator implements Iterator<Thread> {
         private final Map<Thread, Void> alreadyUsed = new WeakHashMap();
         private final ReadThreadsSet rtSet = ReadWriteLock.this.readThreads;

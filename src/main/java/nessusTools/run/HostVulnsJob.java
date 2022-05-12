@@ -15,7 +15,16 @@ import java.time.*;
 import java.time.format.*;
 import java.util.*;
 
+/**
+ * Takes a given scanResponse and host from the scanResponse, and fetches the host vulnerability
+ * data from the Nessus API about that host.  The resulting data is output as a .json file ready
+ * for Splunk ingestion, and the DB is updated to show that this is the most recent file generated
+ * for this host_id/scan_id combination
+ */
 public class HostVulnsJob extends DbManagerJob.Child {
+    /**
+     * The output directory, as obtained by Main from the config file specified in command-line arg[0]
+     */
     public static final String OUTPUT_DIR = Main.getConfig().getProperty("output.dir");
 
     private static final Logger logger = LogManager.getLogger(HostVulnsJob.class);
@@ -29,6 +38,12 @@ public class HostVulnsJob extends DbManagerJob.Child {
     private final HostOutput output = new HostOutput();
     private final Timestamp scanTimestamp;
 
+    /**
+     * Instantiates a new Host vulns job using the provided scanResponse and scan host.
+     *
+     * @param scanResponse the scan response which the host originates from
+     * @param host         the host to obtain the vulnerability data about
+     */
     public HostVulnsJob(ScanResponse scanResponse, ScanHost host) {
         this.scanResponse = scanResponse;
         this.host = host;

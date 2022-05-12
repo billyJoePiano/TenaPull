@@ -6,12 +6,25 @@ import org.apache.logging.log4j.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * The entry point to the TenaPull application.  Processes the config file provided in
+ * command line arg, and then enters the jobs loop if the config is valid.  If config
+ * is invalid, this will return a descriptive error message and then exit.
+ */
 public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
     private static final Thread main = Thread.currentThread();
 
+    /**
+     * The configuration file to use for Unit tests, since they do NOT enter the application
+     * through the public static void main(String[] args) method of Main.
+     */
     public static final String TESTS_CONFIG = "tests.properties";
 
+    /**
+     * Flag to indicate there was an error in the application.  If marked as true,
+     * the application will exist with status code of -1
+     */
     private static boolean error = false;
 
     private static final Properties config = new Properties();
@@ -28,6 +41,21 @@ public class Main {
 
     private Main() { } //never instantiated ... static only
 
+
+    /**
+     * The entry point of the application.  There should be at least one arg
+     * which indicates the configuration file to use for this run of TenaPull.
+     * The config file itself should have a .properties extension, but the extension may
+     * be left out of the command line argument (e.g. myscanner1.properties
+     * could be myscanner1)
+     *
+     * There may be an optional second argument specifying to perform a database
+     * reset instead of the normal Nessus API tasks.  This argument may be "reset",
+     * "dbReset", or "resetDb."  The database reset will first prompt for a confirmation
+     * before performing the reset.
+     *
+     * @param args the input arguments
+     */
     public static void main(String[] args) {
         if (validateArgs(args) && loadConfig(args[0])) {
             Var<Job> seed = new Var<>(makeSeedJob(args));
@@ -43,26 +71,57 @@ public class Main {
         System.exit(error ? -1 : 0);
     }
 
+    /**
+     * Returns whether the current thread is the main thread or not
+     *
+     * @return true if the invoking thread is the main thread, false is not.
+     */
     public static boolean isMain() {
         return isMain(Thread.currentThread());
     }
 
+    /**
+     * Returns whether the provided thread is the main thread or not
+     *
+     * @return true if the provided thread is the main thread, false is not.
+     */
     public static boolean isMain(Thread thread) {
         return Objects.equals(main, thread);
     }
 
+    /**
+     * Marks the application as having an error, so that it will exit with status code -1
+     */
     public static void markErrorStatus() {
         error = true;
     }
 
+    /**
+     * Gets whether the error status flag has been marked.
+     *
+     * @return true if the error status flag has been marked, false if not
+     */
     public static boolean getErrorStatus() {
         return error;
     }
 
+    /**
+     * Gets a copy of the application config, as parsed from the filename provided
+     * in the command line arg[0]
+     *
+     * @return a copy of the config
+     */
     public static Properties getConfig() {
         return (Properties) config.clone();
     }
 
+    /**
+     * Loads the default config for unit tests, since they do not enter the application
+     * through the usual public static main(String[] args) of this class
+     *
+     * @return true if the configuration was valid, false if not
+     * @throws IllegalStateException if another config was already loaded
+     */
     public static boolean loadTestConfig() throws IllegalStateException {
         if (config.size() > 0) {
             throw new IllegalStateException(
@@ -172,6 +231,14 @@ public class Main {
         }
     }
 
+    /**
+     * Used to build a url string from the provided config and prefix.  Used by both
+     * "db" prefix and "api" prefix.
+     *
+     * @param config the config to parse for a url
+     * @param prefix the prefix to obtain the url components from (typically either "db" or "api")
+     * @return the string
+     */
     public static String buildUrl(Properties config, String prefix) {
         String url = config.getProperty(prefix + ".url.protocol") + "://"
                         + config.getProperty(prefix + ".url.host");

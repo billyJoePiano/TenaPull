@@ -7,52 +7,47 @@ import org.apache.logging.log4j.*;
 import java.lang.ref.*;
 import java.util.*;
 
-/*
- * TODO see other TODOs , also triple-check logic behind createLock.waitForStage and checkForDeadlock
- * especially as it relates to knowing which threads are running with which locks and checking
- * against which are waiting for read/write locks on instance/underConstruction, etc to determine
- * if deadlock conditions have been reached
- */
 
 /**
  * Synchronizes and maps unique instances to a unique "key" (typically a String or Number).
  * Instances are held as weak references via a WeakHashMap which is synchronized via ReadWriteLock.
- *
- *
+ * <p>
+ * <p>
  * NOTE: The implementation of this class inverts keys and value.
  * It is a little counter-intuitive that the instance is the key of the actual WeakHashMap and the key is
  * the value.  But this is needed for the "Weak" reference to work correctly, and allow garbage collection
  * of unused instances.
- *
+ * <p>
  * In a sense, both the keys and values "keys" for each other, but only the instance is a weak reference
  * that can be garbage-collected, which is why it must occupy the formal 'key' position in the WeakHashMap.
  * However, for users of InstancesTracker, the instances are considered to be the "values", and the accessor
  * strong references (typically strings) are considered to be the "keys".  The strongly-referenced "keys" may have
  * more than one key per instance, but each key may refer to only one instance, like a normal map.
- *
+ * <p>
  * The "put" method is ONLY for adding additional keys to a pre-existing instance because an instance should
  * not be constructed without first obtaining a CreateLock for the initial key. There are several methods for this.
  * 1) getOrConstruct(K key).  A default construct lambda should be provided with the InstancesTracker
- *      constructor.  The construct lambda will be called with appropriate locks by the getOrConstruct method.
- *
+ * constructor.  The construct lambda will be called with appropriate locks by the getOrConstruct method.
+ * <p>
  * 2) getOrConstructWith(K key, Lambda1/2) like getOrConstruct but with a custom construction lambda instead of the
- *      default lambda.
- *
- *
+ * default lambda.
+ * <p>
+ * <p>
  * 3) constructWith(K key, Lambda1/2) Construct with a custom lambda, the returned instance will override any
- *      previously existing instance associated with the given key.
- *
- * Note that all construct lambda MUST return a non-null value of instance type I or a
- *      NullInstance runtime exception will be thrown (no need to be declared or caught)
- *      EDIT: 4/13 removed this requirement to allow searching while holding a CreateLock in MapLookupDao
- *
+ * previously existing instance associated with the given key.
+ * <p>
  * Type parameters:
+ * <p>
+ * K -- Key -- the string, integer, hash or other value used to access the instances.  There is a strong reference
+ * to these values
  *
- * K -- Key -- the string or other object used to access the instances.  There is a strong reference to these values
  * I -- Instances -- the type of the instances being tracked.  These are weak references so may be garbage
  * collected if no strong references remain to the instance, in which case the strong reference to the key
  * will also be destroyed here (though there may be strong references elsewhere that prevent it from being
  * garbage-collected)
+ *
+ * @param <K> the type parameter
+ * @param <I> the type parameter
  */
 public class InstancesTracker<K, I> {
     private static final Logger logger = LogManager.getLogger(InstancesTracker.class);
@@ -87,7 +82,14 @@ public class InstancesTracker<K, I> {
     private InstancesTracker<K, I> replacedWith;
 
 
-
+    /**
+     * Instantiates a new Instances tracker of the given key and value types
+     *
+     * @param keyType            the key type
+     * @param instancesType      the instances type
+     * @param constructionLambda the default construction lambda (may be null)
+     * @throws NullPointerException if the keyType or instancesType are null.
+     */
     public InstancesTracker(Class<K> keyType,
                             Class<I> instancesType,
                             Lambda1<K, I> constructionLambda)
@@ -96,6 +98,14 @@ public class InstancesTracker<K, I> {
         this(new Type(keyType), new Type(instancesType), constructionLambda);
     }
 
+    /**
+     * Instantiates a new Instances tracker.
+     *
+     * @param keyType            the key type
+     * @param instType           the inst type
+     * @param constructionLambda the construction lambda (may be null)
+     * @throws NullPointerException if the keyType or instancesType are null
+     */
     public InstancesTracker(Type<K> keyType,
                             Type<I> instType,
                             Lambda1<K, I> constructionLambda)
@@ -114,10 +124,26 @@ public class InstancesTracker<K, I> {
     }
 
 
+    /**
+     * Get the set of keys.  IMPORTANT: the implementation of the keySet inner class
+     * was never completed.  Use extreme caution if trying to use it, as it may
+     * not be synchronized with the actual keys in use, and may have undefined/exception-prone
+     * behavior in certain cases.
+     *
+     * @return the set
+     */
     public Set<K> keySet() {
         return this.keySet;
     }
 
+    /**
+     * The number of instances that have been constructed and which still exist
+     * (aka, haven't been GC'd).  Note that this may be an expensive operation,
+     * because it requires waiting for construction to finish on all existing
+     * create locks, and then finalizing all of them.
+     *
+     * @return the size
+     */
     public int size() {
         return instances.read(Integer.class, instances ->
             underConstruction.read(Integer.class, underConstruction -> {
@@ -134,6 +160,12 @@ public class InstancesTracker<K, I> {
         );
     }
 
+    /**
+     * Get the instance associated with the provided key
+     *
+     * @param key the key
+     * @return the instance associated with the provided key
+     */
     public I get(K key) {
         //iol = instance or lock
         Object iol = this.instances.read(instances -> {
@@ -160,10 +192,35 @@ public class InstancesTracker<K, I> {
         return lock.run(lock.key);
     }
 
+    /**
+     * Applies a filter lambda to the entire set of instances, and returns a list of
+     * the instances for which the lambda returns true.
+     *
+     * Note that this may be an expensive operation, because it requires waiting for
+     * construction to finish on all existing create locks, and then finalizing all of them
+     * before the comparisons can be conducted.
+     *
+     * @param filter the filter
+     * @return the list of matching instances
+     */
     public List<I> get(Lambda1<I, Boolean> filter) {
         return this.get(filter, 0);
     }
 
+    /**
+     * Applies a filter lambda to the entire set of instances, and returns a list of
+     * the instances for which the lambda returns true, stopping after the providing
+     * limit is reached.  If limit <= 0 then the iteration will not stop until
+     * all instances have been checked.
+     *
+     * Note that this may be an expensive operation, because it requires waiting for
+     * construction to finish on all existing create locks, and then finalizing all of them
+     * before the comparisons can be conducted.
+     * @param filter the filter
+     * @param limit  the number of matched instances at which to stop checking, or <= 0
+     *               to check every instance
+     * @return the list of matching instances
+     */
     public List<I> get(Lambda1<I, Boolean> filter, int limit) {
         List<I> accepted = new LinkedList();
         List<I> rejected = new LinkedList();
@@ -225,15 +282,54 @@ public class InstancesTracker<K, I> {
     }
 
 
+    /**
+     * Gets the instance matching the provided key, or constructs it with the default
+     * construct-lambda provided in the InstancesTracker's constructor.
+     *
+     * Note that even if the construct lambda runs, it is possible that a different
+     * instance will be returned by this method, if another thread overrides the
+     * instance associated with the key while the construct lambda is running.
+     * Also note that getOrConstruct is NOT considered a force-overriding method call,
+     * and that the lambda is not guaranteed to run, though IF it does run it will
+     * only run before this method returns.
+     * To force-override a key's associated instance, use construct or constructWith
+     *
+     * @param key the key
+     * @return the instance associated with the key
+     * @throws InstancesTrackerException if the key is null
+     * @throws CreateLockException if this method is being called from within the context
+     * of another construct lambda holding a create lock from this instancesTracker.
+     * To add a key-instance pair within such a context, use the put method
+     */
     public I getOrConstruct(K key)
-            throws InstancesTrackerException {
+            throws InstancesTrackerException, CreateLockException {
         return getOrMakeCreateLock(key, this.construct,false);
     }
 
-    // First removes the key if it already exists, and then gains a construct
-    // lock with it before running the custom one-time construction lambda
+    /**
+     * Forces construction of an instance associated with the provided key
+     * using the provided construct lambda, overriding any previously existing
+     * instance associated with the key.
+     *
+     * Note that even though the construct lambda is guaranteed to run before
+     * this method returns, it is still possible that a different
+     * instance will be returned by this method, if another thread also overrides the
+     * instance associated with the key while the construct lambda is running.
+     *
+     *
+     * @param key          the key
+     * @param customLambda the custom construct lambda
+     * @return the
+     * @throws InstancesTrackerException if the key is null
+     * @throws NullPointerException      if the construct lambda is null
+     * @throws CreateLockException if this method is being called from within the context
+     * of another construct lambda holding a create lock from this instancesTracker.
+     * To add a key-instance pair within such a context, use the put method
+     */
     public I constructWith(K key, Lambda1<K, I> customLambda)
-            throws InstancesTrackerException, NullPointerException {
+            throws InstancesTrackerException, NullPointerException, CreateLockException {
+        // First removes the key if it already exists, and then gains a construct
+        // lock with it before running the custom one-time construction lambda
         if (customLambda == null) {
             throw new NullPointerException();
         }
@@ -241,8 +337,27 @@ public class InstancesTracker<K, I> {
         return getOrMakeCreateLock(key, customLambda, true);
     }
 
+    /**
+     * Gets the instance matching the provided key, or constructs it with the provided
+     * custom construct-lambda,
+     *
+     * Note that even if the construct lambda runs, it is possible that a different
+     * instance will be returned by this method, if another thread overrides the
+     * instance associated with the key while the construct lambda is running.
+     * Also note that getOrConstruct is NOT considered a force-overriding method call,
+     * and that the lambda is not guaranteed to run, though IF it does run it will
+     * only run before this method returns.
+     * To force-override a key's associated instance, use construct or constructWith
+     *
+     * @param key the key
+     * @return the instance associated with the key
+     * @throws InstancesTrackerException if the key is null
+     * @throws CreateLockException if this method is being called from within the context
+     * of another construct lambda holding a create lock from this instancesTracker.
+     * To add a key-instance pair within such a context, use the put method
+     */
     public I getOrConstructWith(K key, Lambda1<K, I> customLambda)
-            throws InstancesTrackerException, NullPointerException {
+            throws InstancesTrackerException, NullPointerException, CreateLockException {
 
         if (customLambda == null) {
             throw new NullPointerException();
@@ -251,14 +366,41 @@ public class InstancesTracker<K, I> {
         return getOrMakeCreateLock(key, customLambda,  false);
     }
 
-    // uses the default construction lambda for key K
-    public I construct(K key) throws InstancesTrackerException {
+    /**
+     * Forces construction of an instance associated with the provided key
+     * using the default construct lambda provided at the InstancesTracker's
+     * constructor, overriding any previously existing instance associated
+     * with the key.
+     *
+     * Note that even though the default construct lambda is guaranteed to run before
+     * this method returns, it is still possible that a different
+     * instance will be returned by this method, if another thread also overrides the
+     * instance associated with the key while the lambda is running.
+     *
+     * @param key          the key
+     * @return the instance associated with the key
+     * @throws InstancesTrackerException if the key is null
+     * @throws CreateLockException if this method is being called from within the context
+     * of another construct lambda holding a create lock from this instancesTracker.
+     * To add a key-instance pair within such a context, use the put method
+     */
+    public I construct(K key) throws InstancesTrackerException, CreateLockException {
         if (key == null) {
             return null;
         }
         return this.getOrMakeCreateLock(key, this.construct, true);
     }
 
+    /**
+     * Remove the key from the instances tracker.  Note that although the
+     * instance the key referenced may no longer have any key associated with it,
+     * the instance will still be held as a weak reference in the InstancesTracker,
+     * and (if an external reference to it exists) may have a new key associated with it
+     * using the put method.
+     *
+     * @param key the key to remove
+     * @return the instance that was associated with the key
+     */
     public I remove(K key) {
         return this.instances.write(instType, instances -> {
             Set<K> keySet;
@@ -284,6 +426,14 @@ public class InstancesTracker<K, I> {
         });
     }
 
+    /**
+     * Gets all keys associated with the provided instance
+     *
+     * @param instance the instance
+     * @return the set of keys associated with the provided instance
+     * @throws UnrecognizedInstance if the instance is not recognized as an instance constructed
+     * under the lock of this instancesTracker.
+     */
     public Set<K> getKeysFor(I instance)
             throws UnrecognizedInstance {
 
@@ -303,6 +453,14 @@ public class InstancesTracker<K, I> {
         });
     }
 
+    /**
+     * Clears all keys associated with the provided instance, and returns them
+     *
+     * @param instance the instance
+     * @return the set of keys previously associated with the instance
+     * @throws UnrecognizedInstance if the instance is not recognized as an instance constructed
+     * under the lock of this instancesTracker.
+     */
     public Set<K> clearKeysFor(I instance)
             throws UnrecognizedInstance {
 
@@ -338,6 +496,12 @@ public class InstancesTracker<K, I> {
         return keySet;
     }
 
+    /**
+     * Gets the set of all instances constructed under the lock of this instancesTracker
+     * that haven't been GC'd
+     *
+     * @return the instances
+     */
     public Set<I> getInstances() {
         return instances.read(Set.class, instances -> {
             Set<I> all = new LinkedHashSet(instances.keySet());
@@ -356,6 +520,16 @@ public class InstancesTracker<K, I> {
     }
 
 
+    /**
+     * Puts a new key-instance association for a previously constructed instances,
+     * or adds an extra key for an instance which is currently under construction.
+     *
+     * @param key      the key
+     * @param instance the instance
+     * @return the
+     * @throws UnrecognizedInstance if the instance is not recognized as an instance constructed
+     * under the lock of this instancesTracker.
+     */
     public I put(K key, I instance)
             throws UnrecognizedInstance {
 
@@ -515,7 +689,7 @@ public class InstancesTracker<K, I> {
     private I getOrMakeCreateLock(K key,
                                   Lambda1<K, I> construct,
                                   boolean overwriteIfFound)
-            throws InstancesTrackerException {
+            throws InstancesTrackerException, CreateLockException {
 
         if (key == null) {
             throw new NullKeyArgument(this);
@@ -663,6 +837,12 @@ public class InstancesTracker<K, I> {
         }
     }
 
+    /**
+     * Gets the default construct lambda, provided at the construction of this
+     * instances tracker
+     *
+     * @return the default construct lambda
+     */
     public Lambda1<K, I> getConstruct() {
         return this.construct;
     }
@@ -679,21 +859,68 @@ public class InstancesTracker<K, I> {
     }
 
     private enum Stage {
+        /**
+         * Idle stage.
+         */
         IDLE,
+        /**
+         * Pre construct stage.
+         */
         PRE_CONSTRUCT,
+        /**
+         * Construct stage.
+         */
         CONSTRUCT,
+        /**
+         * Post construct stage.
+         */
         POST_CONSTRUCT,
+        /**
+         * Returned stage.
+         */
         RETURNED, // includes thrown exceptions
+        /**
+         * Finalizing stage.
+         */
         FINALIZING,
+        /**
+         * Finalized stage.
+         */
         FINALIZED
     }
 
+    /**
+     * The interface Key finalizer, which may be implemented by custom keys.
+     * If the key type implements key finalizer, this method will be invoked
+     * immediately after a createLock is "finalized" -- meaning that the finished instance
+     * is moved from the underConstruction map where it is a strong reference held
+     * by the CreateLock under which it was constructed, to the instances map where it is
+     * a weak reference associated with a set of keys.
+     *
+     * Note that finalizing happens asynchronously from the completion of construction,
+     * and that the finished instance may be returned long before finalizing happens
+     *
+     * @param <K> The key type implementing KeyFinalizer
+     * @param <I> the instance type associated with the keyFinalizer implementation
+     */
     public interface KeyFinalizer<K extends KeyFinalizer<K, I>, I> {
+        /**
+         * Method invoked immediately after finalization is completed.
+         *
+         * @param instance the instance that was finalized, meaning moved from
+         *                 underConstruction to instances
+         */
         public void finalizeKey(I instance);
     }
 
 
-    static Var.Long lockIdCounter = new Var.Long(Long.MIN_VALUE);
+    /**
+     * An ID counter used to uniquely identify every instance of CreateLock.  We use
+     * a permanent Var.Long instance so that it can be used as a synchronizing monitor.
+     * The id is needed for implementing the comparable interface on CreateLock, and
+     * guaranteeing that no two create locks will ever be equal by means of compare().
+     */
+    private static final Var.Long lockIdCounter = new Var.Long(Long.MIN_VALUE);
     private static long getCreateLockId(InstancesTracker.CreateLock lock) {
         synchronized (lockIdCounter) {
             return lockIdCounter.value++;
@@ -1227,6 +1454,10 @@ public class InstancesTracker<K, I> {
         // end of CreateLock inner class
     }
 
+    /**
+     * NOT COMPLETED.  USE WITH EXTREME CAUTION.  This is intended to be a dynamic
+     * unmodifiable view of an instancesTracker's key set.
+     */
     public class KeySet implements Set<K> {
         private final ReadWriteLock<Map<K, WeakReference<I>>, Object>
                 keysMap = ReadWriteLock.forMap(new WeakHashMap());
@@ -1403,10 +1634,28 @@ public class InstancesTracker<K, I> {
         Thread.interrupted();
     }
 
+    /**
+     * Iterates over all existing instances trackers and their create locks,
+     * and generates a recursive map of which threads are blocking which other
+     * threads.  This method begins with the threadBlockingMap returned from
+     * ReadWriteLock
+     *
+     * @return the map of which threads are blocking which other threads
+     */
     public static RecursiveMap<Thread> getThreadBlockingMap() {
         return getThreadBlockingMap(ReadWriteLock.getThreadBlockingMap());
     }
 
+    /**
+     * Iterates over all active instances trackers and their create locks,
+     * and generates a recursive map of which threads are blocking which other
+     * threads.  The caller may include a pre-filled Recursive map (e.g. from
+     * ReadWriteLock.getThreadBlockingMap) that will be further populated, or
+     * an empty RecursiveMap to just see the blocks from InstancesTrackers
+     *
+     * @param preFilled the pre filled recursive map of thread blocks
+     * @return the thread blocking map8\
+     */
     public static RecursiveMap<Thread> getThreadBlockingMap(RecursiveMap<Thread> preFilled) {
         //switch out waitingThreads and altWaitingThreads
         return waitingThreads.read(RecursiveMap.class, wt ->
@@ -1601,7 +1850,13 @@ public class InstancesTracker<K, I> {
         }
     }
 
+    /**
+     * The constant BILLION, used for converting between nanoseconds and seconds
+     */
     public static final double BILLION = 1000000000; //for converting ns to seconds
+    /**
+     * The constant MILLION used for converting between nanoseconds and milliseconds
+     */
     public static final long MILLION = 1000000; //for converting between ns and ms
     //private static final int REPORT_ITERATIONS = 1;
     //private static final int RESULT_SAMPLES = 1;
@@ -1675,6 +1930,16 @@ public class InstancesTracker<K, I> {
         }
     }
 
+    /**
+     * Runs a single iteration of finalization for all InstancesTracker needing it,
+     * with the provided maximum timeout before quitting.  This method is used by
+     * the finalizer thread, and can also be invoked by other threads with nothing
+     * else to do (e.g. by JobFactory)
+     *
+     * @param maxTimeNs the max time in nanoseconds before quitting
+     * @return true if there was finalizing that needed to be done, false if there
+     * was nothing to do
+     */
     public static boolean runFinalizer(long maxTimeNs) {
         List<TrackerNeedsFinalizing> needsFinalizing = getTrackersThatNeedFinalizing();
 
@@ -1879,10 +2144,11 @@ public class InstancesTracker<K, I> {
      */
 
     private static class FinalizeResult {
-        final boolean success;
-        final int count;
-        final int instances;
-        FinalizeResult(boolean success, int count, int instances) {
+        private final boolean success;
+        private final int count;
+        private final int instances;
+
+        private FinalizeResult(boolean success, int count, int instances) {
             this.success = success;
             this.count = count;
             this.instances = instances;
@@ -2001,63 +2267,93 @@ public class InstancesTracker<K, I> {
     }
 
 
+    /**
+     * Abstract supertype of all specialized exceptions thrown by InstanceTracker
+     */
     public static abstract class InstancesTrackerException extends RuntimeException {
         private final InstancesTracker tracker;
 
+        /**
+         * Instantiates a new Instances tracker exception.
+         *
+         * @param tracker the tracker
+         */
         protected InstancesTrackerException(InstancesTracker tracker) {
             super();
             this.tracker = tracker;
         }
 
+        /**
+         * Instantiates a new Instances tracker exception.
+         *
+         * @param tracker the tracker
+         * @param msg     the msg
+         */
         protected InstancesTrackerException(InstancesTracker tracker, String msg) {
             super(msg);
             this.tracker = tracker;
         }
 
+        /**
+         * Gets tracker which threw the exception
+         *
+         * @return the tracker
+         */
         public InstancesTracker getTracker() {
             return this.tracker;
         }
     }
 
-    // Compiler won't let Throwables have type params ... womp womp
+    /**
+     * Thrown when a null instance is passed to put or putWithLock
+     */
+// Compiler won't let Throwables have type params ... womp womp
     // Can only be a static inner class when the outer class has type params
-    public abstract static class NullInstance extends InstancesTrackerException {
+    public static class NullInstanceArgument extends InstancesTrackerException {
         private final Object key;
-        private NullInstance(InstancesTracker tracker, Object key, String modifier) {
-            super(tracker, "Null instance " + modifier
-                            + " InstancesTracker " + tracker.toString()
+        private NullInstanceArgument(InstancesTracker tracker, Object key) {
+            super(tracker, "Null instance passed to "
+                            + "InstancesTracker " + tracker.toString()
                             + " for key.toString() value: " + key.toString());
 
             this.key = key;
         }
 
+        /**
+         * Gets key.
+         *
+         * @return the key
+         */
         public Object getKey() {
             return this.key;
         }
 
+        /**
+         * Gets key.
+         *
+         * @param <K>      the type parameter
+         * @param keyClass the key class
+         * @return the key
+         * @throws ClassCastException the class cast exception
+         */
         public <K> K getKey(Class<K> keyClass) throws ClassCastException {
             return (K) key;
         }
     }
 
-    public static class NullInstanceReturned extends NullInstance {
-        private NullInstanceReturned(InstancesTracker tracker, Object key) {
-            super (tracker, key, "returned to");
-        }
-    }
-
-    public static class NullInstanceArgument extends NullInstance {
-        private NullInstanceArgument(InstancesTracker tracker, Object key) {
-            super (tracker, key, "passed to");
-        }
-    }
-
+    /**
+     * Thrown when a null key is passed to a construct method
+     */
     public static class NullKeyArgument extends InstancesTrackerException {
         private NullKeyArgument(InstancesTracker tracker) {
             super(tracker, "Null key passed to InstancesTracker " + tracker.toString());
         }
     }
 
+    /**
+     * Thrown when an instance is passed to a method requiring an instance argument
+     * that was not constructed under the lock of the given instancesTracker
+     */
     public static class UnrecognizedInstance extends InstancesTrackerException {
         private Object instance;
         private Object key;
@@ -2075,11 +2371,20 @@ public class InstancesTracker<K, I> {
             this(tracker, null, instance);
         }
 
+        /**
+         * Gets instance.
+         *
+         * @return the instance
+         */
         public Object getInstance() {
             return instance;
         }
     }
 
+    /**
+     * Thrown when a construct-lambda holding a create lock tries to obtain another create lock.
+     * This can lead to deadlock, and so is checked and prevented
+     */
     public static class CreateLockException extends InstancesTrackerException {
         private final Thread thread = Thread.currentThread();
         private final Object key;
@@ -2089,15 +2394,29 @@ public class InstancesTracker<K, I> {
             this.key = key;
         }
 
+        /**
+         * Gets thread.
+         *
+         * @return the thread
+         */
         public Thread getThread() {
             return this.thread;
         }
 
+        /**
+         * Gets key.
+         *
+         * @return the key
+         */
         public Object getKey() {
             return this.key;
         }
     }
 
+    /**
+     * Thrown when an unexpected state is reached during create lock finalization.  If you see
+     * this exception, it suggests unexpected or undefined behavior... probably a bug
+     */
     public static class AlreadyFinalized extends InstancesTrackerException {
         private final InstancesTracker.CreateLock lock;
 
@@ -2107,7 +2426,14 @@ public class InstancesTracker<K, I> {
         }
     }
 
+    /**
+     * Thrown if the instances tracker was discontinued because it was replaced by another
+     * tracker with the same key and argument types and type params
+     */
     public static class TrackerDiscontinuedException extends InstancesTrackerException {
+        /**
+         * The New tracker.
+         */
         InstancesTracker newTracker;
 
         private TrackerDiscontinuedException(InstancesTracker tracker) {
@@ -2122,6 +2448,11 @@ public class InstancesTracker<K, I> {
             this.newTracker = tracker;
         }
 
+        /**
+         * Gets the tracker that replaced the discontinued tracker
+         *
+         * @return the new tracker
+         */
         public InstancesTracker getNewTracker() {
             return this.newTracker;
         }
