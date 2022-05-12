@@ -176,7 +176,23 @@ public class TestSplunkOutput {
         HostOutput.dao.holdSession();
         try {
             persisted = (HostOutput)Hibernate.unproxy(HostOutput.dao.getById(output.getId()));
-            persisted.setScanHostResponse((ScanHostResponse)Hibernate.unproxy(persisted.getScanHostResponse()));
+
+            ScanHostResponse shr = (ScanHostResponse)Hibernate.unproxy(persisted.getScanHostResponse());
+            persisted.setScanHostResponse(shr);
+
+            //replace the persistant bag from Hibernate
+            // ... it does not follow the List contract for .equals(), apparently :-(
+            persisted.setVulnerabilities(new ArrayList(persisted.getVulnerabilities()));
+            output.setVulnerabilities(new ArrayList(output.getVulnerabilities()));
+
+            ScanResponse sr = shr.getOrFetchScanResponse();
+
+            for (HostVulnerabilityOutput hvo : persisted.getVulnerabilities()) {
+                hvo.setScanResponse(sr);
+                ScanHost sh = (ScanHost)Hibernate.unproxy(hvo.getScanHost());
+                hvo.setScanHost(sh);
+            }
+
 
             Timestamp orig = output.getScanTimestamp();
             Timestamp pers = persisted.getScanTimestamp();
