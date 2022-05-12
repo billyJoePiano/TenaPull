@@ -46,9 +46,9 @@ public class TestCRUD {
      */
     public static final Object[][] TESTS = {
             // { pojoType, (optionals) dbPopulate script, jsonFile with params }
-            //{ Folder.class },
-            { Scan.class } //,
-            //{ Scan.class, null, "Scan.extraJson.json"} // null = use default
+            { Folder.class },
+            { Scan.class } ,
+            { Scan.class, null, "Scan.extraJson.json"} // null = use default
 
     };
 
