@@ -13,26 +13,17 @@ fi
 echo "$JAVA_HOME"
 echo "If there are problems building the application, you may need to change this variable to the directory which contains a recent JDK version"
 
-function restoreTtyAndExit() {
+function interruptMsg() {
   echo
-  echo "build.sh : Interrupted... exiting"
-
-  ( # backgrounded subshell waits until after read has exited and restored the "-echo" state from when it started
-    sleep 1
-    stty echo
-  ) &
-
+  echo "build.sh interrupted... exiting"
   exit 1
 }
 
-if trap restoreTtyAndExit SIGINT SIGKILL SIGTERM SIGHUP SIGSTOP
-then
-  echo "Press any key to continue..."
-  stty -echo
-  read -n 1 -s -r # -n 1 = 1 character.  -s = silent.  -r = raw (don't escape backslashes, etc.)
-  read -t 0.1     # near-immediate timeout, but consumes excess characters (e.g. for arrow or ctrl keys)
-  stty echo
-fi
+trap interruptMsg SIGINT SIGKILL SIGTERM SIGHUP SIGSTOP
+
+echo "Press any key to continue..."
+read -n 1 -s -r # -n 1 = 1 character.  -s = silent.  -r = raw (don't escape backslashes, etc.)
+read -t 0.1     # near-immediate timeout, but consumes excess characters (e.g. for arrow or ctrl keys)
 
 echo -n "Starting build with Maven in 3..."
 sleep 1
