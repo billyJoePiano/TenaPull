@@ -212,7 +212,7 @@ public abstract class Job {
      * @throws IllegalStateException if this method is not being called from within one of the processing
      * methods by the established WorkerThread
      *
-     * @param newJob the new job
+     * @param newJobs the list of new jobs
      */
     protected final void addJobs(Collection<Job> newJobs) {
         checkForRunThread();

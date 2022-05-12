@@ -32,16 +32,16 @@ public class AcceptAnySSL {
 
 
     /**
-     * Creates SSL context that trusts all certificates<br/>
-     * <br/>
-     * See resources:<br/>
-     * https://stackoverflow.com/questions/875467/java-client-certificates-over-https-ssl<br/>
-     * http://useof.org/java-open-source/org.glassfish.jersey.SslConfigurator<br/>
-     * https://www.techieshah.com/2019/08/jersey-client-how-to-skip-ssl.html<br/>
-     * https://stackoverflow.com/questions/6047996/ignore-self-signed-ssl-cert-using-jersey-client<br/>
-     * https://stackoverflow.com/questions/12060250/ignore-ssl-certificate-errors-with-java/42823950<br/>
-     * <br/>
-     * IMPORT TRUSTED SSL:<br/>
+     * Creates SSL context that trusts all certificates<br>
+     * <br>
+     * See resources:<br>
+     * https://stackoverflow.com/questions/875467/java-client-certificates-over-https-ssl<br>
+     * http://useof.org/java-open-source/org.glassfish.jersey.SslConfigurator<br>
+     * https://www.techieshah.com/2019/08/jersey-client-how-to-skip-ssl.html<br>
+     * https://stackoverflow.com/questions/6047996/ignore-self-signed-ssl-cert-using-jersey-client<br>
+     * https://stackoverflow.com/questions/12060250/ignore-ssl-certificate-errors-with-java/42823950<br>
+     * <br>
+     * IMPORT TRUSTED SSL:<br>
      * https://stackoverflow.com/questions/6659360/how-to-solve-javax-net-ssl-sslhandshakeexception-error/6742204#6742204
      *
      * @return the ssl context

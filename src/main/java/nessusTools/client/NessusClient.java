@@ -75,9 +75,9 @@ public class NessusClient extends GenericClient {
      * A convenience method which automatically includes the API access keys in the HTTP header,
      * and adds the full protocol, domain name, and port (if applicable) to the URL.  NOTE:  DO
      * NOT INCLUDE THE PROTOCOL, DOMAIN NAME, AND PORT IN THE URL PASSED TO THIS METHOD.
-     * <br />
+     * <br>
      * Also note that due to the way overloaded fetchJson methods are invoked in the GenericClient,
-     * this method is the end-point method for all of the fetchJson methods inherited from
+     * this method is the end-point method for all the fetchJson methods inherited from
      * GenericClient.
      *
      *

@@ -21,7 +21,9 @@ import java.util.*;
 import java.util.stream.*;
 
 /**
- * Represents a scan object returned by the Nessus API in /scans/&lt;scan-id&gt;
+ * Represents the scan-specific fields (host_count, and hosts) in the plugin object from the "plugins"
+ * array returned by the Nessus API in /scans/&lt;scan-id&gt;.  Also serves as a join table
+ * between scan_response and plugin
  */
 @Entity(name = "ScanPlugin")
 @Table(name = "scan_plugin")

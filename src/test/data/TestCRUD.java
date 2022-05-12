@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TestCRUD {
     /**
      * Name of the SQL script which performs a partial reset between tests, and repopulates the
-     * tables which were reset.  It resets the scan & host data tables but not the lookup tables
+     * tables which were reset.  It resets the scan and host data tables but not the lookup tables
      */
     public static final String DB_PARTIAL_RESET = "dbPartialReset.sql"; // resets the scan data tables but not the lookup tables
     /**

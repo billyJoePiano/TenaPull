@@ -28,7 +28,7 @@ import org.apache.logging.log4j.*;
 /**
  * Tests the pipeline from deserialization into persistence, and then fetching back out of the
  * database, to ensure the re-constituted entity matches the originally deserialized entity
- * <br/>
+ * <br>
  * https://www.guru99.com/junit-parameterized-test.html#:~:text=What%20is%20Parameterized%20Test%20in,their%20inputs%20and%20expected%20results.
  *
  * @param <R> the response type being tested

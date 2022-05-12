@@ -9,7 +9,7 @@ import java.util.*;
 
 
 /**
- * Synchronizes and maps unique instances to a unique "key" (typically a String or Number).
+ * Synchronizes and maps unique instances to a unique "key" (typically a String, Number, or Hash).
  * Instances are held as weak references via a WeakHashMap which is synchronized via ReadWriteLock.
  * <p>
  * <p>
@@ -32,7 +32,6 @@ import java.util.*;
  * 2) getOrConstructWith(K key, Lambda1/2) like getOrConstruct but with a custom construction lambda instead of the
  * default lambda.
  * <p>
- * <p>
  * 3) constructWith(K key, Lambda1/2) Construct with a custom lambda, the returned instance will override any
  * previously existing instance associated with the given key.
  * <p>
@@ -40,7 +39,7 @@ import java.util.*;
  * <p>
  * K -- Key -- the string, integer, hash or other value used to access the instances.  There is a strong reference
  * to these values
- *
+ * <p>
  * I -- Instances -- the type of the instances being tracked.  These are weak references so may be garbage
  * collected if no strong references remain to the instance, in which case the strong reference to the key
  * will also be destroyed here (though there may be strong references elsewhere that prevent it from being
@@ -210,14 +209,14 @@ public class InstancesTracker<K, I> {
     /**
      * Applies a filter lambda to the entire set of instances, and returns a list of
      * the instances for which the lambda returns true, stopping after the providing
-     * limit is reached.  If limit <= 0 then the iteration will not stop until
+     * limit is reached.  If limit &lt;= 0 then the iteration will not stop until
      * all instances have been checked.
      *
      * Note that this may be an expensive operation, because it requires waiting for
      * construction to finish on all existing create locks, and then finalizing all of them
      * before the comparisons can be conducted.
      * @param filter the filter
-     * @param limit  the number of matched instances at which to stop checking, or <= 0
+     * @param limit  the number of matched instances at which to stop checking, or &lt;= 0
      *               to check every instance
      * @return the list of matching instances
      */

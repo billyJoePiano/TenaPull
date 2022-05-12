@@ -159,13 +159,13 @@ public class Dao<POJO extends DbPojo> {
      * Holds a session open for all invocations on the current thread
      * until releaseSession has been called.  This is needed in some cases
      * to initialize a HibernateProxy that was lazily fetched.
-     * <br/>
+     * <br>
      * NOTE: IT IS VERY IMPORTANT TO INCLUDE RELEASE SESSION IN THE FINALLY
      * BLOCK OF A TRY ... (catch optional) ... FINALLY CONSTRUCT WHEN USING THIS METHOD.
      * Otherwise the number of available sessions will become
      * quickly exhausted, and the application will be deadlocked waiting for
      * sessions to open up.
-     * <br/>
+     * <br>
      * It should also be noted that if holdSession is invoked multiple times
      * on a thread before releaseSession is called, then releaseSession must
      * be invoked the same number of times before the session will be closed.
@@ -180,13 +180,13 @@ public class Dao<POJO extends DbPojo> {
 
     /**
      * Release a session being held open.
-     * <br/>
+     * <br>
      * NOTE: IT IS VERY IMPORTANT TO INCLUDE RELEASE SESSION IN THE FINALLY
      * BLOCK OF A TRY ... (catch optional) ... FINALLY CONSTRUCT WHEN USING THIS METHOD.
      * Otherwise the number of available sessions will become
      * quickly exhausted, and the application will be deadlocked waiting for
      * sessions to open up.
-     * <br/>
+     * <br>
      * It should also be noted that if holdSession is invoked multiple times
      * on a thread before releaseSession is called, then releaseSession must
      * be invoked the same number of times before the session will be closed.
