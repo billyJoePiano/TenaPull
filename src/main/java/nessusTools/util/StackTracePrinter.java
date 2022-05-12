@@ -5,6 +5,13 @@ import nessusTools.sync.*;
 import java.time.*;
 import java.util.*;
 
+/**
+ * A debugging utility only (thus the use of println statements...)
+ * for multi-thread concurrency issues.
+ * Obtains the stack traces of all threads, grouping threads with the same
+ * stack trace together, and showing any threads blocking other threads,
+ * then determining if there are any circular blocks.
+ */
 public class StackTracePrinter extends Thread {
     private static boolean started = false;
     private static Var.Long counter = new Var.Long();
@@ -24,18 +31,25 @@ public class StackTracePrinter extends Thread {
         System.out.println(this + " constructed at " + LocalDateTime.now() + " (delay for " + delay + " ms)");
     }
 
+    /**
+     * Starts a stackTracePrinter thread with a delay of 0
+     *
+     * @return the name of the new thread
+     */
     public static String startThread() {
         return startThread(0);
     }
 
+    /**
+     * Starts a stackTracePrinter thread with a delay of 0
+     *
+     * @param delay the number of millseconds to wait before performing the stack trace analysis and printing
+     * @return the name of the new thread
+     */
     public static String startThread(int delay) {
         Thread thread = new StackTracePrinter(delay);
         thread.start();
         return thread.toString();
-    }
-
-    StackTracePrinter() {
-        this(0);
     }
 
     @Override
@@ -54,6 +68,11 @@ public class StackTracePrinter extends Thread {
         print();
     }
 
+    /**
+     * The main working method that obtains and analyzes the stack traces and thread
+     * blocking patterns.  This may also be invoked by any thread from outside of the
+     * StackTracePrinter class
+     */
     public static void print() {
         System.err.println("STARTING STACK TRACE PRINTER ... " + Thread.currentThread());
 
@@ -149,18 +168,44 @@ public class StackTracePrinter extends Thread {
         System.out.println();
     }
 
+    /**
+     * Produces a string representation of the current thread's stack trace
+     *
+     * @return the string
+     */
     public static String makeStackTraceString() {
         return makeStackTraceString(Thread.currentThread().getStackTrace(), "\n");
     }
 
+    /**
+     * Produces a string representation of the provided thread's stack trace
+     *
+     * @param thread the thread
+     * @return the string
+     */
     public static String makeStackTraceString(Thread thread) {
         return makeStackTraceString(thread.getStackTrace(), "\n");
     }
 
+    /**
+     * Produces a string representation of the provided stack trace elements array
+     *
+     * @param elements the stack trace elements
+     * @return the string representation
+     */
     public static String makeStackTraceString(StackTraceElement[] elements) {
         return makeStackTraceString(elements, "\n");
     }
 
+    /**
+     * Produces a string representation of the provided stack trace elements array
+     * using the provided separator between frames of the stack.  This can be used,
+     * for example, to indent the entire stack trace by a tab, or the like
+     *
+     * @param elements  the stack trace elements
+     * @param separator the separator between frames
+     * @return the string representation
+     */
     public static String makeStackTraceString(StackTraceElement[] elements, String separator) {
         String str = "";
         for (StackTraceElement el : elements) {
@@ -197,16 +242,16 @@ public class StackTracePrinter extends Thread {
     }
 
     private static class StackTrace implements Comparable<StackTrace> {
-        Map<Thread.State, Set<Thread>> threads = new LinkedHashMap<>();
-        String stacktrace;
-        int count = 0;
-        long minId = Long.MAX_VALUE;
+        private Map<Thread.State, Set<Thread>> threads = new LinkedHashMap<>();
+        private String stacktrace;
+        private int count = 0;
+        private long minId = Long.MAX_VALUE;
 
-        StackTrace(String stacktrace) {
+        private StackTrace(String stacktrace) {
             this.stacktrace = stacktrace;
         }
 
-        public void add(Thread thread) {
+        private void add(Thread thread) {
             Thread.State state = thread.getState();
             Set<Thread> threads = this.threads.get(state);
             if (threads == null) {
@@ -221,6 +266,7 @@ public class StackTracePrinter extends Thread {
             }
         }
 
+        @Override
         public int compareTo(StackTrace other) {
             if (this.count != other.count) {
                 return this.count < other.count ? -1 : 1;
@@ -237,6 +283,12 @@ public class StackTracePrinter extends Thread {
 
         private Set<Thread> intersection;
 
+        /**
+         * Produces a stack trace analysis that focuses on the provided set of threads
+         *
+         * @param include the include
+         * @return the string
+         */
         public String toString(Set<Thread> include) {
             String str = "THREADS:";
 
@@ -269,15 +321,6 @@ public class StackTracePrinter extends Thread {
 
             }
             return str + "\n" + this.stacktrace;
-        }
-
-        public Thread.State getThreadState(Thread thread) {
-            for (Map.Entry<Thread.State, Set<Thread>> entry : this.threads.entrySet()) {
-                if (entry.getValue().contains(thread)) {
-                    return entry.getKey();
-                }
-            }
-            return null;
         }
     }
 }

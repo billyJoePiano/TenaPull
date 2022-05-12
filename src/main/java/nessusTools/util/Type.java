@@ -5,6 +5,16 @@ import com.sun.istack.*;
 import java.util.*;
 
 
+/**
+ * Represents a type that may have type parameters, including
+ * any arbitrary level of nested type parameters
+ * e.g. ReadWriteLock&lt;Map&lt;Set&lt;Thread&gt;, Dao&lt;Scan&gt;&gt;, List&lt;Scan&gt;&gt;.
+ *
+ * This is an immutable class.  To represent nested type params, pass a Type instance
+ *  into the constructor of another Type instance
+ *
+ * @param <T> the base class which this type represents
+ */
 public final class Type<T> {
     // http://gafter.blogspot.com/2006/12/super-type-tokens.html
     // represents a class/type that can include type parameters at runtime
@@ -12,11 +22,25 @@ public final class Type<T> {
     private final Class<T> type;
     private final Type[] params;
 
+    /**
+     * Instantiates a new Type for the provided class
+     *
+     * @param type the type
+     * @throws NullPointerException the null pointer exception
+     */
     public Type(Class<T> type) throws NullPointerException {
         this.type = type;
         this.params = null;
     }
 
+    /**
+     * Instantiates a new Type for the provided class, with the given class
+     * as a type param
+     *
+     * @param type  the type
+     * @param param the param
+     * @throws NullPointerException the null pointer exception
+     */
     public Type(Class<T> type, Class param)
             throws NullPointerException {
 
@@ -24,6 +48,14 @@ public final class Type<T> {
         this.params = new Type[] { new Type(param) };
     }
 
+    /**
+     * Instantiates a new Type for the provided class, with the given Type
+     * as a type param
+     *
+     * @param type  the type
+     * @param param the param
+     * @throws NullPointerException the null pointer exception
+     */
     public Type(Class<T> type, Type param)
             throws NullPointerException {
 
@@ -32,6 +64,14 @@ public final class Type<T> {
         this.params = new Type[] { param };
     }
 
+    /**
+     * Instantiates a new Type for the provided class, with two type params
+     * of the two provided classes
+     *
+     * @param type   the type
+     * @param param1 the param 1
+     * @param param2 the param 2
+     */
     public Type(Class<T> type,
                 Class param1,
                 Class param2) {
@@ -39,6 +79,14 @@ public final class Type<T> {
         this.params = new Type[] { new Type(param1), new Type(param2) };
     }
 
+    /**
+     * Instantiates a new Type for the provided class, with the two type params
+     * of the two provided types
+     *
+     * @param type   the type
+     * @param param1 the param 1
+     * @param param2 the param 2
+     */
     public Type(Class<T> type,
                 Type param1,
                 Type param2) {
@@ -49,6 +97,14 @@ public final class Type<T> {
     }
 
 
+    /**
+     * Instantiates a new Type for the provided class, with an array
+     * of type params
+     *
+     * @param type   the type
+     * @param params the params
+     * @throws NullPointerException the null pointer exception
+     */
     public Type(Class<T> type, Type[] params)
             throws NullPointerException {
 
@@ -73,6 +129,14 @@ public final class Type<T> {
 
     }
 
+    /**
+     * Instantiates a new Type for the provided class, with an array of
+     * classes as type params
+     *
+     * @param type   the type
+     * @param params the params
+     * @throws NullPointerException the null pointer exception
+     */
     public Type(Class<T> type, Class[] params)
             throws NullPointerException {
 
@@ -94,6 +158,14 @@ public final class Type<T> {
         }
     }
 
+    /**
+     * Instantiates a new Type for the provided class with a List
+     * of classes as the type params
+     *
+     * @param type   the type
+     * @param params the params
+     * @throws NullPointerException the null pointer exception
+     */
     public Type(Class<T> type,
                 @Nullable List<Class> params)
             throws NullPointerException {
@@ -101,6 +173,15 @@ public final class Type<T> {
         this(type, (Class[]) params.toArray());
     }
 
+    /**
+     * Instantiates a new Type for the provided class with a list
+     * of types as the type params
+     *
+     * @param type               the type
+     * @param params             the params
+     * @param nullDifferentiator the null differentiator
+     * @throws NullPointerException the null pointer exception
+     */
     public Type(Class<T> type,
                 List<Type> params,
                 Void nullDifferentiator) //because type erasure is otherwise the same as the previous constructor
@@ -124,16 +205,27 @@ public final class Type<T> {
         }
     }
 
+    /**
+     * Gets root class this type represents
+     *
+     * @return the type
+     */
     public Class<T> getType() {
         return this.type;
     }
 
+    /**
+     * Gets a copy of the array of type params, or null if there are none
+     *
+     * @return the type [ ]
+     */
     public Type[] getParams() {
         if (this.params == null) {
             return null;
         }
         return this.params.clone();
     }
+
 
     public int hashCode() {
         int code = this.type.hashCode();
@@ -165,6 +257,13 @@ public final class Type<T> {
         return "(Type)<" + this.toStringBasic() + ">";
     }
 
+    /**
+     * Produces a string representation of this type (with type params if applicable)
+     * that does NOT include an indication that this represents an instance of the Type class.
+     * Used mainly by recursive calls within Type, and also by KeyValueType
+     *
+     * @return the string
+     */
     public String toStringBasic() {
         String str = this.type.getSimpleName();
         if (this.params == null) {

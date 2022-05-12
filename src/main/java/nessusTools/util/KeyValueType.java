@@ -5,10 +5,23 @@ import nessusTools.sync.*;
 
 import java.util.*;
 
+/**
+ * Represents a pair of Types, representing a key and a value
+ *
+ * @param <K> the key class
+ * @param <V> the value calss
+ */
 public class KeyValueType<K, V> {
     private final Type<K> keyType;
     private final Type<V> valueType;
 
+    /**
+     * Instantiates a new Key value type.
+     *
+     * @param keyType   the key type
+     * @param valueType the value type
+     * @throws NullPointerException if one of the arguments is null
+     */
     public KeyValueType(Type<K> keyType, Type<V> valueType)
             throws NullPointerException {
         
@@ -20,6 +33,13 @@ public class KeyValueType<K, V> {
         this.valueType = valueType;
     }
 
+    /**
+     * Instantiates a new Key value type.
+     *
+     * @param keyType   the key class
+     * @param valueType the value class
+     * @throws NullPointerException if one of the arguments is null
+     */
     public KeyValueType(Class<K> keyType, Class<V> valueType)
             throws NullPointerException {
 
@@ -27,6 +47,13 @@ public class KeyValueType<K, V> {
         this.valueType = new Type(valueType);
     }
 
+    /**
+     * Instantiates a new Key value type.
+     *
+     * @param keyType   the key class
+     * @param valueType the value type
+     * @throws NullPointerException if one of the arguments is null
+     */
     public KeyValueType(Class<K> keyType, Type<V> valueType)
             throws NullPointerException {
 
@@ -38,6 +65,13 @@ public class KeyValueType<K, V> {
         this.valueType = valueType;
     }
 
+    /**
+     * Instantiates a new Key value type.
+     *
+     * @param keyType   the key type
+     * @param valueType the value class
+     * @throws NullPointerException if one of the arguments is null
+     */
     public KeyValueType(Type<K> keyType, Class<V> valueType)
             throws NullPointerException {
 
@@ -49,10 +83,20 @@ public class KeyValueType<K, V> {
         this.valueType = new Type(valueType);
     }
 
+    /**
+     * Gets key type.
+     *
+     * @return the key type
+     */
     public Type<K> getKeyType() {
         return this.keyType;
     }
 
+    /**
+     * Gets value type.
+     *
+     * @return the value type
+     */
     public Type<V> getValueType() {
         return this.valueType;
     }

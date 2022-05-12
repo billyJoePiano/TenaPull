@@ -9,16 +9,17 @@ import java.sql.*;
 import java.util.*;
 
 /**
- * Provides access the database
+ * Provides access to the database
  * Created on 8/31/16.
- *
+ * <p>
  * 3/10/22 WJA -- changed from singleton class to static (no instance) utility class
  *
  * @author pwaite
  */
-
 public class Database {
-    //public static final String DB_SOFT_RESET = "dbSoftReset.sql";
+    /**
+     * The name of the sql script which performs a full reset of the database
+     */
     public static final String DB_HARD_RESET = "dbHardReset.sql";
 
     private static final Logger logger = LogManager.getLogger(Database.class);
@@ -32,10 +33,6 @@ public class Database {
     private Database() {
         throw new IllegalStateException();
     }
-
-    /**
-     * Load up properties for connection info
-     */
 
     /**
      * Gets connection.
@@ -84,6 +81,7 @@ public class Database {
      * Run the sql.
      *
      * @param sqlFile the sql file to be read and executed line by line
+     * @throws FileNotFoundException the file not found exception
      */
     public static void runSQL(String sqlFile) throws FileNotFoundException {
 
@@ -113,19 +111,20 @@ public class Database {
 
     }
 
+    /**
+     * Reset the database
+     *
+     * @throws FileNotFoundException if the hard reset sql script can't be found
+     */
     public static void reset() throws FileNotFoundException {
         hardReset();
     }
 
-    /*
-    public static void softReset() throws FileNotFoundException {
-        logger.info("RUNNING SOFT RESET ON DATABASE");
-        runSQL(DB_SOFT_RESET);
-        logger.info("FINISHED SOFT RESET ON DATABASE");
-    }
-
+    /**
+     * Reset the database
+     *
+     * @throws FileNotFoundException if the hard reset sql script can't be found
      */
-
     public static void hardReset() throws FileNotFoundException {
         logger.info("RUNNING HARD RESET ON DATABASE");
         runSQL(DB_HARD_RESET);

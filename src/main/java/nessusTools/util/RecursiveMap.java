@@ -2,6 +2,22 @@ package nessusTools.util;
 
 import java.util.*;
 
+/**
+ * A recursive map is a map of maps that point to each other.  It is essentially a way to
+ * map keys as nodes that each point to other keys (via that keys' map).  The origin map
+ * is the only map which does not represent a key, and also contains all keys that have
+ * been added to any of the recursive maps that originated from it.
+ *
+ * The primary use-case for this in TenaPull is to determine where thread deadlocks may
+ * be happening, by finding circular references between threads blocking each other.  In this
+ * scenario, each thread represents a key, and its value is a recursive map of all the threads it is
+ * blocking from obtaining a lock (or actually... the recursive maps representing each of those threads,
+ * with the threads themselves as the keys, etc...)
+ *
+ *
+ * @param <K> the key type for the recursive map.  The value will always be another recursive map
+ *           representing that key (and containing the keys it points to)
+ */
 public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
 
     private final RecursiveMap<K> origin;
@@ -14,6 +30,9 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
 
     private int maxSizeToPrint = 10; // for toString() method ... if the keyset is larger than this size, it just prints the size
 
+    /**
+     * Instantiates a new Recursive map.
+     */
     public RecursiveMap() {
         this.key = null;
         this.origin = this;
@@ -53,6 +72,12 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
         return map.get(key);
     }
 
+    /**
+     * Put recursive map.
+     *
+     * @param key the key
+     * @return the recursive map
+     */
     public RecursiveMap<K> put(K key) {
         RecursiveMap<K> child = this.origin.map.get(key);
         if (child == null) {
@@ -66,6 +91,13 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
         return child;
     }
 
+    /**
+     * Put child recursive map.
+     *
+     * @param parent the parent
+     * @param child  the child
+     * @return the recursive map
+     */
     public RecursiveMap<K> putChild(K parent, K child) {
         return this.origin.put(parent).put(child);
     }
@@ -101,6 +133,11 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Put all.
+     *
+     * @param keys the keys
+     */
     public void putAll(Set<K> keys) {
         for (K key : keys) {
             this.put(key);
@@ -132,22 +169,47 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
         return this.view.entrySet();
     }
 
+    /**
+     * Gets parents.
+     *
+     * @return the parents
+     */
     public Set<K> getParents() {
         return this.parentsView;
     }
 
+    /**
+     * Gets key.
+     *
+     * @return the key
+     */
     public K getKey() {
         return this.key;
     }
 
+    /**
+     * Gets origin.
+     *
+     * @return the origin
+     */
     public RecursiveMap<K> getOrigin() {
         return this.origin;
     }
 
+    /**
+     * Is origin boolean.
+     *
+     * @return the boolean
+     */
     public boolean isOrigin() {
         return this.origin == this;
     }
 
+    /**
+     * Gets circular keys.
+     *
+     * @return the circular keys
+     */
     public Set<K> getCircularKeys() {
         Set<K> circular = new LinkedHashSet<>();
         Set<K> alreadyChecked = new LinkedHashSet<>();
@@ -197,15 +259,34 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
         }
     }
 
+    /**
+     * Contains upstream boolean.
+     *
+     * @param key the key
+     * @return the boolean
+     */
     public boolean containsUpstream(K key) {
         if (this.origin == this) return false;
         return this.containsDownstream(key, this.key);
     }
 
+    /**
+     * Contains upstream boolean.
+     *
+     * @param startingPoint the starting point
+     * @param searchingFor  the searching for
+     * @return the boolean
+     */
     public boolean containsUpstream(K startingPoint, K searchingFor) {
         return this.containsDownstream(searchingFor, startingPoint);
     }
 
+    /**
+     * Contains downstream boolean.
+     *
+     * @param key the key
+     * @return the boolean
+     */
     public boolean containsDownstream(K key) {
         Set<K> alreadyChecked = new LinkedHashSet<>();
         if (this != this.origin) {
@@ -214,6 +295,13 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
         return this.containsDownstream(key, alreadyChecked);
     }
 
+    /**
+     * Contains downstream boolean.
+     *
+     * @param startingPoint the starting point
+     * @param searchingFor  the searching for
+     * @return the boolean
+     */
     public boolean containsDownstream(K startingPoint, K searchingFor) {
         RecursiveMap<K> upstreamMap = this.origin.get(startingPoint);
         if (upstreamMap == null) {
@@ -245,14 +333,30 @@ public class RecursiveMap<K> implements Map<K, RecursiveMap<K>> {
         return false;
     }
 
+    /**
+     * Contains up or downstream boolean.
+     *
+     * @param key the key
+     * @return the boolean
+     */
     public boolean containsUpOrDownstream(K key) {
         return this.containsDownstream(key) || this.containsUpstream(key);
     }
 
+    /**
+     * Gets max size to print.
+     *
+     * @return the max size to print
+     */
     public int getMaxSizeToPrint() {
         return this.maxSizeToPrint;
     }
 
+    /**
+     * Sets max size to print.
+     *
+     * @param maxSizeToPrint the max size to print
+     */
     public void setMaxSizeToPrint(int maxSizeToPrint) {
         this.maxSizeToPrint = maxSizeToPrint;
     }
