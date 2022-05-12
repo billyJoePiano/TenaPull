@@ -26,14 +26,15 @@ import static org.junit.jupiter.api.Assertions.*;
 @RunWith(Parameterized.class)
 public class TestCRUD {
     /**
-     * Name of the SQL script which performs a partial reset between tests.  It resets the
-     * scan data tables but not the lookup tables
+     * Name of the SQL script which performs a partial reset between tests, and repopulates the
+     * tables which were reset.  It resets the scan & host data tables but not the lookup tables
      */
     public static final String DB_PARTIAL_RESET = "dbPartialReset.sql"; // resets the scan data tables but not the lookup tables
     /**
      * The SQL script which populates the database
      */
     public static final String DB_POPULATE_SQL = "dbPopulate.sql";
+
 
     /**
      * The directory where the test params can be found, with .json files matching class names.
@@ -75,12 +76,9 @@ public class TestCRUD {
      *
      * @throws FileNotFoundException the file not found exception
      */
-    @Before
+    @After
     public void dbReset() throws FileNotFoundException {
-        Database.runSQL("dbPartialReset.sql");
-        if (params.sqlPopulate != null) {
-            Database.runSQL(params.sqlPopulate);
-        }
+        Database.runSQL(DB_PARTIAL_RESET);
     }
 
     private List<DbPojo> convertFromJsonNode(List<JsonNode> nodeList) {
@@ -354,6 +352,9 @@ public class TestCRUD {
     public static Collection getTestParams()
             throws NoSuchFieldException, IllegalAccessException, IOException {
 
+        Database.hardReset();
+        Database.runSQL(DB_POPULATE_SQL);
+
         List<TestParams[]> paramsList = new ArrayList();
 
         for (Object[] test : TESTS) {
@@ -392,8 +393,6 @@ public class TestCRUD {
                 paramsList.add(new TestParams[] { params });
             }
         }
-
-        Database.hardReset();
 
         return paramsList;
     }

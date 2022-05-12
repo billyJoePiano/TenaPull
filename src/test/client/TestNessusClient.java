@@ -8,7 +8,6 @@ import nessusTools.data.entity.scan.*;
 import nessusTools.data.entity.template.*;
 import nessusTools.run.*;
 import nessusTools.util.*;
-import testUtils.*;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.*;

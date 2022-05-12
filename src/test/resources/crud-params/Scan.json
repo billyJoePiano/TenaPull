@@ -61,7 +61,7 @@
         "shared": false,
         "user_permissions": 128,
         "owner": "wanderson7",
-        "timezone": "Central",
+        "timezone": null,
         "rrules": null,
         "starttime": null,
         "enabled": false,
@@ -72,7 +72,7 @@
       }
     },
     {
-      "searchMap": { "folder":  3 },
+      "searchMap": { "folderId":  3 },
       "expectedCount": 5
     },
     {
