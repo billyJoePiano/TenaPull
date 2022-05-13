@@ -80,10 +80,6 @@ public class ReformatAll extends Job {
 
     @Override
     protected void process() throws IOException {
-        /*Files.list(new File(inputDir).toPath()).forEach(path -> {
-            this.addJob(new ReformatOutput(path.toFile()));
-        });*/
-
         List<Job> list = new ArrayList<>(this.files.length);
 
         for (File file : this.files) {

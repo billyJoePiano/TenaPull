@@ -52,6 +52,7 @@ public class ReformatOutput extends Job {
             ObjectNode obj = (ObjectNode) o;
             obj.remove("plugin_error");
             obj.remove("scanner_url");
+            obj.remove("scanner");
 
             if (SplunkOutputMapper.TRUNCATE != null) {
                 obj = truncateObj(obj);
