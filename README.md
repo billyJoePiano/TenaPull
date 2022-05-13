@@ -13,9 +13,10 @@ For a complete demonstration, click the below picture which will take you to a Y
 
 ## Resources
 
-### TenaPull JavaDocs
+### TenaPull Documentation
 
-https://billyjoepiano.github.io/TenaPull/
+- [Install and run instructions](installAndRun.md)
+- JavaDocs: https://billyjoepiano.github.io/TenaPull/
 
 ### Tenable / Nessus
 

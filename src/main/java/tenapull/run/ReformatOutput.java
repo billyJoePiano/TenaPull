@@ -79,7 +79,7 @@ public class ReformatOutput extends Job {
     protected void output() throws Exception {
         File out = new File(OUTPUT_DIR + this.file.getName());
         mapper.writeValue(out, output);
-        logger.info("Reformatted " + this.file.getName());
+        logger.info(this.file.getName());
     }
 
 
