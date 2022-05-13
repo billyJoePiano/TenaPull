@@ -46,7 +46,7 @@
    - Best practice is to name the config file after your Nessus hostname.
    - For example `mynessusinstallation1.mylan.local` would have configuration file `mynessusinstallation1.properties`
    - `db.url.name` and `output.dir` configs could also reflect the hostname (e.g. `mynessusintallation1` in the above example)
-   - You may have as many configuration files as you like (one for each Nessus Scanner!) as long as they each have unique `output.dir` and `db.name` values
+   - You may have as many configuration files as you like (one for each Nessus Scanner!) as long as they each have unique `output.dir` and `db.url.name` values
    
     
 7. Create the database associated with the configuration file you just created
