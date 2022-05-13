@@ -27,9 +27,9 @@ read -t 0.1     # near-immediate timeout, but consumes excess characters (e.g. f
 
 echo -n "Starting build with Maven in 3..."
 sleep 1
-echo -n "2... "
+echo -n "2..."
 sleep 1
-echo -n "1... "
+echo -n "1..."
 sleep 1
 echo
 
