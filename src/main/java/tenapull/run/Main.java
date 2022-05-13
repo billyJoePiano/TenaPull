@@ -230,6 +230,15 @@ public class Main {
     }
 
     private static Job makeSeedJob(String[] args) {
+        System.out.println();
+        System.out.println("ARGS:");
+        for (String arg :args) {
+            System.out.println("'" + arg + "'");
+        }
+
+        System.out.println("ARGS DONE");
+        System.out.println();
+
         if (args.length == 1) {
             mainJobType = IndexJob.class;
             return new IndexJob();
