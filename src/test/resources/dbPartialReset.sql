@@ -412,7 +412,7 @@ create table scan_host_vulnerability (
 
 -- MySQL dump 10.13  Distrib 8.0.28, for Win64 (x86_64)
 --
--- Host: localhost    Database: nessustools
+-- Host: localhost    Database: TenaPull
 -- ------------------------------------------------------
 -- Server version	8.0.28
 

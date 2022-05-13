@@ -102,7 +102,7 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
         if (summary == null) {
             if (deets == null) {
                 jg.writeStartObject();
-                jg.writeStringField("NessusTools error",
+                jg.writeStringField("TenaPull error",
                         "Cached data from both the " + name + " summary and "
                                 + name + " details couldn't be found");
 
@@ -113,7 +113,7 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
             if (id != null) {
                 jg.writeNumberField("id", id);
             }
-            jg.writeStringField("NessusTools error",
+            jg.writeStringField("TenaPull error",
                     "Cached data from the " + name + " summary couldn't be found");
 
             jg.writeObjectField(container.getDetailsKey(), deets);
@@ -142,7 +142,7 @@ public class SummarySerializer<S extends DbPojo, D extends DbPojo>
         ObjectNode info;
         if (deets == null) {
             info = mapper.createObjectNode();
-            info.put("NessusTools error",
+            info.put("TenaPull error",
                     "Cached data from " + name + " details couldn't be found.");
         } else {
             info = mapper.valueToTree(deets);

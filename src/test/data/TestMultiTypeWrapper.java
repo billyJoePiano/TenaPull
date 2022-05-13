@@ -67,7 +67,7 @@ public class TestMultiTypeWrapper {
                         new BigDecimal("1234567890987654321234567890987654321.1234567890987654321234567890987654321"));
                     put("D-1234567890987654321234567890987654321.1234567890987654321234567890987654321",
                         new BigDecimal("-1234567890987654321234567890987654321.1234567890987654321234567890987654321"));
-                    put("Uclass nessusTools.data.entity.lookup.ScanType\nthis is a test",
+                    put("Uclass tenapull.data.entity.lookup.ScanType\nthis is a test",
                             MultiTypeWrapper.wrap(createUnknownType()));
                     // need to be able to replace ^^^ this instance on reset of the instance trackers, for multi-threaded test
                     // that's why this map isn't immutable
@@ -92,7 +92,7 @@ public class TestMultiTypeWrapper {
      * Tests that go in one direction, from an object into the DB
      */
     public static Map<Object, String> TEST_TO_DB = Map.of(
-            createUnknownType(), "Uclass nessusTools.data.entity.lookup.ScanType\nthis is a test"
+            createUnknownType(), "Uclass tenapull.data.entity.lookup.ScanType\nthis is a test"
         );
 
     /**

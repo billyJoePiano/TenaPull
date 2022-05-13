@@ -8,14 +8,14 @@ TenaPull is a configurable Java application which fetches and processes the data
 
 For a complete demonstration, click the below picture which will take you to a YouTube video.
 
-<a href="https://www.youtube.com/watch?v=aHoMRjRHHrc" rel="Demo video">![Demo video](https://raw.githubusercontent.com/billyJoePiano/NessusTools/master/screenshots/Splunk-table%20(best%20format%20for%20viewing).png)</a>
+<a href="https://www.youtube.com/watch?v=aHoMRjRHHrc" rel="Demo video">![Demo video](https://raw.githubusercontent.com/billyJoePiano/TenaPull/master/screenshots/Splunk-table%20(best%20format%20for%20viewing).png)</a>
 
 
 ## Resources
 
 ### TenaPull JavaDocs
 
-https://billyjoepiano.github.io/NessusTools/
+https://billyjoepiano.github.io/TenaPull/
 
 ### Tenable / Nessus
 

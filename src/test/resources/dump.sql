@@ -1,6 +1,6 @@
 -- MariaDB dump 10.19  Distrib 10.5.13-MariaDB, for FreeBSD13.0 (amd64)
 --
--- Host: localhost    Database: NessusTools
+-- Host: localhost    Database: TenaPull
 -- ------------------------------------------------------
 -- Server version       10.5.13-MariaDB
 

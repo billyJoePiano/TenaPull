@@ -13,4 +13,4 @@ echo "If there are problems building the application, you may need to change thi
 echo 2>
 echo 2>
 
-mvn exec:java -Dexec.mainClass=nessusTools.run.Main -Dexec.args="$*"
+mvn exec:java -Dexec.mainClass=tenapull.run.Main -Dexec.args="$*"
