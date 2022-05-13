@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="TenaPull.gh-pages">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/package-search-index.zip!/" />
+      <root url="jar://$PROJECT_DIR$/member-search-index.zip!/" />
+      <root url="jar://$PROJECT_DIR$/type-search-index.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
