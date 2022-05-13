@@ -60,7 +60,7 @@
 
 ## Run TenaPull !
 
-    tenapull <config-name>
+    ./tenapull <config-name>
 
 ### Yep, it's really that easy!
 
