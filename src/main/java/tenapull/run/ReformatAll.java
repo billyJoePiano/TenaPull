@@ -16,7 +16,7 @@ public class ReformatAll extends Job {
     private static final Logger logger = LogManager.getLogger(ReformatAll.class);
 
     private final boolean ready;
-    private final String inputDir;
+    private final File[] files;
 
     /**
      * Instantiates a new Reset database job, prompting the user for confirmation first.
@@ -26,19 +26,22 @@ public class ReformatAll extends Job {
     public ReformatAll() {
         String inputDir = Main.getConfig().getProperty("output.dir");
         inputDir = inputDir.substring(0, inputDir.length() - 1) + ".old/";
-        this.inputDir = inputDir;
 
         boolean ready = false;
+        File[] files = null;
 
         try {
             File directory = new File(inputDir);
             ready = directory.exists();
+            files = directory.listFiles();
 
         } catch (Exception e) {
             logger.error(e);
         }
 
-        if (!ready) {
+        this.files = files;
+
+        if (!ready || files == null) {
             Main.markErrorStatus();
             logger.error("ERROR Couldn't find input directory " + inputDir);
             this.ready = false;
@@ -48,13 +51,16 @@ public class ReformatAll extends Job {
 
         Main.initOutputDir();
 
+
         this.ready = ready && Main.confirmJob(
-                "WARNING: THIS WILL OVERWRITE ANY FILES IN THE OUTPUT DIRECTORY "
+                "Found " + this.files.length + " files to reformat\n"
+                + " WARNING: THIS WILL OVERWRITE ANY FILES IN THE OUTPUT DIRECTORY "
                 + Main.getConfig("output.dir") + " WHERE THERE IS A FILE IN THE OLD DIRECTORY "
                 + inputDir +  " WITH THE SAME NAME");
 
         if (!this.ready) {
             System.err.println("Reformat job cancelled");
+            return;
         }
     }
 
@@ -74,13 +80,13 @@ public class ReformatAll extends Job {
 
     @Override
     protected void process() throws IOException {
-        List<JsonNode> nodes = new LinkedList();
-        ObjectMapper mapper = new ObjectMapper();
-        Var.Int count = new Var.Int();
-
-        Files.list(new File(inputDir).toPath()).forEach(path -> {
+        /*Files.list(new File(inputDir).toPath()).forEach(path -> {
             this.addJob(new ReformatOutput(path.toFile()));
-        });
+        });*/
+
+        for (File file : this.files) {
+            this.addJob(new ReformatOutput(file));
+        }
     }
 
     @Override
