@@ -51,7 +51,7 @@
     
 7. Create the database associated with the configuration file you just created
     - [ ] Login to mysql console with `mysql -u root -p`
-    - [ ] Enter `CREATE DATABASE <db.url.name>;` where db.url.name is the name configured in the .properties file.
+    - [ ] Enter `CREATE DATABASE <db.url.name>;` where &lt;db.url.name&gt; is the name configured in the .properties file.
       - Then exit the mysql console (`exit`)
     - [ ] We will now build the table structure of the database.  Enter `./tenapull <config-name> reset`
       - &lt;config-name&gt; is the name of the configuration file created above
