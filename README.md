@@ -13,15 +13,26 @@ For a complete demonstration, click the below picture which will take you to a Y
 <a href="https://www.youtube.com/watch?v=aHoMRjRHHrc" rel="Demo video">![Demo video](https://raw.githubusercontent.com/billyJoePiano/TenaPull/master/screenshots/Splunk-table%20(best%20format%20for%20viewing).png)</a>
 
 
+
 ## Resources
+
 
 ### TenaPull Documentation
 
 - [Install and run instructions](installAndRun.md)
 - JavaDocs: https://billyjoepiano.github.io/TenaPull/
 
+
 ### Tenable / Nessus
 
 - API intro: https://docs.tenable.com/tenablesc/Content/APIKeyAuthentication.htm
 - API documentation: https://docs.tenable.com/tenablesc/api/index.htm
 - API best practices: https://docs.tenable.com/tenablesc/api_best_practices/Content/ScApiBestPractices/AboutScApiBestPrac.htm
+
+
+### Importing a custom Certificate Authority into Java
+
+- See: https://stackoverflow.com/questions/6659360/how-to-solve-javax-net-ssl-sslhandshakeexception-error/6742204#6742204
+    - NOTE: I have NOT tried this, and cannot guarantee it will work
+    - There is always the option of disabling SSL validation (see `example-config.properties`)
+    - Or you could obtain a certificate signed by a recognized CA for your Nessus installation

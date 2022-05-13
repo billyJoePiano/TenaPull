@@ -53,7 +53,7 @@
     - [ ] Login to mysql console with `mysql -u root -p`
     - [ ] Enter `CREATE DATABASE <db.url.name>;` where &lt;db.url.name&gt; is the name configured in the .properties file.
       - Don't forget about the semi-colon at the end!
-      - Then exit the mysql console (`exit`)
+      - Exit the mysql console (`exit`)
     - [ ] We will now build the table structure of the database.  Enter `./tenapull <config-name> reset`
       - &lt;config-name&gt; is the name of the configuration file created above
       - The `.properties` extension can be omitted from the command-line argument, but the config file itself must have a `.properties` extension
@@ -64,6 +64,21 @@
     ./tenapull <config-name>
 
 ### Yep, it's really that easy!
+
+A few notes:
+
+- The `.properties` extension may be omitted from the command-line argument, but the config file itself must have a `.properties` extension
+- When searching for the config file, the working directory is checked first.  If it cannot be found in the working directory,
+TenaPull will attempt to find it as a resource on the Java classpath (the `target/classes` directory and all subdirectories)
+
+
+## Importing a custom Certificate Authority into Java (optional)
+
+- See: https://stackoverflow.com/questions/6659360/how-to-solve-javax-net-ssl-sslhandshakeexception-error/6742204#6742204
+    - NOTE: I have NOT tried this, and cannot guarantee it will work
+    - There is always the option of disabling SSL validation (see `example-config.properties`)
+    - Or you could obtain a certificate signed by a recognized CA for your Nessus installation
+
 
 ## Reformat outputs (optional)
 
