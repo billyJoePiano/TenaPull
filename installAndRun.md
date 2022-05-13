@@ -4,20 +4,21 @@
 
 ## Install and build TenaPull
 
-1. Install and configure MySQL:
-   - [ ] `sudo yum/apt/dnf install mysqld`
-   - [ ] Run the `mysql_secure_installation` script
-   - [ ] Setup the root account for the DB, and save the credentials to be used in TenaPull configuration later
-   - [ ] Configure the timezone in mySQL.
-     - You will first need to populate the DB's timezone table using the timezone_posix.sql script at the root of this repo
-       - `mysql -u root -p < timezone_posix.sql`
-     - Then enter the mysql console with `mysql -u root -p` and enter `SET time_zone = 'US/Central'` (e.g. for Central Time).
-     - More information here: https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html
 
-
-2. Pull down the TenaPull repo
+1. Pull down the TenaPull repo
     - [ ] `sudo yum/apt/dnf install git` (if it's not already installed)
     - [ ] `git clone https://github.com/billyJoePiano/TenaPull.git`
+
+
+2. Install and configure MySQL:
+    - [ ] `sudo yum/apt/dnf install mysqld`
+    - [ ] Run the `mysql_secure_installation` script
+    - [ ] Setup the root account for the DB, and save the credentials to be used in TenaPull configuration later
+    - [ ] Configure the timezone in mySQL.
+        - You will first need to populate the DB's timezone table using the timezone_posix.sql script at the root of this repo
+            - `mysql -u root -p < timezone_posix.sql`
+        - Then enter the mysql console with `mysql -u root -p` and enter `SET time_zone = 'US/Central'` (e.g. for Central Time).
+        - More information here: https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html
 
 
 3. Install and configure the Java JDK (minimum version 13, but 17 is suggested)
