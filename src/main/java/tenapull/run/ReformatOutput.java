@@ -20,7 +20,8 @@ public class ReformatOutput extends Job {
 
     private File file;
 
-    public ReformatOutput(File file) {
+    public ReformatOutput(File file) throws NullPointerException {
+        if (file == null) throw new NullPointerException();
         this.file = file;
     }
 

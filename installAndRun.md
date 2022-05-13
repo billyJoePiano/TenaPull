@@ -53,7 +53,7 @@
     - [ ] Enter `CREATE DATABASE <db.url.name>;` where db.url.name is the name configured in the .properties file.
       - Then exit the mysql console (`exit`)
     - [ ] We will now build the table structure of the database.  Enter `./tenapull <config-name> reset`
-      - &lt;config-name&gt; is the name of the configuration file create above
+      - &lt;config-name&gt; is the name of the configuration file created above
       - The `.properties` extension can be omitted from the command-line argument, but the config file itself must have a `.properties` extension
       - You will be prompted to confirm the "reset" of the database.  Enter `YES` (all caps) to confirm
 

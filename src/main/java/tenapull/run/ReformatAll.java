@@ -84,9 +84,13 @@ public class ReformatAll extends Job {
             this.addJob(new ReformatOutput(path.toFile()));
         });*/
 
+        List<Job> list = new ArrayList<>(this.files.length);
+
         for (File file : this.files) {
-            this.addJob(new ReformatOutput(file));
+            list.add(new ReformatOutput(file));
         }
+
+        this.addJobs(list);
     }
 
     @Override
