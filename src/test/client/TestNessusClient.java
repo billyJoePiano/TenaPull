@@ -1,13 +1,13 @@
 package client;
 
-import nessusTools.client.*;
+import tenapull.client.*;
 
-import nessusTools.data.deserialize.*;
-import nessusTools.data.entity.response.*;
-import nessusTools.data.entity.scan.*;
-import nessusTools.data.entity.template.*;
-import nessusTools.run.*;
-import nessusTools.util.*;
+import tenapull.data.deserialize.*;
+import tenapull.data.entity.response.*;
+import tenapull.data.entity.scan.*;
+import tenapull.data.entity.template.*;
+import tenapull.run.*;
+import tenapull.util.*;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.*;

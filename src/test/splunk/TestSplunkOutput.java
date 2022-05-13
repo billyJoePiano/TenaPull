@@ -2,13 +2,11 @@ package splunk;
 
 
 
-import com.fasterxml.jackson.databind.node.*;
-import nessusTools.data.deserialize.*;
-import nessusTools.data.entity.objectLookup.*;
-import nessusTools.data.entity.response.*;
-import nessusTools.data.entity.scan.*;
-import nessusTools.data.entity.splunk.*;
-import nessusTools.run.*;
+import tenapull.data.entity.objectLookup.*;
+import tenapull.data.entity.response.*;
+import tenapull.data.entity.scan.*;
+import tenapull.data.entity.splunk.*;
+import tenapull.run.*;
 import org.hibernate.*;
 import org.junit.*;
 

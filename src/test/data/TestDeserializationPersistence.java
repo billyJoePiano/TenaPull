@@ -2,12 +2,11 @@ package data;
 
 
 import com.fasterxml.jackson.databind.node.*;
-import nessusTools.data.deserialize.*;
-import nessusTools.data.entity.response.*;
-import nessusTools.data.entity.scan.*;
-import nessusTools.data.persistence.*;
-import nessusTools.run.Main;
-import nessusTools.util.*;
+import tenapull.data.entity.response.*;
+import tenapull.data.entity.scan.*;
+import tenapull.data.persistence.*;
+import tenapull.run.Main;
+import tenapull.util.*;
 import org.junit.*;
 
 import org.junit.jupiter.api.BeforeAll;

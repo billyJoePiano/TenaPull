@@ -11,72 +11,72 @@
         <property name="hibernate.c3p0.idle_test_period">3000</property>
 
 
-        <mapping class="nessusTools.data.entity.lookup.HostIp" />
-        <mapping class="nessusTools.data.entity.lookup.Hostname" />
-        <mapping class="nessusTools.data.entity.lookup.HostFqdn" />
-        <mapping class="nessusTools.data.entity.lookup.OperatingSystem" />
-        <mapping class="nessusTools.data.entity.lookup.Cpe" />
-        <mapping class="nessusTools.data.entity.lookup.PluginFamily" />
-        <mapping class="nessusTools.data.entity.lookup.PluginName" />
-        <mapping class="nessusTools.data.entity.lookup.PluginRefValue" />
-        <mapping class="nessusTools.data.entity.lookup.PluginSeeAlso" />
-        <mapping class="nessusTools.data.entity.lookup.PluginSynopsis" />
-        <mapping class="nessusTools.data.entity.lookup.PluginScriptCopyright" />
-        <mapping class="nessusTools.data.entity.lookup.PluginDescription" />
-        <mapping class="nessusTools.data.entity.lookup.PolicyTemplateUuid" />
-        <mapping class="nessusTools.data.entity.lookup.ScanPolicy" />
-        <mapping class="nessusTools.data.entity.lookup.ScanScheduleType" />
-        <mapping class="nessusTools.data.entity.lookup.ScanStatus" />
-        <mapping class="nessusTools.data.entity.lookup.ScanType" />
-        <mapping class="nessusTools.data.entity.lookup.ScanUuid" />
-        <mapping class="nessusTools.data.entity.lookup.ScanTargets" />
-        <mapping class="nessusTools.data.entity.lookup.PluginSolution" />
-        <mapping class="nessusTools.data.entity.lookup.Timezone" />
-        <mapping class="nessusTools.data.entity.lookup.Scanner" />
-        <mapping class="nessusTools.data.entity.lookup.ScanOwner" />
-        <mapping class="nessusTools.data.entity.lookup.VulnerabilityScore" />
-        <mapping class="nessusTools.data.entity.lookup.Remediation" />
-        <mapping class="nessusTools.data.entity.lookup.HostNetbiosName" />
-        <mapping class="nessusTools.data.entity.lookup.Url" />
-        <mapping class="nessusTools.data.entity.lookup.PluginRiskFactor" />
-        <mapping class="nessusTools.data.entity.lookup.CvssVector" />
-        <mapping class="nessusTools.data.entity.lookup.CvssTemporalVector" />
+        <mapping class="tenapull.data.entity.lookup.HostIp" />
+        <mapping class="tenapull.data.entity.lookup.Hostname" />
+        <mapping class="tenapull.data.entity.lookup.HostFqdn" />
+        <mapping class="tenapull.data.entity.lookup.OperatingSystem" />
+        <mapping class="tenapull.data.entity.lookup.Cpe" />
+        <mapping class="tenapull.data.entity.lookup.PluginFamily" />
+        <mapping class="tenapull.data.entity.lookup.PluginName" />
+        <mapping class="tenapull.data.entity.lookup.PluginRefValue" />
+        <mapping class="tenapull.data.entity.lookup.PluginSeeAlso" />
+        <mapping class="tenapull.data.entity.lookup.PluginSynopsis" />
+        <mapping class="tenapull.data.entity.lookup.PluginScriptCopyright" />
+        <mapping class="tenapull.data.entity.lookup.PluginDescription" />
+        <mapping class="tenapull.data.entity.lookup.PolicyTemplateUuid" />
+        <mapping class="tenapull.data.entity.lookup.ScanPolicy" />
+        <mapping class="tenapull.data.entity.lookup.ScanScheduleType" />
+        <mapping class="tenapull.data.entity.lookup.ScanStatus" />
+        <mapping class="tenapull.data.entity.lookup.ScanType" />
+        <mapping class="tenapull.data.entity.lookup.ScanUuid" />
+        <mapping class="tenapull.data.entity.lookup.ScanTargets" />
+        <mapping class="tenapull.data.entity.lookup.PluginSolution" />
+        <mapping class="tenapull.data.entity.lookup.Timezone" />
+        <mapping class="tenapull.data.entity.lookup.Scanner" />
+        <mapping class="tenapull.data.entity.lookup.ScanOwner" />
+        <mapping class="tenapull.data.entity.lookup.VulnerabilityScore" />
+        <mapping class="tenapull.data.entity.lookup.Remediation" />
+        <mapping class="tenapull.data.entity.lookup.HostNetbiosName" />
+        <mapping class="tenapull.data.entity.lookup.Url" />
+        <mapping class="tenapull.data.entity.lookup.PluginRiskFactor" />
+        <mapping class="tenapull.data.entity.lookup.CvssVector" />
+        <mapping class="tenapull.data.entity.lookup.CvssTemporalVector" />
 
-        <mapping class="nessusTools.data.entity.objectLookup.Acl" />
-        <mapping class="nessusTools.data.entity.objectLookup.PluginAttributes" />
-        <mapping class="nessusTools.data.entity.objectLookup.PluginInformation" />
-        <mapping class="nessusTools.data.entity.objectLookup.PluginRefInformation" />
-        <mapping class="nessusTools.data.entity.objectLookup.PluginRiskInformation" />
-        <mapping class="nessusTools.data.entity.objectLookup.PluginVulnInformation" />
-        <mapping class="nessusTools.data.entity.objectLookup.PluginHost" />
-        <mapping class="nessusTools.data.entity.objectLookup.Plugin" />
-        <mapping class="nessusTools.data.entity.objectLookup.License" />
-        <mapping class="nessusTools.data.entity.objectLookup.RemediationDetails" />
-        <mapping class="nessusTools.data.entity.objectLookup.SeverityBase" />
-        <mapping class="nessusTools.data.entity.objectLookup.SeverityLevelCount" />
-        <mapping class="nessusTools.data.entity.objectLookup.Vulnerability" />
-        <mapping class="nessusTools.data.entity.objectLookup.ExtraJson" />
-
-
-        <mapping class="nessusTools.data.entity.scan.Folder" />
-        <mapping class="nessusTools.data.entity.scan.Scan" />
-        <mapping class="nessusTools.data.entity.scan.ScanHistory" />
-        <mapping class="nessusTools.data.entity.host.ScanHostInfo" />
-        <mapping class="nessusTools.data.entity.scan.ScanInfo" />
-        <mapping class="nessusTools.data.entity.scan.ScanPlugin" />
-        <mapping class="nessusTools.data.entity.scan.ScanPrioritization" />
-        <mapping class="nessusTools.data.entity.scan.ScanRemediationsSummary" />
-        <mapping class="nessusTools.data.entity.scan.ScanHost" />
-        <mapping class="nessusTools.data.entity.scan.ScanRemediation" />
+        <mapping class="tenapull.data.entity.objectLookup.Acl" />
+        <mapping class="tenapull.data.entity.objectLookup.PluginAttributes" />
+        <mapping class="tenapull.data.entity.objectLookup.PluginInformation" />
+        <mapping class="tenapull.data.entity.objectLookup.PluginRefInformation" />
+        <mapping class="tenapull.data.entity.objectLookup.PluginRiskInformation" />
+        <mapping class="tenapull.data.entity.objectLookup.PluginVulnInformation" />
+        <mapping class="tenapull.data.entity.objectLookup.PluginHost" />
+        <mapping class="tenapull.data.entity.objectLookup.Plugin" />
+        <mapping class="tenapull.data.entity.objectLookup.License" />
+        <mapping class="tenapull.data.entity.objectLookup.RemediationDetails" />
+        <mapping class="tenapull.data.entity.objectLookup.SeverityBase" />
+        <mapping class="tenapull.data.entity.objectLookup.SeverityLevelCount" />
+        <mapping class="tenapull.data.entity.objectLookup.Vulnerability" />
+        <mapping class="tenapull.data.entity.objectLookup.ExtraJson" />
 
 
-        <mapping class="nessusTools.data.entity.host.ScanHostInfo" />
+        <mapping class="tenapull.data.entity.scan.Folder" />
+        <mapping class="tenapull.data.entity.scan.Scan" />
+        <mapping class="tenapull.data.entity.scan.ScanHistory" />
+        <mapping class="tenapull.data.entity.host.ScanHostInfo" />
+        <mapping class="tenapull.data.entity.scan.ScanInfo" />
+        <mapping class="tenapull.data.entity.scan.ScanPlugin" />
+        <mapping class="tenapull.data.entity.scan.ScanPrioritization" />
+        <mapping class="tenapull.data.entity.scan.ScanRemediationsSummary" />
+        <mapping class="tenapull.data.entity.scan.ScanHost" />
+        <mapping class="tenapull.data.entity.scan.ScanRemediation" />
 
-        <mapping class="nessusTools.data.entity.response.IndexResponse" />
-        <mapping class="nessusTools.data.entity.response.ScanResponse" />
-        <mapping class="nessusTools.data.entity.response.ScanHostResponse" />
-        <mapping class="nessusTools.data.entity.splunk.HostOutput" />
-        <mapping class="nessusTools.data.entity.splunk.HostVulnerabilityOutput" />
+
+        <mapping class="tenapull.data.entity.host.ScanHostInfo" />
+
+        <mapping class="tenapull.data.entity.response.IndexResponse" />
+        <mapping class="tenapull.data.entity.response.ScanResponse" />
+        <mapping class="tenapull.data.entity.response.ScanHostResponse" />
+        <mapping class="tenapull.data.entity.splunk.HostOutput" />
+        <mapping class="tenapull.data.entity.splunk.HostVulnerabilityOutput" />
 
     </session-factory>
 

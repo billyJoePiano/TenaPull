@@ -1,8 +1,8 @@
 package sync;
 
 import data.*;
-import nessusTools.data.persistence.*;
-import nessusTools.util.*;
+import tenapull.data.persistence.*;
+import tenapull.util.*;
 import org.apache.logging.log4j.*;
 
 import java.math.*;
