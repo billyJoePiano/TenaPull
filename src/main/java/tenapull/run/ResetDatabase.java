@@ -32,22 +32,10 @@ public class ResetDatabase extends Job {
         //NOTE to Paula:  I used the stdout/stderr stream here (instead of log4j)
         // due to need for command-line interaction with the user
 
-        System.err.println("WARNING: THIS WILL COMPLETELY RESET THE DATABASE AT ADDRESS '"
+        this.runReset = Main.confirmJob(
+                "WARNING: THIS WILL COMPLETELY RESET THE DATABASE AT ADDRESS '"
                 + Main.getConfig().getProperty("db.url") + "'   ALL DATA WILL BE LOST");
-        System.err.println("TYPE 'YES' TO PROCEED (case-sensitive)");
 
-        String in;
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
-            in = br.readLine();
-
-        } catch (IOException e) {
-            logger.error("I/O error reading response, exiting without DB reset", e);
-            Main.markErrorStatus();
-            this.runReset = false;
-            return;
-        }
-
-        this.runReset = Objects.equals("YES", in);
         if (!this.runReset) {
             System.err.println("DB reset cancelled");
         }

@@ -9,7 +9,7 @@ else
     echo "Note: \$JAVA_HOME environmental variable was already set to the following value, so will not be changed:" 1>&2
 fi
 echo "$JAVA_HOME" 1>&2
-echo "If there are problems building the application, you may need to change this variable to the directory which contains a recent JDK version" 1>&2
+echo "If there are problems building/running the application, you may need to change this variable to the directory which contains a newer JDK version" 1>&2
 echo 1>&2
 echo 1>&2
 

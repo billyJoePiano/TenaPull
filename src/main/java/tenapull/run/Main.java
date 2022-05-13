@@ -314,4 +314,19 @@ public class Main {
         }
 
     }
+
+    public static boolean confirmJob(String msg) {
+        System.err.println(msg);
+        System.err.println("TYPE 'YES' TO PROCEED (case-sensitive)");
+        String in = null;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+            in = br.readLine();
+
+        } catch (IOException e) {
+            logger.error("I/O error reading your response", e);
+            return false;
+        }
+
+        return Objects.equals("YES", in);
+    }
 }
