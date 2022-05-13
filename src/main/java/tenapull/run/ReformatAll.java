@@ -50,7 +50,7 @@ public class ReformatAll extends Job {
 
         this.ready = ready && Main.confirmJob(
                 "WARNING: THIS WILL OVERWRITE ANY FILES IN THE OUTPUT DIRECTORY "
-                + Main.getConfig("output.dir") + " IF THERE IS A FILE IN THE OLD DIRECTORY "
+                + Main.getConfig("output.dir") + " WHERE THERE IS A FILE IN THE OLD DIRECTORY "
                 + inputDir +  " WITH THE SAME NAME");
 
         if (!this.ready) {

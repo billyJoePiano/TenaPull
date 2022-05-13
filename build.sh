@@ -33,5 +33,7 @@ echo -n "1..."
 sleep 1
 echo
 
-mvn clean install -X
+mvn clean install
+
+# Note: use 'mvn clean install -X' 'for debugging
 
