@@ -444,4 +444,8 @@ public abstract class Job {
             return Job.this;
         }
     }
+
+    public final boolean equals(Object o) {
+        return o == this;
+    }
 }
