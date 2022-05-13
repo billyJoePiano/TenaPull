@@ -18,36 +18,35 @@ public class IndexJob extends Job {
     private static Logger logger = LogManager.getLogger(IndexJob.class);
 
     private IndexResponse response;
-    private final boolean markFailed;
+    private final boolean ready;
 
     /**
      * Instantiates a new Index job.
      */
     public IndexJob() {
-        boolean markFailed = Main.initOutputDir();
+        boolean ready = Main.initOutputDir();
 
-        if (!markFailed) {
+        if (ready) {
             //force DB to initialize right away, using smallest table that likely has a value
             logger.info("Checking database connection: " + Main.getConfig("db.url"));
             try {
                 Timezone.dao.getById(1);
 
             } catch (Exception e) {
-                markFailed = true;
+                ready = false;
                 logger.error("Error while trying to initialize DB connection", e);
             }
         }
 
-        this.markFailed = markFailed;
+        this.ready = ready;
     }
 
     @Override
     protected boolean isReady() {
-        if (this.markFailed) {
-            Main.markErrorStatus();
-            this.failed();
-        }
-        return !this.markFailed;
+        if (this.ready) return true;
+        Main.markErrorStatus();
+        this.failed();
+        return false;
     }
 
     private NessusClient client;
