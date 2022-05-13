@@ -66,7 +66,7 @@
 ## Reformat outputs (optional)
 
 If you have .json output files that need to be reformatted -- for example, with a different `scanner` field value, or
-truncating excessively long string fields, you can run a TenaPull reformat job.
+truncating excessively long string fields -- you can run a TenaPull reformat job.
 
 - [ ] First, rename the directory with the incorrectly-formatted outputs by adding a `.old` extension to it.
     - For example `mynessusinstallation1/` becomes `mynessusinstallation1.old/`
