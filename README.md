@@ -21,7 +21,7 @@ For a complete demonstration, click the below picture which will take you to a Y
 
 - [Install and run instructions](installAndRun.md)
 - [Example configuration](exmaple-config.properties)
-- <a href="https://billyjoepiano.github.io/TenaPull/" target="_blank">JavaDocs</a>
+- [JavaDocs](https://billyjoepiano.github.io/TenaPull/ target="_blank")
 
 
 ### Tenable / Nessus
