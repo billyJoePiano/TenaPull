@@ -100,7 +100,7 @@ public class DbManagerJob extends Job {
                 }
 
                 try {
-                    this.monitor.wait(JobFactory.MAX_MAIN_WAIT_TIME);
+                    this.monitor.wait(JobFactory.MAIN_MAX_WAIT_TIME);
                 } catch (InterruptedException e) { }
             }
         }
@@ -145,7 +145,7 @@ public class DbManagerJob extends Job {
 
             if (childrenRunning || this.processNewChildJobs(runningJob)) {
                 try {
-                    this.monitor.wait(JobFactory.MAX_MAIN_WAIT_TIME);
+                    this.monitor.wait(JobFactory.MAIN_MAX_WAIT_TIME);
                 } catch (InterruptedException e) { }
 
             } else {
@@ -196,7 +196,7 @@ public class DbManagerJob extends Job {
                 }
 
                 try {
-                    this.monitor.wait(JobFactory.MAX_MAIN_WAIT_TIME);
+                    this.monitor.wait(JobFactory.MAIN_MAX_WAIT_TIME);
 
                 } catch (InterruptedException e) { }
             }

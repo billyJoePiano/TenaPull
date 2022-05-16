@@ -29,7 +29,7 @@ public class JobFactory {
      * tasks again.  Probably not necessary, but included as a fail-safe in case of a
      * bug in the synchronization/wait/notify logic.
      */
-    public static final long MAX_MAIN_WAIT_TIME = 60000; // 1 minute in ms
+    public static final long MAIN_MAX_WAIT_TIME = 60000; // 1 minute in ms
 
 
     private final WorkerThread thread;
@@ -151,7 +151,7 @@ public class JobFactory {
 
 
     private static final Logger logger = LogManager.getLogger(JobFactory.class);
-    private static final Set<Job> newJobProviders = new LinkedHashSet<>();
+    private static final Set<Job.Accessor> newJobProviders = new LinkedHashSet<>();
     private static final Set<Job> newJobs = new LinkedHashSet<>();
 
     private static final ReadWriteLock<Map<Job, Job.Accessor>, Job.Accessor>
@@ -183,7 +183,11 @@ public class JobFactory {
      *
      * @param source the source job, providing new jobs
      */
-    public static void notifyOfJobProvider(Job source) {
+    public static void notifyOfJobProvider(Job.Accessor source) {
+        if (source == null) {
+            logger.error("Null source accessor in JobFactory.notifyOfJobProvider");
+            return;
+        }
         synchronized (newJobProviders) {
             newJobProviders.add(source);
             newJobProviders.notifyAll();
@@ -196,31 +200,40 @@ public class JobFactory {
     private static boolean haveUnderwayJobs = false;
 
     private static void runJobsLoop() {
-        int exitChecks = 0;
-        while (exitChecks < 2) {
+        while (true) {
 
             checkWorkerThreads();
 
             if (haveDelayedJobs) {
                 processDelayedJobs();
-                exitChecks = 0;
             }
 
             if (haveNewJobsToProcess) {
                 processNewJobs();
-                exitChecks = 0;
             }
 
             waitForNextJob();
 
             if (!(haveUnderwayJobs || haveDelayedJobs || haveNewJobsToProcess)) {
-                exitChecks++;
-            } else {
-                exitChecks = 0;
-            }
+                haveUnderwayJobs = true;
+                haveDelayedJobs = true;
+                haveNewJobsToProcess = true;
+                processDelayedJobs();
+                processNewJobs();
+                waitForNextJob();
 
+                if (!(haveUnderwayJobs || haveDelayedJobs || haveNewJobsToProcess)) {
+                    break;
+                }
+            }
         }
+
         logger.info("No jobs left... exiting");
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) { }
+
         System.exit(0);
     }
 
@@ -422,23 +435,17 @@ public class JobFactory {
 
         long start = System.currentTimeMillis();
 
-        for (Iterator<Job> iterator = newJobProviders.iterator();
+        for (Iterator<Job.Accessor> iterator = newJobProviders.iterator();
              iterator.hasNext(); ) {
 
-            Job provider = iterator.next();
+            Job.Accessor accessor = iterator.next();
             iterator.remove();
 
-            if (provider != null) {
-                Job.Accessor accessor = accessors.read(accessors -> accessors.get(provider));
-                if (accessor != null) {
-                    Set<Job> jobs = accessor.getNewJobs();
-                    newJobs.addAll(jobs);
+            if (accessor != null) {
+                newJobs.addAll(accessor.getNewJobs());
 
-                } else {
-                    logger.error("Null accessor for running provider job " + provider);
-                }
             } else {
-                logger.error("Null running provider job!?");
+                logger.error("Null accessor for running provider job");
             }
 
             if (System.currentTimeMillis() - start
@@ -461,8 +468,8 @@ public class JobFactory {
     }
 
     private static void waitForNextJob() {
-        long exitAt = System.currentTimeMillis() + MAX_MAIN_WAIT_TIME;
-        while (System.currentTimeMillis() < exitAt) {
+        long exitAt = System.currentTimeMillis() + MAIN_MAX_WAIT_TIME;
+        do {
 
             processUnderwayJobs();
 
@@ -476,14 +483,16 @@ public class JobFactory {
                 checkWorkerThreads();
 
                 try {
-                    newJobProviders.wait(MAX_MAIN_WAIT_TIME);
+                    newJobProviders.wait(MAIN_MAX_WAIT_TIME);
 
                 } catch (InterruptedException e) { }
 
                 fetchFromProviders();
                 if (haveNewJobsToProcess) return;
             }
-        }
+
+        } while (System.currentTimeMillis() < exitAt);
+
         sleepUntilDelayedJobs();
     }
 
@@ -538,7 +547,7 @@ public class JobFactory {
                         if (newJobProviders.size() > 0) return;
 
                         checkWorkerThreads();
-                        newJobProviders.wait(Math.min(sleepTime, MAX_MAIN_WAIT_TIME));
+                        newJobProviders.wait(Math.min(sleepTime, MAIN_MAX_WAIT_TIME));
 
                         if (accessor.getTryAtTime() > calcAvgDelay() + System.currentTimeMillis()) {
                             // premature waking-up of thread probably means a new jobProvider or job done

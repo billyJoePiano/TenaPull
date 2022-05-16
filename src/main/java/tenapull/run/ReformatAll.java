@@ -80,13 +80,9 @@ public class ReformatAll extends Job {
 
     @Override
     protected void process() throws IOException {
-        List<Job> list = new ArrayList<>(this.files.length);
-
         for (File file : this.files) {
-            list.add(new ReformatOutput(file));
+            this.addJob(new ReformatOutput(file));
         }
-
-        this.addJobs(list);
     }
 
     @Override

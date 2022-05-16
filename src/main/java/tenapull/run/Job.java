@@ -199,7 +199,7 @@ public abstract class Job {
         checkForRunThread();
         if (newJob == null) return;
         accessor.addJob(newJob);
-        JobFactory.notifyOfJobProvider(this);
+        JobFactory.notifyOfJobProvider(this.accessor);
     }
 
     /**
@@ -218,7 +218,7 @@ public abstract class Job {
         checkForRunThread();
         if (newJobs == null) return;
         accessor.addJobs(newJobs);
-        JobFactory.notifyOfJobProvider(this);
+        JobFactory.notifyOfJobProvider(this.accessor);
     }
 
     /**
@@ -350,13 +350,15 @@ public abstract class Job {
      * accessor has already been delivered to the main thread
      */
     public final Accessor getAccessor() throws IllegalStateException {
-        if (accessorDelivered || !Main.isMain()) {
-            throw new IllegalStateException("Only the main thread is allowed to obtain the new job accessor, " +
-                    "and it may only request it once, then store its reference.  Current thread: "
-                    + Thread.currentThread());
+        synchronized (this.accessor) {
+            if (accessorDelivered || !Main.isMain()) {
+                throw new IllegalStateException("Only the main thread is allowed to obtain the new job accessor, " +
+                        "and it may only request it once, then store its reference.  Current thread: "
+                        + Thread.currentThread());
+            }
+            this.accessorDelivered = true;
+            return accessor;
         }
-        this.accessorDelivered = true;
-        return accessor;
     }
 
 
