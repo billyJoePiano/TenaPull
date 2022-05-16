@@ -1865,7 +1865,6 @@ public class InstancesTracker<K, I> {
     static {
         finalizer.setName("InstancesTracker.finalizer");
         finalizer.setDaemon(true);
-        ReadWriteLock.registerAsDisruptable(finalizer);
         finalizer.start();
     }
 
@@ -1877,6 +1876,7 @@ public class InstancesTracker<K, I> {
 
         int loops = 0;
         Thread finalizer = Thread.currentThread();
+        ReadWriteLock.registerAsDisruptable(finalizer);
 
         //FinalizerReport[] reports = new FinalizerReport[REPORT_ITERATIONS];
         int index = 0;
@@ -1952,81 +1952,87 @@ public class InstancesTracker<K, I> {
         int remainingTrackers = needsFinalizing.size();
         List<TrackerNeedsFinalizing> addBackToMonitor = new ArrayList<>(needsFinalizing.size());
 
-        long timeoutAt = System.nanoTime() + maxTimeNs;
-        List<InstancesTracker> revisit = null;
+        Thread current = Thread.currentThread();
+        int origPriority = current.getPriority();
 
-        while (true) {
-            InstancesTracker tracker = null;
-            if (iterator.hasNext()) {
-                TrackerNeedsFinalizing comparable = iterator.next();
-                if (comparable == null //shouldn't happen, but just in case...
-                        || (tracker = comparable.ref.get()) == null
-                        || tracker.replacedWith != null) {
+        try {
+            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+            long timeoutAt = System.nanoTime() + maxTimeNs;
+            List<InstancesTracker> revisit = null;
 
-                    remainingTrackers--;
-                    iterator.remove();
-                    continue;
-                }
+            while (true) {
+                InstancesTracker tracker = null;
+                if (iterator.hasNext()) {
+                    TrackerNeedsFinalizing comparable = iterator.next();
+                    if (comparable == null //shouldn't happen, but just in case...
+                            || (tracker = comparable.ref.get()) == null
+                            || tracker.replacedWith != null) {
 
-                boolean finalizeUnderway = tracker.finalizeUnderway;
-
-                if (!finalizeUnderway) {
-                    synchronized (tracker.returnedLocks) {
-                        if (!(finalizeUnderway = tracker.finalizeUnderway)) {
-                            tracker.finalizeUnderway = true;
-                        }
-                    }
-                }
-
-                if (finalizeUnderway) {
-                    if (revisit == null) revisit = new LinkedList<>();
-                    revisit.add(tracker);
-                    continue;
-                }
-
-            } else  {
-                if (revisit == null || revisit.size() <= 0) break;
-
-                for (Iterator<InstancesTracker> revisitIterator = revisit.iterator();
-                            revisitIterator.hasNext();) {
-
-                    tracker = revisitIterator.next();
-                    if (tracker.finalizeUnderway) {
-                        tracker = null;
+                        remainingTrackers--;
+                        iterator.remove();
                         continue;
                     }
-                    synchronized (tracker.returnedLocks) {
+
+                    boolean finalizeUnderway = tracker.finalizeUnderway;
+
+                    if (!finalizeUnderway) {
+                        synchronized (tracker.returnedLocks) {
+                            if (!(finalizeUnderway = tracker.finalizeUnderway)) {
+                                tracker.finalizeUnderway = true;
+                            }
+                        }
+                    }
+
+                    if (finalizeUnderway) {
+                        if (revisit == null) revisit = new LinkedList<>();
+                        revisit.add(tracker);
+                        continue;
+                    }
+
+                } else {
+                    if (revisit == null || revisit.size() <= 0) break;
+
+                    for (Iterator<InstancesTracker> revisitIterator = revisit.iterator();
+                         revisitIterator.hasNext(); ) {
+
+                        tracker = revisitIterator.next();
                         if (tracker.finalizeUnderway) {
                             tracker = null;
                             continue;
                         }
-                        tracker.finalizeUnderway = true;
+                        synchronized (tracker.returnedLocks) {
+                            if (tracker.finalizeUnderway) {
+                                tracker = null;
+                                continue;
+                            }
+                            tracker.finalizeUnderway = true;
+                        }
+                        revisitIterator.remove();
+                        break;
                     }
-                    revisitIterator.remove();
-                    break;
-                }
-                if (tracker == null) {
-                    if (System.nanoTime() >= timeoutAt) return true;
-                    synchronized (finalizerMonitor) {
-                        long waitMs = (timeoutAt - System.nanoTime()) / 2 / MILLION;
-                        if (waitMs < 2) return true;
+                    if (tracker == null) {
+                        if (System.nanoTime() >= timeoutAt) return true;
+                        synchronized (finalizerMonitor) {
+                            long waitMs = (timeoutAt - System.nanoTime()) / 2 / MILLION;
+                            if (waitMs < 2) return true;
 
-                        try {
-                            finalizerMonitor.wait(waitMs);
+                            try {
+                                finalizerMonitor.wait(waitMs);
 
-                        } catch (InterruptedException e) { }
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                        if (System.nanoTime() >= timeoutAt) return true;
+                        continue;
                     }
-                    if (System.nanoTime() >= timeoutAt) return true;
-                    continue;
                 }
-            }
 
-            long time = System.nanoTime();
-            if (time >= timeoutAt) return true;
-            long trackerTimeoutAt = (timeoutAt - time) / remainingTrackers + time;
+                long time = System.nanoTime();
+                if (time >= timeoutAt) return true;
+                long trackerTimeoutAt = (timeoutAt - time) / remainingTrackers + time;
 
-            //logger.debug("Finalizing create locks <K, I> : " + tracker.type);
-            FinalizeResult result = tracker.finalizeCreateLocks(trackerTimeoutAt);
+                //logger.debug("Finalizing create locks <K, I> : " + tracker.type);
+                FinalizeResult result = tracker.finalizeCreateLocks(trackerTimeoutAt);
 
             /*String trackerType = tracker.type.toString();
             trackerType += " ".repeat(Math.max(0, 45 - trackerType.length()));
@@ -2034,13 +2040,21 @@ public class InstancesTracker<K, I> {
                     + tracker.comparable.notificationCount + " remaining\t"
                     + result.instances + " instances");*/
 
-            remainingTrackers--;
+                remainingTrackers--;
 
-            finalizedCount += result.count;
-            if (!result.success) {
-                addBackToMonitor.add(tracker.comparable);
+                finalizedCount += result.count;
+                if (!result.success) {
+                    addBackToMonitor.add(tracker.comparable);
+                }
+
             }
+
+
+
+        } finally {
+            current.setPriority(origPriority);
         }
+
 
         //long endTime = System.nanoTime();
 
@@ -2050,9 +2064,6 @@ public class InstancesTracker<K, I> {
             }
             return null;
         });
-
-        return true;
-
 
         /*
         reports[index++] = new FinalizerReport(finalizedCount, endTime - loopStart);
@@ -2070,11 +2081,27 @@ public class InstancesTracker<K, I> {
             startTime = System.nanoTime();
         }
          */
+
+        boolean gcHint;
+        synchronized (gcHintCounter) {
+            if (gcHint = ++gcHintCounter.value >= GC_HINT_FREQUENCY) {
+                gcHintCounter.value = 0;
+            }
+        }
+
+        if (gcHint) {
+            System.gc();
+        }
+
+        return true;
     }
+
+    private static final int GC_HINT_FREQUENCY = 64;
+    private static final Var.Int gcHintCounter = new Var.Int(0);
+
 
     private static List<TrackerNeedsFinalizing> getTrackersThatNeedFinalizing() {
         List<TrackerNeedsFinalizing> needsFinalizing = finalizerMonitor.write(comparables -> {
-            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
             List nf = new ArrayList(comparables.keySet());
             comparables.clear();
             return nf;
@@ -2096,7 +2123,8 @@ public class InstancesTracker<K, I> {
             long startSleep = System.nanoTime();
             try {
                 Thread.sleep(changedSize);
-            } catch (InterruptedException e) { }
+            } catch (InterruptedException e) {
+            }
 
             long endSleep = System.nanoTime();
             addToLoopStart = endSleep - startSleep;
