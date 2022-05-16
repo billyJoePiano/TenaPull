@@ -78,11 +78,37 @@ public class ReformatAll extends Job {
         // no need for the client in this job
     }
 
+    private static int MAX_LIMIT = 1024; //Max number of jobs to accumulate in a list before sending to JobFactory
+
     @Override
     protected void process() throws IOException {
+        logger.info("Starting");
+        int i = 0;
+        int nextLimit = JobFactory.NUM_WORKER_THREADS;
+        List<Job> jobs = new ArrayList<>(nextLimit);
+
+        //Add to the jobs queue in progressively larger chunks...
         for (File file : this.files) {
-            this.addJob(new ReformatOutput(file));
+            if (i++ < JobFactory.NUM_WORKER_THREADS) {
+                this.addJob(new ReformatOutput(file));
+
+            } else {
+                jobs.add(new ReformatOutput(file));
+                if (jobs.size() >= nextLimit) {
+                    this.addJobs(jobs);
+                    if (nextLimit < MAX_LIMIT) {
+                        nextLimit = Math.min(nextLimit * 2, MAX_LIMIT);
+                    }
+                    jobs = new ArrayList(nextLimit);
+                }
+            }
+
         }
+
+        if (jobs.size() > 0) {
+            this.addJobs(jobs);
+        }
+        logger.info("Finished");
     }
 
     @Override
