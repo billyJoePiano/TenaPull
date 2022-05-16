@@ -82,7 +82,6 @@ public class ReformatAll extends Job {
 
     @Override
     protected void process() throws IOException {
-        logger.info("Starting");
         int i = 0;
         int nextLimit = JobFactory.NUM_WORKER_THREADS;
         List<Job> jobs = new ArrayList<>(nextLimit);
@@ -108,7 +107,6 @@ public class ReformatAll extends Job {
         if (jobs.size() > 0) {
             this.addJobs(jobs);
         }
-        logger.info("Finished");
     }
 
     @Override
