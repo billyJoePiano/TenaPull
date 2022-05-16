@@ -2096,7 +2096,7 @@ public class InstancesTracker<K, I> {
         return true;
     }
 
-    private static final int GC_HINT_FREQUENCY = 64;
+    private static final int GC_HINT_FREQUENCY = 256;
     private static final Var.Int gcHintCounter = new Var.Int(0);
 
 
