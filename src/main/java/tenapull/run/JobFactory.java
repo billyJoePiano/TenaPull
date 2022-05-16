@@ -229,12 +229,6 @@ public class JobFactory {
         }
 
         logger.info("No jobs left... exiting");
-
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) { }
-
-        System.exit(0);
     }
 
 
