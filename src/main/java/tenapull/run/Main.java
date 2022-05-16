@@ -122,6 +122,10 @@ public class Main {
         return config.getProperty(property);
     }
 
+    public static boolean hasConfig(String property) {
+        return config.containsKey(property);
+    }
+
     /**
      * Loads the default config for unit tests, since they do not enter the application
      * through the usual public static main(String[] args) of this class
@@ -294,7 +298,7 @@ public class Main {
         }
     }
 
-    public static Integer getTruncate() {
+    public static Integer parseTruncate() {
         String str = config.getProperty("output.truncate");
         if (str == null) return null;
         try {

@@ -17,7 +17,7 @@ public class SplunkOutputMapper extends ObjectMapper {
     private static final Map<Thread, SplunkOutputMapper> mappers = new WeakHashMap<>();
     private static final Logger logger = LogManager.getLogger(SplunkOutputMapper.class);
 
-    public static final Integer TRUNCATE = Main.getTruncate();
+    public static final Integer TRUNCATE = Main.parseTruncate();
 
 
     /**

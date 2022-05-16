@@ -27,6 +27,8 @@ public class HostVulnsJob extends DbManagerJob.Child {
      */
     public static final String OUTPUT_DIR = Main.getConfig("output.dir");
 
+    public static final boolean SEPARATE_OUTPUTS = Main.hasConfig("output.separate");
+
     private static final Logger logger = LogManager.getLogger(HostVulnsJob.class);
     private static final DateTimeFormatter filenameFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd_HH.mm.ss")
             .withZone(TimeZone.getDefault().toZoneId());
@@ -116,7 +118,7 @@ public class HostVulnsJob extends DbManagerJob.Child {
 
 
     @Override
-    protected void output() throws FileNotFoundException, IOException {
+    protected void output() throws IOException {
         LocalDateTime useForFilename;
         if (this.scanTimestamp != null) {
             useForFilename = this.scanTimestamp.toLocalDateTime();
@@ -129,19 +131,48 @@ public class HostVulnsJob extends DbManagerJob.Child {
         Integer hostId = this.host.getHostId();
 
         String filename = OUTPUT_DIR + timestampStr + "_" + scanResponse.getId()
-                + "_" + hostId + ".json";
+                + "_" + hostId;
+
+        if (SEPARATE_OUTPUTS) {
+            this.separateOutputs(filename);
+
+        } else {
+            this.singleOutput(filename);
+        }
+
+        this.addDbTask(this::runDbInsert);
+    }
+
+    private void singleOutput(String filePrefix) throws IOException {
+        String filename = filePrefix + ".json";
 
         this.output.setFilename(filename);
 
-        logger.info("Writing " +  output.size() + " results to " + filename);
+        logger.info("Writing " + output.size() + " results to " + filename);
 
         LocalDateTime outputTime = LocalDateTime.now();
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(filename));
         SplunkOutputMapper.get().writeValue(writer, output);
 
         this.output.setOutputTimestamp(Timestamp.valueOf(outputTime));
+    }
 
-        this.addDbTask(this::runDbInsert);
+    private void separateOutputs(String filePrefix) throws IOException {
+        this.output.setFilename(filePrefix + "_?.json");
+        int i = 0;
+        SplunkOutputMapper mapper = SplunkOutputMapper.get();
+
+        logger.info("Writing " + output.size() + " separate results to files " + filePrefix + "_?.json");
+
+        LocalDateTime outputTime = LocalDateTime.now();
+
+        for (HostVulnerabilityOutput out : this.output.getVulnerabilities()) {
+            String filename = filePrefix + "_" + (i++) + ".json";
+            OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(filename));
+            mapper.writeValue(writer, out);
+        }
+
+        this.output.setOutputTimestamp(Timestamp.valueOf(outputTime));
     }
 
     private void runDbInsert() {
