@@ -77,28 +77,16 @@ public class WeakInstancesTracker<K, I> {
      * A wrapper for WeakReference that also implement the Instances.KeyFinalizer interface,
      * so that a key is held as a strong reference until it has been finalized
      */
-    public class WeakRef implements InstancesTracker.KeyFinalizer<WeakRef, I> {
-        /**
-         * The weak reference
-         */
-        WeakReference<K> ref;
+    private class WeakRef extends WeakReference<K>
+            implements InstancesTracker.KeyFinalizer<WeakRef, I> {
         /**
          * The temporary strong reference that is set to null after the key is finalized
          */
-        K tempStrongRef;
+        private K tempStrongRef;
 
         private WeakRef(K referent) {
-            this.ref = new WeakReference<K>(referent);
+            super(referent);
             this.tempStrongRef = referent;
-        }
-
-        /**
-         * Get the key which this references, or null if it has been GC'd
-         *
-         * @return the key
-         */
-        public K get() {
-            return this.ref.get();
         }
 
         public boolean equals(Object o) {
@@ -122,6 +110,13 @@ public class WeakInstancesTracker<K, I> {
         @Override
         public void finalizeKey(I instance) {
             this.tempStrongRef = null;
+        }
+
+        @Override
+        public int hashCode() {
+            K ref = this.get();
+            if (ref != null) return ref.hashCode();
+            return 0;
         }
     }
 
