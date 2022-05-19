@@ -287,8 +287,6 @@ public class WeakInstancesTracker<K, I> {
     private static Thread garbageCollector = new Thread(() -> {
         Thread garbageCollector = Thread.currentThread();
 
-        long lastGcMonitorValue = 0;
-
         while(true) try {
             synchronized (gcMonitor) {
                 garbageCollector.setPriority(Thread.MIN_PRIORITY);
