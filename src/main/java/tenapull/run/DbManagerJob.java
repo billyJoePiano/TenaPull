@@ -472,6 +472,10 @@ public class DbManagerJob extends Job {
         protected void notifyChildOfExit() {
 
         }
+
+        protected boolean hasDbManager() {
+            return this.dbManager != null;
+        }
     }
 
     /**

@@ -37,7 +37,7 @@ public class HostVulnsJob extends DbManagerJob.Child {
     private final ScanHost host;
     private List<Vulnerability> vulns;
     private ScanHostResponse response;
-    private final HostOutput output = new HostOutput();
+    private final HostOutput output;
     private final Timestamp scanTimestamp;
 
     /**
@@ -47,6 +47,18 @@ public class HostVulnsJob extends DbManagerJob.Child {
      * @param host         the host to obtain the vulnerability data about
      */
     public HostVulnsJob(ScanResponse scanResponse, ScanHost host) {
+        this(scanResponse, host, new HostOutput());
+    }
+
+    public HostVulnsJob(ScanResponse scanResponse, ScanHost host,
+                        ScanHostResponse scanHostResponse, HostOutput testOutput) {
+
+        this(scanResponse, host, testOutput);
+        this.response = scanHostResponse;
+
+    }
+
+    private HostVulnsJob(ScanResponse scanResponse, ScanHost host, HostOutput testOutput) {
         this.scanResponse = scanResponse;
         this.host = host;
         ScanInfo info = scanResponse.getInfo();
@@ -59,6 +71,7 @@ public class HostVulnsJob extends DbManagerJob.Child {
         } else {
             this.scanTimestamp = null;
         }
+        this.output = testOutput;
     }
 
     @Override
@@ -119,19 +132,7 @@ public class HostVulnsJob extends DbManagerJob.Child {
 
     @Override
     protected void output() throws IOException {
-        LocalDateTime useForFilename;
-        if (this.scanTimestamp != null) {
-            useForFilename = this.scanTimestamp.toLocalDateTime();
-
-        } else {
-            useForFilename = LocalDateTime.now();
-        }
-
-        String timestampStr = filenameFormatter.format(useForFilename);
-        Integer hostId = this.host.getHostId();
-
-        String filename = OUTPUT_DIR + timestampStr + "_" + scanResponse.getId()
-                + "_" + hostId;
+        String filename = makeFilename();
 
         if (SEPARATE_OUTPUTS) {
             this.separateOutputs(filename);
@@ -143,7 +144,29 @@ public class HostVulnsJob extends DbManagerJob.Child {
         this.addDbTask(this::runDbInsert);
     }
 
-    private void singleOutput(String filePrefix) throws IOException {
+    public String makeFilename() {
+        LocalDateTime useForFilename;
+        if (this.scanTimestamp != null) {
+            useForFilename = this.scanTimestamp.toLocalDateTime();
+
+        } else {
+            useForFilename = LocalDateTime.now();
+        }
+
+        String timestampStr = filenameFormatter.format(useForFilename);
+        Integer hostId = this.host.getHostId();
+
+        return OUTPUT_DIR + timestampStr + "_" + scanResponse.getId()
+                + "_" + hostId;
+    }
+
+    protected void singleOutput(String filePrefix) throws IOException {
+        List<HostVulnerabilityOutput> list = this.output.getVulnerabilities();
+        if (list == null || list.size() <= 0) {
+            this.output.setFilename(null);
+            return;
+        }
+
         String filename = filePrefix + ".json";
 
         this.output.setFilename(filename);
@@ -151,13 +174,30 @@ public class HostVulnsJob extends DbManagerJob.Child {
         logger.info("Writing " + output.size() + " results to " + filename);
 
         LocalDateTime outputTime = LocalDateTime.now();
-        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(filename));
-        SplunkOutputMapper.get().writeValue(writer, output);
-
         this.output.setOutputTimestamp(Timestamp.valueOf(outputTime));
+
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(filename))) {
+
+            SplunkOutputMapper mapper = SplunkOutputMapper.get();
+
+            writer.write("[\n");
+            boolean firstIteration = true;
+
+            for (HostVulnerabilityOutput hvo : list) {
+                if (firstIteration) {
+                    firstIteration = false;
+
+                } else {
+                    writer.write(",\n");
+                }
+
+                mapper.writeValue(writer, hvo);
+            }
+            writer.write("\n]");
+        }
     }
 
-    private void separateOutputs(String filePrefix) throws IOException {
+    protected void separateOutputs(String filePrefix) throws IOException {
         this.output.setFilename(filePrefix + "_?.json");
         int i = 0;
         SplunkOutputMapper mapper = SplunkOutputMapper.get();
@@ -175,7 +215,7 @@ public class HostVulnsJob extends DbManagerJob.Child {
         this.output.setOutputTimestamp(Timestamp.valueOf(outputTime));
     }
 
-    private void runDbInsert() {
+    protected void runDbInsert() {
         ScanHostResponse.dao.saveOrUpdate(this.response);
         HostOutput.dao.saveOrUpdate(this.output);
     }

@@ -1,6 +1,7 @@
 package tenapull.run;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import tenapull.client.*;
@@ -107,8 +108,32 @@ public class ReformatOutput extends Job {
             this.separateOutputs();
 
         } else {
-            File out = new File(OUTPUT_DIR + this.file.getName());
-            mapper.writeValue(out, output);
+            try (OutputStreamWriter writer
+                    = new OutputStreamWriter(new FileOutputStream(OUTPUT_DIR + this.file.getName()))) {
+
+                if (this.inputWasArray && this.output.size() > 0) {
+                    mapper.getFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+                    writer.write("[\n");
+
+                    boolean firstIteration = true;
+
+                    for (JsonNode node : this.output) {
+                        if (firstIteration) {
+                            firstIteration = false;
+
+                        } else {
+                            writer.write(",\n");
+                        }
+
+                        mapper.writeValue(writer, node);
+                    }
+
+                    writer.write("\n]");
+
+                } else {
+                    mapper.writeValue(writer, output);
+                }
+            }
         }
         logger.info(this.file.getName());
     }

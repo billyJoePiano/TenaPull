@@ -15,6 +15,7 @@ import org.hibernate.annotations.*;
 import javax.persistence.*;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import java.sql.*;
 import java.util.*;
@@ -46,6 +47,7 @@ public class HostOutput implements DbPojo {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "hostOutput")
     @LazyCollection(LazyCollectionOption.FALSE)
     @Fetch(value = FetchMode.SUBSELECT)
+    @OrderBy("id")
     private List<HostVulnerabilityOutput> vulnerabilities;
 
 

@@ -1,5 +1,6 @@
 package tenapull.data.deserialize;
 
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import tenapull.data.entity.objectLookup.*;
 import tenapull.data.entity.scan.*;
@@ -46,6 +47,7 @@ public class SplunkOutputMapper extends ObjectMapper {
      */
     protected SplunkOutputMapper() {
         super();
+        this.getFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
         this.addMixins();
     }
 

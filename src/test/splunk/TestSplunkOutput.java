@@ -107,7 +107,7 @@ public class TestSplunkOutput {
         return params;
     }
 
-    private static List<JsonNode> results = new LinkedList<>();
+    private static List<HostOutput> results = new LinkedList<>();
 
     private final ScanResponse scanResponse;
     private final ScanHost host;
@@ -168,10 +168,11 @@ public class TestSplunkOutput {
         assertNotNull(node);
         logger.info("\n" + node);
 
-        results.add(node);
+        results.add(output);
 
         HostOutput persisted = null;
         HostOutput.dao.holdSession();
+
         try {
             persisted = (HostOutput)Hibernate.unproxy(HostOutput.dao.getById(output.getId()));
 
@@ -192,6 +193,8 @@ public class TestSplunkOutput {
             }
 
 
+            output.setOutputTimestamp(persisted.getOutputTimestamp());
+
             Timestamp orig = output.getScanTimestamp();
             Timestamp pers = persisted.getScanTimestamp();
             if (orig.getTime() != pers.getTime()
@@ -211,34 +214,42 @@ public class TestSplunkOutput {
             HostOutput.dao.releaseSession();
         }
 
+        try {
+            OutputTestJob job = new OutputTestJob(output);
+            job.doWrite();
+
+        } catch (Throwable e) {
+            throw e;
+        }
+
     }
 
 
-    /**
-     * Writes all JsonNodes produced by all the tests to a file
-     */
+    /*
     @AfterClass
-    public static void write() {
-        LocalDateTime now = LocalDateTime.now();
-        String filename = OUTPUT_DIR + now.toString();
+    public static void printHashAvgs {
+        Hash.printAverages();
+    }
+     */
 
-        filename = filename.replace(":", ".");
-
-        logger.info("Writing " +  results.size() + " results to " + filename);
-
-        try (OutputStreamWriter writer
-                     = new OutputStreamWriter(
-                            new FileOutputStream(filename))) {
-
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.writerWithDefaultPrettyPrinter().writeValue(writer, results);
-
-        } catch (FileNotFoundException e) {
-            logger.error(e);
-        } catch (IOException e) {
-            logger.error(e);
+    private class OutputTestJob extends HostVulnsJob {
+        public OutputTestJob(HostOutput testOutput) {
+            super(TestSplunkOutput.this.scanResponse, TestSplunkOutput.this.host,
+                    TestSplunkOutput.this.response, testOutput);
         }
 
-        //Hash.printAverages();
+        private void doWrite() {
+            try {
+                assertTrue(this.isReady());
+                this.process();
+                this.singleOutput(this.makeFilename());
+                this.runDbInsert();
+
+
+            } catch (Exception e) {
+                fail(e);
+            }
+
+        }
     }
 }
