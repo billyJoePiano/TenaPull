@@ -10,7 +10,6 @@ import tenapull.data.entity.splunk.*;
 import org.apache.logging.log4j.*;
 
 import java.io.*;
-import java.nio.charset.*;
 import java.util.*;
 
 public class ReformatOutput extends Job {
