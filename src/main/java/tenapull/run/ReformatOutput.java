@@ -20,7 +20,7 @@ public class ReformatOutput extends Job {
     public static final Integer TRUNCATE = Main.parseTruncate();
     public static final boolean SEPARATE_OUTPUTS = Main.hasConfig("output.separate");
 
-    private File file;
+    private final File file;
 
     public ReformatOutput(File file) throws NullPointerException {
         if (file == null) throw new NullPointerException();
@@ -57,7 +57,7 @@ public class ReformatOutput extends Job {
                 return;
 
             case OBJECT:
-                output = new ArrayList(1);
+                output = new ArrayList<>(1);
                 processSeparate((ObjectNode)input);
                 return;
 
@@ -68,7 +68,7 @@ public class ReformatOutput extends Job {
     }
 
     private void processArray(ArrayNode input) {
-        output = new ArrayList(input.size());
+        output = new ArrayList<>(input.size());
 
         for (JsonNode o : input) {
             processSeparate((ObjectNode) o);
