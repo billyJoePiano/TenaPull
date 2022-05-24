@@ -4,7 +4,7 @@ echo
 
 if [ -z "$JAVA_HOME" ]
 then
-    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.3.0.6-2.el8_5.x86_64/
+    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.3.0.7-2.el8_6.x86_64/
     echo "Note: \$JAVA_HOME environmental variable has been set to the following directory:"
 
 else
