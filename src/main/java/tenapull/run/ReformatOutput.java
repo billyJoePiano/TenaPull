@@ -126,8 +126,7 @@ public class ReformatOutput extends Job {
             TextNode timestampNode = (TextNode)input.get("scan_timestamp");
             Long epoch = null;
             try {
-                epoch = this.getFriendlyFormat().parse(timestampNode.textValue()).getTime();
-
+                epoch = this.getFriendlyFormat().parse(timestampNode.textValue()).getTime() / 1000;
 
             } catch (Exception e) {
                 logger.warn("Exception trying to convert textual timestamp '" + timestampNode.textValue()
@@ -166,7 +165,7 @@ public class ReformatOutput extends Job {
         this.friendlyFormat = FRIENDLY_FORMAT.read(ff -> ff.get(current));
         if (this.friendlyFormat != null) return this.friendlyFormat;
 
-        this.friendlyFormat = new SimpleDateFormat("EEE LLL d H:mm:ss uuuu");
+        this.friendlyFormat = new SimpleDateFormat("EEE LLL d H:mm:ss yyyy");
         FRIENDLY_FORMAT.write(ff -> ff.put(current, this.friendlyFormat));
         return this.friendlyFormat;
     }
