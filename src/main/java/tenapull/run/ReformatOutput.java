@@ -8,20 +8,26 @@ import tenapull.client.*;
 import tenapull.data.deserialize.*;
 import tenapull.data.entity.splunk.*;
 import org.apache.logging.log4j.*;
+import tenapull.sync.*;
 
 import java.io.*;
 import java.nio.file.*;
+import java.text.*;
 import java.util.*;
 
 public class ReformatOutput extends Job {
     private static final Logger logger = LogManager.getLogger(ReformatOutput.class);
     public static final String OUTPUT_DIR = Main.getConfig("output.dir");
     private static final String[] FIELD_ORDER = HostVulnerabilityOutput.class.getAnnotation(JsonPropertyOrder.class).value();
-    private static final TextNode SCANNER = TextNode.valueOf(Main.getConfig("output.scanner"));
+    private static final TextNode SCANNER = Main.hasConfig("output.scanner.omit") ? null
+                                                    : TextNode.valueOf(Main.getConfig("output.scanner"));
     public static final Integer TRUNCATE = Main.parseTruncate();
     public static final boolean SEPARATE_OUTPUTS = Main.hasConfig("output.separate");
+    private static final ReadWriteLock<Map<Thread, SimpleDateFormat>, SimpleDateFormat>
+            FRIENDLY_FORMAT = ReadWriteLock.forMap(new WeakHashMap<>());
 
     private final File file;
+    private SimpleDateFormat friendlyFormat;
 
     public ReformatOutput(File file) throws NullPointerException {
         if (file == null) throw new NullPointerException();
@@ -76,42 +82,68 @@ public class ReformatOutput extends Job {
             }
         }
 
-        switch (input.getNodeType()) {
-            case ARRAY:
-                inputWasArray = true;
-                processArray((ArrayNode) input);
-                return;
+        try {
+            switch (input.getNodeType()) {
+                case ARRAY:
+                    inputWasArray = true;
+                    processArray((ArrayNode) input);
+                    return;
 
-            case OBJECT:
-                output = new ArrayList<>(1);
-                processSeparate((ObjectNode)input);
-                return;
+                case OBJECT:
+                    output = new ArrayList<>(1);
+                    processEntry((ObjectNode) input);
+                    return;
 
-            default:
-                logger.error("INVALID JSON INPUT, MUST BE AN OBJECT OR ARRAY:n" + input);
-                this.failed();
+                default:
+                    logger.error("INVALID JSON INPUT, MUST BE AN OBJECT OR ARRAY:n" + input);
+                    this.failed();
+            }
+
+        } finally {
+            this.friendlyFormat = null;
         }
     }
 
     private void processArray(ArrayNode input) {
         output = new ArrayList<>(input.size());
-
         for (JsonNode o : input) {
-            processSeparate((ObjectNode) o);
+            processEntry((ObjectNode) o);
         }
     }
 
-    private void processSeparate(ObjectNode input) {
+    private void processEntry(ObjectNode input) {
         input.remove("plugin_error");
         input.remove("scanner_url");
         input.remove("scanner");
+
+        if (SCANNER != null) {
+            input.set("scanner", SCANNER);
+        }
+
+        if (input.has("scan_timestamp")
+                && input.get("scan_timestamp").getNodeType() == JsonNodeType.STRING) {
+
+            TextNode timestampNode = (TextNode)input.get("scan_timestamp");
+            Long epoch = null;
+            try {
+                epoch = this.getFriendlyFormat().parse(timestampNode.textValue()).getTime();
+
+
+            } catch (Exception e) {
+                logger.warn("Exception trying to convert textual timestamp '" + timestampNode.textValue()
+                        + "' to epoch timestamp", e);
+            }
+
+            if (epoch != null) {
+                input.put("scan_timestamp", epoch);
+            }
+        }
 
         if (SplunkOutputMapper.TRUNCATE != null) {
             input = truncateObj(input);
         }
 
         ObjectNode newObj = mapper.createObjectNode();
-        newObj.set("scanner", SCANNER);
 
         for (String field : FIELD_ORDER) {
             if (!input.has(field)) continue;
@@ -125,6 +157,18 @@ public class ReformatOutput extends Job {
         }
 
         output.add(newObj);
+    }
+
+    private SimpleDateFormat getFriendlyFormat() {
+        if (this.friendlyFormat != null) return this.friendlyFormat;
+
+        Thread current = Thread.currentThread();
+        this.friendlyFormat = FRIENDLY_FORMAT.read(ff -> ff.get(current));
+        if (this.friendlyFormat != null) return this.friendlyFormat;
+
+        this.friendlyFormat = new SimpleDateFormat("EEE LLL d H:mm:ss uuuu");
+        FRIENDLY_FORMAT.write(ff -> ff.put(current, this.friendlyFormat));
+        return this.friendlyFormat;
     }
 
     @Override
