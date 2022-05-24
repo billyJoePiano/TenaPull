@@ -10,6 +10,7 @@ import tenapull.data.entity.splunk.*;
 import org.apache.logging.log4j.*;
 
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 
 public class ReformatOutput extends Job {
@@ -47,8 +48,33 @@ public class ReformatOutput extends Job {
 
     @Override
     protected void process() throws IOException {
+        List<String> lines = Files.readAllLines(this.file.toPath());
+
         mapper = new ObjectMapper();
-        JsonNode input = mapper.readTree(file);
+        JsonNode input;
+
+        if (lines.size() == 0) {
+            return;
+
+        } else if (lines.size() == 1) {
+            input = mapper.readTree(lines.get(0));
+
+        } else {
+            ArrayNode arr = mapper.createArrayNode();
+            input = arr;
+
+            if (Objects.equals(lines.get(0), "[") && Objects.equals(lines.get(lines.size() - 1), "]")) {
+                lines.remove(lines.size() - 1);
+                lines.remove(0);
+            }
+
+            for (String line : lines) {
+                if (Objects.equals(",", line.substring(line.length() - 1))) {
+                    line = line.substring(0, line.length() - 1);
+                }
+                arr.add(mapper.readTree(line));
+            }
+        }
 
         switch (input.getNodeType()) {
             case ARRAY:
@@ -103,6 +129,8 @@ public class ReformatOutput extends Job {
 
     @Override
     protected void output() throws IOException {
+        if (this.output == null) return;
+
         if (SEPARATE_OUTPUTS) {
             this.separateOutputs();
 
@@ -112,22 +140,11 @@ public class ReformatOutput extends Job {
 
                 if (this.inputWasArray && this.output.size() > 0) {
                     mapper.getFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
-                    writer.write("[\n");
-
-                    boolean firstIteration = true;
 
                     for (JsonNode node : this.output) {
-                        if (firstIteration) {
-                            firstIteration = false;
-
-                        } else {
-                            writer.write(",\n");
-                        }
-
                         mapper.writeValue(writer, node);
+                        writer.write("\n");
                     }
-
-                    writer.write("\n]");
 
                 } else {
                     mapper.writeValue(writer, output);

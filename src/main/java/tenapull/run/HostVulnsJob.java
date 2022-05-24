@@ -180,20 +180,10 @@ public class HostVulnsJob extends DbManagerJob.Child {
 
             SplunkOutputMapper mapper = SplunkOutputMapper.get();
 
-            writer.write("[\n");
-            boolean firstIteration = true;
-
             for (HostVulnerabilityOutput hvo : list) {
-                if (firstIteration) {
-                    firstIteration = false;
-
-                } else {
-                    writer.write(",\n");
-                }
-
                 mapper.writeValue(writer, hvo);
+                writer.write("\n");
             }
-            writer.write("\n]");
         }
     }
 
