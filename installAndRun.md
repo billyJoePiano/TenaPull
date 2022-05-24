@@ -1,6 +1,6 @@
 # TenaPull Installation checklist
 
-- If you've already installed & built TenaPull, and just want to add another scanner, then skip to "Configure TenaPull for your Nessus Installation"
+- If you've already installed & built TenaPull, and just want to add another scanner, then skip to [Configure TenaPull for your Nessus Installation](#configure-tenapull-for-your-nessus-installation)
 
 ## Install and build TenaPull
 
