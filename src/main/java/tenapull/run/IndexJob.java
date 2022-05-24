@@ -24,21 +24,7 @@ public class IndexJob extends Job {
      * Instantiates a new Index job.
      */
     public IndexJob() {
-        boolean ready = Main.initOutputDir();
-
-        if (ready) {
-            //force DB to initialize right away, using smallest table that likely has a value
-            logger.info("Checking database connection: " + Main.getConfig("db.url"));
-            try {
-                Timezone.dao.getById(1);
-
-            } catch (Exception e) {
-                ready = false;
-                logger.error("Error while trying to initialize DB connection", e);
-            }
-        }
-
-        this.ready = ready;
+        this.ready = Main.initOutputDir() && Main.initDbConnection();
     }
 
     @Override

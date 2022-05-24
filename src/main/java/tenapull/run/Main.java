@@ -1,5 +1,6 @@
 package tenapull.run;
 
+import tenapull.data.entity.lookup.*;
 import tenapull.util.*;
 import org.apache.logging.log4j.*;
 
@@ -296,6 +297,19 @@ public class Main {
             logger.error("Error while trying to make output directory '" + dir + "'", e);
             return false;
         }
+    }
+
+    public static boolean initDbConnection() {
+        //force DB to initialize using the smallest table that likely has a value
+        logger.info("Checking database connection: " + Main.getConfig("db.url"));
+        try {
+            Timezone.dao.getById(1);
+
+        } catch (Exception e) {
+            logger.error("Error while trying to initialize DB connection", e);
+            return false;
+        }
+        return true;
     }
 
     public static Integer parseTruncate() {

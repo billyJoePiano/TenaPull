@@ -28,14 +28,18 @@ import org.apache.logging.log4j.*;
  */
 @RunWith(Parameterized.class)
 public class TestSplunkOutput {
-    /**
-     * The directory to output to
-     */
-    public static final String OUTPUT_DIR = "splunk-output/";
     private static final Logger logger = LogManager.getLogger(TestSplunkOutput.class);
 
     static {
         Main.loadTestConfig();
+
+        if (!Main.initOutputDir()) {
+            throw new IllegalStateException("Could not initialize output directory");
+
+        } else if (!Main.initDbConnection()) {
+            throw new IllegalStateException("Could not initialize database connection");
+        }
+
         ScanResponse.dao.holdSession();
     }
     private static List<ScanResponse> scanResponses = (List<ScanResponse>)Hibernate.unproxy(ScanResponse.dao.getAll());
@@ -179,7 +183,7 @@ public class TestSplunkOutput {
             ScanHostResponse shr = (ScanHostResponse)Hibernate.unproxy(persisted.getScanHostResponse());
             persisted.setScanHostResponse(shr);
 
-            //replace the persistant bag from Hibernate
+            //replace the persistent bag from Hibernate
             // ... it does not follow the List contract for .equals(), apparently :-(
             persisted.setVulnerabilities(new ArrayList(persisted.getVulnerabilities()));
             output.setVulnerabilities(new ArrayList(output.getVulnerabilities()));
