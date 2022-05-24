@@ -1,1 +1,0 @@
-<h1><a href="/web/folders">See all scans</a></h1>
