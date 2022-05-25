@@ -13,6 +13,7 @@ import tenapull.sync.*;
 import java.io.*;
 import java.nio.file.*;
 import java.text.*;
+import java.time.*;
 import java.util.*;
 
 public class ReformatOutput extends Job {
@@ -23,8 +24,6 @@ public class ReformatOutput extends Job {
                                                     : TextNode.valueOf(Main.getConfig("output.scanner"));
     public static final Integer TRUNCATE = Main.parseTruncate();
     public static final boolean SEPARATE_OUTPUTS = Main.hasConfig("output.separate");
-    private static final ReadWriteLock<Map<Thread, SimpleDateFormat>, SimpleDateFormat>
-            FRIENDLY_FORMAT = ReadWriteLock.forMap(new WeakHashMap<>());
 
     private final File file;
     private SimpleDateFormat friendlyFormat;
@@ -126,7 +125,8 @@ public class ReformatOutput extends Job {
             TextNode timestampNode = (TextNode)input.get("scan_timestamp");
             Long epoch = null;
             try {
-                epoch = this.getFriendlyFormat().parse(timestampNode.textValue()).getTime() / 1000;
+                epoch = LocalDateTime.parse(timestampNode.textValue(), FriendlyTimestamp.OUTPUT_FORMATTER)
+                                        .atZone(ZoneId.systemDefault()).toEpochSecond();
 
             } catch (Exception e) {
                 logger.warn("Exception trying to convert textual timestamp '" + timestampNode.textValue()
@@ -156,18 +156,6 @@ public class ReformatOutput extends Job {
         }
 
         output.add(newObj);
-    }
-
-    private SimpleDateFormat getFriendlyFormat() {
-        if (this.friendlyFormat != null) return this.friendlyFormat;
-
-        Thread current = Thread.currentThread();
-        this.friendlyFormat = FRIENDLY_FORMAT.read(ff -> ff.get(current));
-        if (this.friendlyFormat != null) return this.friendlyFormat;
-
-        this.friendlyFormat = new SimpleDateFormat("EEE LLL d H:mm:ss yyyy");
-        FRIENDLY_FORMAT.write(ff -> ff.put(current, this.friendlyFormat));
-        return this.friendlyFormat;
     }
 
     @Override
