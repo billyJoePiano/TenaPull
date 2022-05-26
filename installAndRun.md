@@ -75,11 +75,11 @@ TenaPull will attempt to find it as a resource on the Java classpath (the `targe
 
 ## Configure your Splunk Universal Forwarder and Heavy Forwarder/Indexer
 
-This assumes you already know how to install and configure a Splunk Universal Forwarder,
-and configure your Splunk Indexer or Heavy Forwarder for custom inputs.  More information is available on the Splunk website:<br />
+This assumes you already know how to install and configure a Splunk Universal Forwarder, and the basics of configuring
+your Splunk Indexer or Heavy Forwarder for custom inputs.  More information is available on the Splunk website:<br />
 https://docs.splunk.com/Documentation/Forwarder/8.2.6/Forwarder/Installanixuniversalforwarder
 
-### Example Splunk configuration entries
+### TenaPull Splunk configuration entries
 
 - [Example `local/inputs.conf` entry](inputs.conf) for your Splunk Universal Forwarder, on the host which runs TenaPull
 - [Example `local/props.conf` entry](props.conf) for your Splunk Heavy Forwarder or Indexer
