@@ -75,8 +75,8 @@ TenaPull will attempt to find it as a resource on the Java classpath (the `targe
 
 ## Configure your Splunk Universal Forwarder and Heavy Forwarder/Indexer
 
-- [Example local/inputs.conf entry](inputs.conf) for your Splunk Universal Forwarder on the host which runs TenaPull
-- [Example local/props.conf entry](props.conf) for your Splunk Heavy Forwarder or Indexer
+- [Example `local/inputs.conf` entry](inputs.conf) for your Splunk Universal Forwarder on the host which runs TenaPull
+- [Example `local/props.conf` entry](props.conf) for your Splunk Heavy Forwarder or Indexer
 - See also:
   - https://docs.splunk.com/Documentation/Splunk/8.2.6/Admin/Inputsconf
   - https://docs.splunk.com/Documentation/Splunk/8.2.6/Admin/Propsconf
