@@ -27,7 +27,7 @@
      - See also: https://access.redhat.com/documentation/en-us/jboss_enterprise_application_platform/6/html/administration_and_configuration_guide/configure_the_default_jdk_on_red_hat_enterprise_linux 
    - [ ] Confirm the home directory of the JDK, and edit the two scripts `tenapull` and `build.sh` (in the root of the repo) if necessary. 
      - The `$JAVA_HOME` environmental variable must set to the correct directory 
-     - Default is `export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.3.0.6-2.el8_5.x86_64`
+     - Default is `export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.3.0.7-2.el8_6.x86_64/`
      
 
 4. Install Maven (This is used by TenaPull for dependency management during build and runtime)
