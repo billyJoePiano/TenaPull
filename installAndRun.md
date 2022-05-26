@@ -36,7 +36,7 @@
 
 5. Build TenaPull
    - [ ] From your local root of the repo, run `./build.sh`
-     - If you are having issues with the build, check the JDK version `mvn` is using.
+     - If you are having issues with the build, check the JDK version  maven is using with `mvn -v`
      - You can also manually run `mvn clean install -X` (-X for debugging), but make sure you've exported the correct `$JAVA_HOME` enviromental  variable
 
 
