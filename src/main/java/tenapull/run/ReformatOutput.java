@@ -14,6 +14,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.text.*;
 import java.time.*;
+import java.time.temporal.*;
 import java.util.*;
 
 public class ReformatOutput extends Job {
@@ -119,22 +120,27 @@ public class ReformatOutput extends Job {
             input.set("scanner", SCANNER);
         }
 
-        if (input.has("scan_timestamp")
-                && input.get("scan_timestamp").getNodeType() == JsonNodeType.STRING) {
+        JsonNode timestampNode = input.get("scan_timestamp");
+        String timestampStr = timestampNode != null ? input.get("scan_timestamp").textValue() : null;
 
-            TextNode timestampNode = (TextNode)input.get("scan_timestamp");
-            Long epoch = null;
+        if (timestampStr != null
+                && timestampStr.length() >= 20
+                && timestampStr.charAt(3) == ' ') {
+                // indicates this is the "friendly timestamp" formatted like "Fri May 20 10:22:38 2022"
+
+            String reformatted = null;
+
             try {
-                epoch = LocalDateTime.parse(timestampNode.textValue(), FriendlyTimestamp.OUTPUT_FORMATTER)
-                                        .atZone(ZoneId.systemDefault()).toEpochSecond();
+                TemporalAccessor ta = FriendlyTimestamp.OUTPUT_FORMATTER.parse(timestampStr);
+                reformatted = FriendlyTimestamp.SPLUNK_FORMATTER.format(ta);
 
             } catch (Exception e) {
                 logger.warn("Exception trying to convert textual timestamp '" + timestampNode.textValue()
-                        + "' to epoch timestamp", e);
+                        + "' to splunk timestamp format", e);
             }
 
-            if (epoch != null) {
-                input.put("scan_timestamp", epoch);
+            if (reformatted != null) {
+                input.put("scan_timestamp", reformatted);
             }
         }
 

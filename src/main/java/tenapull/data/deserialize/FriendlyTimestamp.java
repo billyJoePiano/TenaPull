@@ -2,6 +2,8 @@ package tenapull.data.deserialize;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+import org.apache.logging.log4j.*;
+import tenapull.data.entity.splunk.*;
 
 import java.io.*;
 import java.sql.*;
@@ -106,6 +108,45 @@ public class FriendlyTimestamp {
             } catch (DateTimeException e) { }
 
             jg.writeString(value);
+        }
+    }
+
+    public static final DateTimeFormatter SPLUNK_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")
+            .withZone(TimeZone.getDefault().toZoneId());
+
+    public static class Splunk extends JsonSerializer<Timestamp> {
+        private static final Logger logger = LogManager.getLogger(FriendlyTimestamp.Splunk.class);
+
+        @Override
+        public void serialize(Timestamp value,
+                              JsonGenerator jg,
+                              SerializerProvider sp) throws IOException {
+
+            LocalDateTime ldt = null;
+            if (value != null) {
+                ldt = value.toLocalDateTime();
+            }
+
+            if (ldt == null) {
+                jg.writeNull();
+                try {
+                    logger.warn("Null Splunk-targeted timestamp encountered",
+                            ((HostVulnerabilityOutput) jg.getOutputContext().getCurrentValue()).getScan());
+
+                } catch (Exception e) {
+                    logger.warn("Null Splunk-targeted timestamp encountered\n"
+                            + "Note: COULDN'T PRINT Scan CONTEXT OF NULL TIMESTAMP DUE TO EXCEPTION:", e);
+                }
+                return;
+            }
+
+            try {
+                jg.writeString(SPLUNK_FORMATTER.format(ldt));
+
+            } catch (Exception e) {
+                logger.error("Exception while formatting or writing Splunk-targeted timestamp. Writing null instead", e);
+                jg.writeNull();
+            }
         }
     }
 }
