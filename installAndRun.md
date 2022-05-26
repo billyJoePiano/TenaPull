@@ -73,6 +73,15 @@ A few notes:
 TenaPull will attempt to find it as a resource on the Java classpath (the `target/classes` directory and all subdirectories)
 
 
+## Configure your Splunk Universal Forwarder and Heavy Forwarder/Indexer
+
+- [Example local/inputs.conf entry](inputs.conf) for your Splunk Universal Forwarder on the host which runs TenaPull
+- [Example local/props.conf entry](props.conf) for your Splunk Heavy Forwarder or Indexer
+- See also:
+  - https://docs.splunk.com/Documentation/Splunk/8.2.6/Admin/Inputsconf
+  - https://docs.splunk.com/Documentation/Splunk/8.2.6/Admin/Propsconf
+
+
 ## Importing a custom Certificate Authority into Java (optional)
 
 - See: https://stackoverflow.com/questions/6659360/how-to-solve-javax-net-ssl-sslhandshakeexception-error/6742204#6742204

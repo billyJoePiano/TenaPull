@@ -20,7 +20,9 @@ For a complete demonstration, click the below picture which will take you to a Y
 ### TenaPull Documentation
 
 - [Install and run instructions](installAndRun.md)
-- [Example configuration](example-config.properties)
+- [Example TenaPull configuration](example-config.properties)
+- [Example local/inputs.conf entry](inputs.conf) for your Splunk Universal Forwarder on the host which runs TenaPull
+- [Example local/props.conf entry](props.conf) for your Splunk Heavy Forwarder or Indexer
 - [JavaDocs](https://billyjoepiano.github.io/TenaPull/)
 
 
