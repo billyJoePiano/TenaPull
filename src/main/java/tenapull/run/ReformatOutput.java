@@ -187,6 +187,10 @@ public class ReformatOutput extends Job {
                 if (reformatted != null) {
                     input.put("scan_timestamp", reformatted);
                 }
+            } else {
+                logger.warn("Verification on possible epoch timestamp failed: " + timestampNode
+                        + "\nLong to double comparison: " + epoch + " =?= " + dbl);
+
             }
         }
 
