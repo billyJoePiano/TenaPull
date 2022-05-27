@@ -11,6 +11,7 @@ import org.apache.logging.log4j.*;
 
 import java.io.*;
 import java.nio.file.*;
+import java.sql.*;
 import java.text.*;
 import java.time.*;
 import java.time.temporal.*;
@@ -163,6 +164,27 @@ public class ReformatOutput extends Job {
                     if (reformatted != null) {
                         input.put("scan_timestamp", reformatted);
                     }
+                }
+            }
+
+        } else if (timestampNode != null
+                && timestampNode.isIntegralNumber()) {
+
+            long epoch = timestampNode.longValue();
+            LocalDateTime ldt = new Timestamp(epoch * 1000).toLocalDateTime();
+
+            if (epoch > 0 && ldt != null) {
+                String reformatted = null;
+
+                try {
+                    reformatted = FriendlyTimestamp.SPLUNK_FORMATTER.format(ldt);
+
+                } catch (Exception e) {
+                    logger.error("Exception while converting timestamp from Epoch to Splunk format", e);
+                }
+
+                if (reformatted != null) {
+                    input.put("scan_timestamp", reformatted);
                 }
             }
         }
