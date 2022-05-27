@@ -116,6 +116,20 @@ public class FriendlyTimestamp {
 
     public static class Splunk extends JsonSerializer<Timestamp> {
         private static final Logger logger = LogManager.getLogger(FriendlyTimestamp.Splunk.class);
+        private static boolean floorSet = false;
+        private static LocalDateTime floor;
+
+        public static void setFloor(LocalDateTime floor) throws IllegalStateException {
+            if (floorSet) throw new IllegalStateException(
+                    "Cannot set output.timestamp.floor after it was already set by Main during config parsing");
+
+            floorSet = true;
+            Splunk.floor = floor;
+        }
+
+        public static LocalDateTime getFloor() {
+            return floor;
+        }
 
         @Override
         public void serialize(Timestamp value,
@@ -138,6 +152,10 @@ public class FriendlyTimestamp {
                             + "Note: COULDN'T PRINT Scan CONTEXT OF NULL TIMESTAMP DUE TO EXCEPTION:", e);
                 }
                 return;
+            }
+
+            if (floor != null && ldt.isBefore(floor)) {
+                ldt = floor;
             }
 
             try {

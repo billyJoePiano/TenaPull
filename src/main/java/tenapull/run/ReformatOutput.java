@@ -8,7 +8,6 @@ import tenapull.client.*;
 import tenapull.data.deserialize.*;
 import tenapull.data.entity.splunk.*;
 import org.apache.logging.log4j.*;
-import tenapull.sync.*;
 
 import java.io.*;
 import java.nio.file.*;
@@ -25,6 +24,7 @@ public class ReformatOutput extends Job {
                                                     : TextNode.valueOf(Main.getConfig("output.scanner"));
     public static final Integer TRUNCATE = Main.parseTruncate();
     public static final boolean SEPARATE_OUTPUTS = Main.hasConfig("output.separate");
+    private static final LocalDateTime EARLIEST = FriendlyTimestamp.Splunk.getFloor();
 
     private final File file;
     private SimpleDateFormat friendlyFormat;
@@ -123,24 +123,47 @@ public class ReformatOutput extends Job {
         JsonNode timestampNode = input.get("scan_timestamp");
         String timestampStr = timestampNode != null ? input.get("scan_timestamp").textValue() : null;
 
-        if (timestampStr != null
-                && timestampStr.length() >= 20
-                && timestampStr.charAt(3) == ' ') {
+        if (timestampStr != null) {
+            TemporalAccessor ta = null;
+
+            if (timestampStr.length() >= 20
+                    && timestampStr.charAt(3) == ' ') {
                 // indicates this is the "friendly timestamp" formatted like "Fri May 20 10:22:38 2022"
 
-            String reformatted = null;
+                ta = fromFriendly(timestampStr);
 
-            try {
-                TemporalAccessor ta = FriendlyTimestamp.OUTPUT_FORMATTER.parse(timestampStr);
-                reformatted = FriendlyTimestamp.SPLUNK_FORMATTER.format(ta);
-
-            } catch (Exception e) {
-                logger.warn("Exception trying to convert textual timestamp '" + timestampNode.textValue()
-                        + "' to splunk timestamp format", e);
+            } else {
+                ta = fromSplunk(timestampStr);
             }
 
-            if (reformatted != null) {
-                input.put("scan_timestamp", reformatted);
+            if (ta != null) {
+                LocalDateTime ldt = null;
+
+                try {
+                    ldt = LocalDateTime.from(ta);
+
+                } catch (Exception e) {
+                    logger.error("Exception while converting parsed TemporalAccessor to LocalDateTime", e);
+                }
+
+                if (ldt != null) {
+                    if (EARLIEST != null && ldt.isBefore(EARLIEST)) {
+                        ldt = EARLIEST;
+                    }
+
+                    String reformatted = null;
+
+                    try {
+                        reformatted = FriendlyTimestamp.SPLUNK_FORMATTER.format(ldt);
+
+                    } catch (Exception e) {
+                        logger.error("Exception while converting timestamp back to Splunk format", e);
+                    }
+
+                    if (reformatted != null) {
+                        input.put("scan_timestamp", reformatted);
+                    }
+                }
             }
         }
 
@@ -162,6 +185,32 @@ public class ReformatOutput extends Job {
         }
 
         output.add(newObj);
+    }
+
+    private TemporalAccessor fromFriendly(String timestampStr) {
+        try {
+            return FriendlyTimestamp.OUTPUT_FORMATTER.parse(timestampStr);
+
+        } catch (Exception e) {
+            logger.warn("Exception trying to convert textual timestamp '"
+                    + timestampStr
+                    + "' from friendly timestamp format. Attempting Splunk format parse next...", e);
+
+            return fromSplunk(timestampStr);
+        }
+    }
+
+    private TemporalAccessor fromSplunk(String timestampStr) {
+        try {
+            return FriendlyTimestamp.SPLUNK_FORMATTER.parse(timestampStr);
+
+        } catch (Exception e) {
+            logger.warn("Exception trying to convert textual timestamp '"
+                    + timestampStr
+                    + "' from Splunk timestamp format.", e);
+
+            return null;
+        }
     }
 
     @Override

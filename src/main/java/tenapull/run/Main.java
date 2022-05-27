@@ -1,10 +1,12 @@
 package tenapull.run;
 
+import tenapull.data.deserialize.*;
 import tenapull.data.entity.lookup.*;
 import tenapull.util.*;
 import org.apache.logging.log4j.*;
 
 import java.io.*;
+import java.time.*;
 import java.util.*;
 
 /**
@@ -229,6 +231,35 @@ public class Main {
 
         } else if (!Objects.equals(dir.substring(length - 1, length), "/")) {
             config.put("output.dir", dir += "/");
+        }
+
+        if (config.containsKey("output.timestamp.floor")) {
+            LocalDateTime ldt = null;
+            String str = config.getProperty("output.timestamp.floor");
+            if (str == null || str.length() <= 0) {
+                logger.warn("Null or empty output.timestamp.floor config, proceeding without earliest timestamp cutoff.");
+                config.remove("output.timestamp.floor");
+                FriendlyTimestamp.Splunk.setFloor(null);
+
+            } else {
+                try {
+                    ldt = LocalDateTime.from(FriendlyTimestamp.SPLUNK_FORMATTER.parse(str));
+
+                } catch (Exception e) {
+                    logger.warn("Exception while parsing config output.timestamp.floor '"
+                            + config.getProperty("output.timestamp.floor")
+                            + "'.  Proceeding without an earliest timestamp cutoff.", e);
+                }
+
+                FriendlyTimestamp.Splunk.setFloor(ldt);
+
+                if (ldt == null) {
+                    config.remove("output.timestamp.floor");
+                }
+            }
+
+        } else {
+            FriendlyTimestamp.Splunk.setFloor(null);
         }
 
         return true;
