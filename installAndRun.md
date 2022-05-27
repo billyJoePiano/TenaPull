@@ -17,7 +17,7 @@
     - [ ] Configure the timezone in mySQL.
         - You will first need to populate the DB's timezone table using the timezone_posix.sql script at the root of this repo
             - `mysql -u root -p < timezone_posix.sql`
-        - Then enter the mysql console with `mysql -u root -p` and enter `SET time_zone = 'US/Central'` (e.g. for Central Time).
+        - Then enter the mysql console with `mysql -u root -p` and enter `SET GLOBAL time_zone = 'US/Central'` (e.g. for Central Time).
         - More information here: https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html
 
 
