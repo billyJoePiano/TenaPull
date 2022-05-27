@@ -198,8 +198,9 @@ public class HostVulnsJob extends DbManagerJob.Child {
 
         for (HostVulnerabilityOutput out : this.output.getVulnerabilities()) {
             String filename = filePrefix + "_" + (i++) + ".json";
-            OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(filename));
-            mapper.writeValue(writer, out);
+            try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(filename))) {
+                mapper.writeValue(writer, out);
+            }
         }
 
         this.output.setOutputTimestamp(Timestamp.valueOf(outputTime));
