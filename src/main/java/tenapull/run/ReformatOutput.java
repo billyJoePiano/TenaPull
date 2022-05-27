@@ -171,9 +171,10 @@ public class ReformatOutput extends Job {
                 && timestampNode.isIntegralNumber()) {
 
             long epoch = timestampNode.longValue();
+            double dbl = timestampNode.doubleValue();
             LocalDateTime ldt = new Timestamp(epoch * 1000).toLocalDateTime();
 
-            if (epoch > 0 && ldt != null) {
+            if (((long)dbl) == epoch && epoch > 1_000_000_000L && ldt != null) {
                 String reformatted = null;
 
                 try {
