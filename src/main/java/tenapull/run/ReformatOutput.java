@@ -167,6 +167,42 @@ public class ReformatOutput extends Job {
             }
         }
 
+        // check for field "plugin (TenaPull best guess)" or "plugin (NessusTools best guess)"
+        if (!input.has("plugin")) {
+            for (Iterator<String> iterator = input.fieldNames();
+                 iterator.hasNext(); ) {
+
+                String field = iterator.next();
+                if (!(field != null && field.length() > 13  // 13 = length of "vulnerability"
+                        && Objects.equals(field.substring(0, 8), "plugin (")
+                        && !input.has("plugin"))) {
+
+                    continue;
+                }
+
+                ObjectNode plugin = (ObjectNode) input.get(field);
+
+                if (!plugin.has(OutputMixIns.ScanPlugin.BEST_GUESS_FIELD)) {
+
+                    ObjectNode newPlugin = mapper.createObjectNode();
+                    newPlugin.put(OutputMixIns.ScanPlugin.BEST_GUESS_FIELD, OutputMixIns.ScanPlugin.BEST_GUESS_MSG);
+
+                    for (Iterator<String> pluginIterator = plugin.fieldNames();
+                         pluginIterator.hasNext(); ) {
+
+                        String pluginField = pluginIterator.next();
+                        newPlugin.set(pluginField, plugin.get(pluginField));
+                    }
+
+                    plugin = newPlugin;
+                }
+
+                iterator.remove();
+                input.set("plugin", plugin);
+                break;
+            }
+        }
+
         if (SplunkOutputMapper.TRUNCATE != null) {
             input = truncateObj(input);
         }
@@ -215,7 +251,10 @@ public class ReformatOutput extends Job {
 
     @Override
     protected void output() throws IOException {
-        if (this.output == null) return;
+        if (this.output == null || this.output.size() <= 0) {
+            logger.info(this.file.getName() + " was empty ... ignoring");
+            return;
+        }
 
         if (SEPARATE_OUTPUTS) {
             this.separateOutputs();
@@ -224,7 +263,7 @@ public class ReformatOutput extends Job {
             try (OutputStreamWriter writer
                     = new OutputStreamWriter(new FileOutputStream(OUTPUT_DIR + this.file.getName()))) {
 
-                if (this.inputWasArray && this.output.size() > 0) {
+                if (this.inputWasArray) {
                     mapper.getFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
                     for (JsonNode node : this.output) {

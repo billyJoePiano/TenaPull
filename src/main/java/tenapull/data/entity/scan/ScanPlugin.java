@@ -3,6 +3,7 @@ package tenapull.data.entity.scan;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import tenapull.data.deserialize.*;
 import tenapull.data.entity.objectLookup.*;
 import tenapull.data.entity.response.*;
 import tenapull.data.entity.template.*;
@@ -46,11 +47,11 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "plugin_id")
     @JsonUnwrapped
-    Plugin plugin;
+    private Plugin plugin;
 
     @Column(name = "host_count")
     @JsonProperty("host_count")
-    Integer hostCount;
+    private Integer hostCount;
 
     @ManyToMany(cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.FALSE)
@@ -61,16 +62,17 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
             inverseJoinColumns = { @JoinColumn(name = "plugin_host_id") }
     )
     @OrderColumn(name = "__order_for_scan_plugin_host")
-    List<PluginHost> hosts;
+    private List<PluginHost> hosts;
 
-    @Override
-    public int getId() {
-        return this.id;
-    }
+    @Transient
+    @JsonIgnore
+    private boolean bestGuess = false;
 
-    @Override
-    public void setId(int id) {
-        this.id = id;
+    public ScanPlugin() { }
+
+    public ScanPlugin(Plugin plugin) {
+        this.plugin = plugin;
+        this.bestGuess = true;
     }
 
     @Transient
@@ -154,6 +156,15 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
                 { "response", this.response, "plugin", this.plugin });
     }
 
+    @Override
+    public int getId() {
+        return this.id;
+    }
+
+    @Override
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public Plugin getPlugin() {
         return plugin;
@@ -177,6 +188,30 @@ public class ScanPlugin implements MapLookupPojo<ScanPlugin>,
 
     public void setHosts(List<PluginHost> hosts) {
         this.hosts = hosts;
+    }
+
+    @Transient
+    @JsonIgnore
+    public boolean isBestGuess() {
+        return this.bestGuess;
+    }
+
+    @Transient
+    @JsonIgnore
+    public void setBestGuess(boolean bestGuess) {
+        this.bestGuess = bestGuess;
+    }
+
+    // OutMixIns.ScanPlugin overrides @JsonIgnore, for purposes of output
+    @Transient
+    @JsonIgnore
+    public String getBestGuess() {
+        if (this.bestGuess) {
+            return OutputMixIns.ScanPlugin.BEST_GUESS_MSG;
+
+        } else {
+            return null;
+        }
     }
 
     @Override

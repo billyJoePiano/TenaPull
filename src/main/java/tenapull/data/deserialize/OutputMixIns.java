@@ -6,14 +6,15 @@ import tenapull.data.entity.lookup.*;
 import tenapull.data.entity.objectLookup.*;
 import tenapull.data.entity.scan.*;
 
+import javax.persistence.*;
 import java.sql.*;
 import java.util.*;
 
 /**
  * A non-instantiable class containing a series of inner classes (also non-instantiable
  * by extension, since they are not *static* inner classes) to be used as ObjectMapper mix-ins
- * when serializing the output.  Each inner class is named after the entity it will be used
- * as a mix-in for
+ * when serializing the output.  Each inner class is named after the entity for which it will be
+ * used as a mix-in
  */
 public class OutputMixIns {
     private OutputMixIns() { }
@@ -86,9 +87,26 @@ public class OutputMixIns {
     /**
      * Output mixin for the ScanPlugin class
      */
+    @JsonPropertyOrder({"a_best_guess", "host_count"})
     public abstract class ScanPlugin {
+        public static final String BEST_GUESS_MSG =
+                "A matching plugin could not be found in the scan's data, "
+                        + "however TenaPull found this plugin in its database which may (or may not) be correct.";
+
+        public static final String BEST_GUESS_FIELD = "a_best_guess";
+
+        @JsonGetter("a_best_guess")
+        @JsonIgnore(false)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public String getBestGuess() {
+            return null;
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private Integer hostCount;
+
         @JsonIgnore
-        private List<PluginHost> hosts; //renders the below unnecessary...
+        private List<PluginHost> hosts; //renders the below class unnecessary...
     }
 
     /**
