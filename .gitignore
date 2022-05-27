@@ -50,15 +50,8 @@ fabric.properties
 
 
 
-
-notes/api-fetch-1.json
-nessus-api.properties*
-nessus-api.properties
-hibernate.cfg.xml
-
 /src/test/resources/splunk-output/*
 /splunk-output
 /splunk-output/*
 /src/test/resources/logs/*
-database.properties
 *.properties
